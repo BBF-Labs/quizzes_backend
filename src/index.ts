@@ -12,5 +12,6 @@ connectToDB()
 process.on("SIGINT", async () => {
   await disconnectDB();
   await stopServer();
+  console.log("Server stopped and DB disconnected");
   process.exit(0);
 });
