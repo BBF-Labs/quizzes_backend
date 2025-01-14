@@ -10,9 +10,8 @@ yarn-error.log*
 .env.test.local
 
 # Build output
-dist/                 # Compiled JavaScript files (TypeScript output)
-
-.vscode/              # Visual Studio Code
+dist/               
+.vscode/              
 
 # Testing
 coverage/             # Code coverage reports
