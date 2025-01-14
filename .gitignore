@@ -9,6 +9,10 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 
+# Ignore REST API files
+*.REST
+*.rest
+
 # Build output
 dist/               
 .vscode/              

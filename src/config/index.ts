@@ -1,2 +1,4 @@
-// This is the index file for src/config
-console.log('index.ts created in src/config')
+import Config from "./config";
+import { connectToDB, disconnectDB } from "./db";
+
+export { Config, connectToDB, disconnectDB };
