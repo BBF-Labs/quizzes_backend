@@ -5,6 +5,7 @@ interface IQuestion extends Document {
   courseCode: string;
   options: string[];
   answer: string;
+  type: "mcq" | "fill-in" | "true-false";
   explanation?: string;
   lectureNumber?: number;
   author: string;
