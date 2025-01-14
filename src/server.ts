@@ -10,12 +10,14 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Hello World");
 });
 
+const server = app.listen(Config.PORT, () => {
+  Config.ENV === "development" &&
+    console.log(`Server running on http://localhost:${Config.PORT}`);
+});
+
 async function startServer() {
   try {
-    app.listen(Config.PORT, () => {
-      Config.ENV === "development" &&
-        console.log(`Server running on http://localhost:${Config.PORT}`);
-    });
+    return server;
   } catch (error: any) {
     Config.ENV === "development" &&
       console.error("Error starting server: ", error.message);
@@ -23,4 +25,14 @@ async function startServer() {
   }
 }
 
-export default startServer;
+async function stopServer() {
+  try {
+    server.close();
+  } catch (error: any) {
+    Config.ENV === "development" &&
+      console.error("Error stopping server: ", error.message);
+    Config.ENV !== "development" && console.error("Error stopping Server");
+  }
+}
+
+export { startServer, stopServer };
