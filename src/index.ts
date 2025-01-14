@@ -1,5 +1,5 @@
 import { connectToDB, disconnectDB } from "./config";
-import startServer from "./server";
+import { startServer, stopServer } from "./server";
 
 connectToDB()
   .then(() => {
@@ -11,5 +11,6 @@ connectToDB()
 
 process.on("SIGINT", async () => {
   await disconnectDB();
+  await stopServer();
   process.exit(0);
 });
