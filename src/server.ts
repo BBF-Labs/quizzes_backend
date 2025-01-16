@@ -1,10 +1,15 @@
 import express, { Express, Request, Response } from "express";
 import { Config } from "./config";
+import { Limiter, sessionMiddleware } from "./middlewares";
+import helmet from "helmet";
 
 const app: Express = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(Limiter);
+app.use(sessionMiddleware);
+app.use(helmet());
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World");

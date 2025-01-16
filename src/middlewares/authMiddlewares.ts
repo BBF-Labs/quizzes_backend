@@ -10,7 +10,11 @@ declare global {
   }
 }
 
-async function authMiddleware(req: Request, res: Response, next: NextFunction) {
+async function authenticateUser(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
@@ -28,4 +32,21 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-export default authMiddleware;
+async function authorizeRoles() {
+  const roles = ["admin", "moderator"];
+
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user || !req.user.role) {
+      return res.status(401).send("You are not authenticated");
+    }
+
+    if (!roles.includes(req.user.role)) {
+      return res
+        .status(403)
+        .send("You are not authorized to perform this action");
+    }
+    next();
+  };
+}
+
+export { authenticateUser, authorizeRoles };
