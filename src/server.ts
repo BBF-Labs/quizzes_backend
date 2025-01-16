@@ -1,6 +1,12 @@
-import express, { Express, Request, Response } from "express";
+import express, { Express, NextFunction, Request, Response } from "express";
 import { Config } from "./config";
-import { Limiter, sessionMiddleware } from "./middlewares";
+import {
+  Limiter,
+  sessionMiddleware,
+  Passport,
+  ErrorHandler,
+  Logger,
+} from "./middlewares";
 import helmet from "helmet";
 
 const app: Express = express();
@@ -10,10 +16,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use(Limiter);
 app.use(sessionMiddleware);
 app.use(helmet());
+app.use(Passport.initialize());
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World");
 });
+
+app.use(ErrorHandler);
+app.use(Logger);
 
 const server = app.listen(Config.PORT, () => {
   Config.ENV === "development" &&
