@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from "express";
+import * as passportStrategy from "passport-local";
+import { verifyToken, findUserByUsername } from "./controllers";
 import { IUser } from "../interfaces";
-import { verifyToken } from "./controllers";
+import passport from "passport";
+import { verify } from "crypto";
 
 declare global {
   namespace Express {
@@ -49,4 +52,36 @@ async function authorizeRoles() {
   };
 }
 
-export { authenticateUser, authorizeRoles };
+const Passport = passport.use(
+  new passportStrategy.Strategy(
+    { usernameField: "username", passwordField: "password" },
+    async (username, password, done) => {
+      try {
+        const user = await findUserByUsername(username);
+        const password = await verifyPassword(password, user.password);
+        if (user.username === username && password) {
+          return done(null, user);
+        } else {
+          return done(null, false);
+        }
+      } catch (error: any) {
+        done(e);
+      }
+
+      passport.serializeUser((user: Partial<IUser>, done) => {
+        done(null, user.username);
+      });
+
+      passport.deserializeUser(async (username: string, done) => {
+        try {
+          const user = await findUserByUsername(username);
+          done(null, user);
+        } catch (error: any) {
+          done(error);
+        }
+      });
+    }
+  )
+);
+
+export { authenticateUser, authorizeRoles, Passport };
