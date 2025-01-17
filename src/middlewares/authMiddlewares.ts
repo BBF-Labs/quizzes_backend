@@ -1,16 +1,12 @@
-import { Request, Response, NextFunction } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import * as passportStrategy from "passport-local";
-import { verifyToken, findUserByUsername } from "./controllers";
+import {
+  verifyToken,
+  findUserByUsername,
+  verifyPassword,
+} from "../controllers";
 import { IUser } from "../interfaces";
 import passport from "passport";
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: IUser;
-    }
-  }
-}
 
 async function authenticateUser(
   req: Request,
@@ -27,7 +23,7 @@ async function authenticateUser(
 
   try {
     const user = await verifyToken(token);
-    req.user = user;
+    req.user = user || undefined;
     next();
   } catch (err) {
     res.status(400).send("Invalid Token");
@@ -57,6 +53,11 @@ const Passport = passport.use(
     async (username, password, done) => {
       try {
         const user = await findUserByUsername(username);
+
+        if (!user) {
+          throw new Error("User does not exist");
+        }
+
         const isValidPassword = await verifyPassword(password, user.password);
         if (user.username === username && isValidPassword) {
           return done(null, user);
@@ -64,7 +65,7 @@ const Passport = passport.use(
           return done(null, false);
         }
       } catch (error: any) {
-        done(e);
+        done(error.message);
       }
 
       passport.serializeUser((user: Partial<IUser>, done) => {
