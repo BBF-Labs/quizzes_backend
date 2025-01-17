@@ -3,12 +3,11 @@ import * as passportStrategy from "passport-local";
 import { verifyToken, findUserByUsername } from "./controllers";
 import { IUser } from "../interfaces";
 import passport from "passport";
-import { verify } from "crypto";
 
 declare global {
   namespace Express {
     interface Request {
-      user?: Partial<IUser>;
+      user?: IUser;
     }
   }
 }
@@ -58,8 +57,8 @@ const Passport = passport.use(
     async (username, password, done) => {
       try {
         const user = await findUserByUsername(username);
-        const password = await verifyPassword(password, user.password);
-        if (user.username === username && password) {
+        const isValidPassword = await verifyPassword(password, user.password);
+        if (user.username === username && isValidPassword) {
           return done(null, user);
         } else {
           return done(null, false);
