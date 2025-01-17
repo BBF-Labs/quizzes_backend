@@ -17,16 +17,33 @@ const UserSchema = new Schema({
     hashed_password:{
         type: String,
     },
-    authKey:{},
-    course:{},
-    role:{},
+    authKey:{
+        type: String,
+        required: true
+    },
+    course:{
+        type: Schema.Types.ObjectId,
+        ref: 'Course'
+    },
+    role:{
+        type: String,
+        enum:['student','admin','moderator'],
+        default: 'student'
+    },
     isBanned:{
         type: Boolean,
         default: false
     },
-    isSubscribed:{},
-    paymenId:{},
-    lastLogin:{},
+    isSubscribed:{ 
+        type: Boolean,
+        default: false},
+    paymenId:{ 
+        type: Schema.Types.ObjectId,
+        ref: 'Payment',
+        default: null},
+    lastLogin:{
+        type: Date,
+        default: null},
     
 },{
     timestamps: true, 
