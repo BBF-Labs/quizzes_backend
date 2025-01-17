@@ -1,4 +1,3 @@
-import { timeStamp } from "console";
 import { Schema, model } from "mongoose";
 import { IUser } from "../interfaces";
 
@@ -58,5 +57,5 @@ const UserSchema = new Schema<IUser>(
   }
 );
 
-const User = model("User", UserSchema);
+const User = model<IUser>("User", UserSchema);
 export default User;
