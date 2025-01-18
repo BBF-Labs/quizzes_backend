@@ -1,7 +1,7 @@
 import { User } from "../models";
 import { IUser } from "../interfaces";
 import { v4 as uuidv4 } from "uuid";
-import { hashPassword } from "./authControllers";
+import { hashPassword } from "./auth.controller";
 import { Config } from "../config";
 
 async function isUserValid(prop: string | undefined) {

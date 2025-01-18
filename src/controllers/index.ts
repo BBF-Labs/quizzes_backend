@@ -5,7 +5,7 @@ import {
   verifyRefreshToken,
   hashPassword,
   verifyPassword,
-} from "./authControllers";
+} from "./auth.controller";
 
 import {
   createUser,
@@ -14,7 +14,7 @@ import {
   findUserByEmail,
   findUserByUsername,
   getUserRole,
-} from "./userControllers";
+} from "./user.controller";
 
 export {
   generateAccessToken,
