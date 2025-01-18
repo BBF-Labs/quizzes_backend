@@ -1,9 +1,9 @@
 import { Express } from "express";
 import { IUser } from "../interfaces";
 
-declare module "express-serve-static-core" {
-  interface Request {
-    user?: Partial<IUser>;
+declare global {
+  namespace Express {
+    interface User extends Partial<IUser> {}
   }
 }
 
