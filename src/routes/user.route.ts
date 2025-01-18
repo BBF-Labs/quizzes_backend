@@ -13,7 +13,11 @@ userRoutes.post("/register", async (req: Request, res: Response) => {
 
     const newUser = await createUser(user);
 
-    res.status(201).json({ message: "User created", user: newUser });
+    if (!newUser) {
+      res.status(400).json({ message: "User already exists" });
+    }
+
+    res.status(201).json(newUser);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
   }
