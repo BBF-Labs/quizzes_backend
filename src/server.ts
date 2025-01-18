@@ -8,6 +8,7 @@ import {
   Logger,
 } from "./middlewares";
 import helmet from "helmet";
+import { userRoutes } from "./routes";
 
 const app: Express = express();
 
@@ -17,6 +18,7 @@ app.use(Limiter);
 app.use(sessionMiddleware);
 app.use(helmet());
 app.use(Passport.initialize());
+app.use("/api/v1/users", userRoutes);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World");
