@@ -9,6 +9,7 @@ const Config = {
   ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET!,
   REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET!,
   SALT_ROUNDS: process.env.SALT_ROUNDS! || 10,
+  LOG_LEVEL: process.env.NODE_ENV === "development" ? "debug" : "info",
 };
 
 export default Config;
