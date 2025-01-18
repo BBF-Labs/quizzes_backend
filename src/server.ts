@@ -2,7 +2,7 @@ import express, { Express, NextFunction, Request, Response } from "express";
 import { Config } from "./config";
 import {
   Limiter,
-  sessionMiddleware,
+  initializeSessionMiddleware,
   Passport,
   ErrorHandler,
   Logger,
@@ -14,8 +14,19 @@ const app: Express = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.disable("x-powered-by");
 app.use(Limiter);
-app.use(sessionMiddleware);
+
+(async () => {
+  try {
+    const sessionMiddleware = await initializeSessionMiddleware();
+    app.use(sessionMiddleware);
+  } catch (error: any) {
+    console.error("Error initializing session middleware:", error.message);
+    process.exit(1);
+  }
+})();
+
 app.use(helmet());
 app.use(Passport.initialize());
 app.use("/api/v1/users", userRoutes);
