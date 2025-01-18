@@ -28,9 +28,9 @@ async function generateUUID() {
 
 async function createUser(user: Partial<IUser>) {
   try {
-    const isValid = !(await isUserValid(user.email));
+    const isValid = await isUserValid(user.email);
 
-    if (!isValid) {
+    if (isValid) {
       throw new Error("User already exists");
     }
 

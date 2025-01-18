@@ -3,6 +3,11 @@ import bcrypt from "bcrypt";
 import { Config } from "../config";
 import { IUser } from "../interfaces";
 
+interface TokenUser {
+  id: string;
+  email: string;
+}
+
 async function generateAccessToken(user: Partial<IUser>) {
   return await Jwt.sign(user, Config.ACCESS_TOKEN_SECRET, { expiresIn: "15m" });
 }
@@ -11,7 +16,7 @@ async function generateRefreshToken(user: Partial<IUser>) {
   return await Jwt.sign(user, Config.REFRESH_TOKEN_SECRET);
 }
 
-async function verifyToken(token: string) {
+async function verifyToken(token: string): Promise<TokenUser | null> {
   try {
     const decoded = (await Jwt.verify(
       token,
