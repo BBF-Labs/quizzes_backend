@@ -8,8 +8,12 @@ import {
 import { IUser } from "../interfaces";
 import passport from "passport";
 
+interface RequestWithUser extends Request {
+  user?: IUser;
+}
+
 async function authenticateUser(
-  req: Request,
+  req: RequestWithUser,
   res: Response,
   next: NextFunction
 ) {
@@ -22,8 +26,19 @@ async function authenticateUser(
   const token = authHeader.split(" ")[1];
 
   try {
-    const user = await verifyToken(token);
-    req.user = user || undefined;
+    const tokenUser = await verifyToken(token);
+
+    if (!tokenUser) {
+      return res.status(401).send("Invalid Token");
+    }
+
+    const user = await findUserByUsername(tokenUser.email);
+
+    if (!user) {
+      return res.status(401).send("User not found");
+    }
+
+    req.user = user as IUser;
     next();
   } catch (err) {
     res.status(400).send("Invalid Token");
@@ -31,14 +46,16 @@ async function authenticateUser(
 }
 
 async function authorizeRoles() {
-  const roles = ["admin", "moderator"];
+  const allowedRoles = ["admin", "moderator"];
 
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user || !req.user.role) {
+  return (req: RequestWithUser, res: Response, next: NextFunction) => {
+    const user = req.user as IUser | undefined;
+
+    if (!user) {
       return res.status(401).send("You are not authenticated");
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (!allowedRoles.includes(user.role)) {
       return res
         .status(403)
         .send("You are not authorized to perform this action");

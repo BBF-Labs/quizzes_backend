@@ -1,10 +1,10 @@
 import { authorizeRoles, authenticateUser, Passport } from "./auth.middleware";
-import { Limiter, sessionMiddleware } from "./session.middleware";
+import { Limiter, initializeSessionMiddleware } from "./session.middleware";
 import { ErrorHandler, Logger } from "./logger.middleware";
 
 export {
   Limiter,
-  sessionMiddleware,
+  initializeSessionMiddleware,
   authenticateUser,
   authorizeRoles,
   Passport,

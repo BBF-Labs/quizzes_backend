@@ -1,23 +1,30 @@
 import { Request, Response, NextFunction } from "express";
 import { createLogger, format, transports } from "winston";
 import DailyRotateFile from "winston-daily-rotate-file";
+import { Config } from "../config";
 
 const logger = createLogger({
-  level: "info",
+  level: Config.LOG_LEVEL,
   format: format.combine(
     format.timestamp(),
-    format.json(),
-    format.colorize(),
-    format.printf((info) => `${info.timestamp} ${info.level}: ${info.message}`)
+    format.printf((info) => `${info.timestamp} [${info.level}] ${info.message}`)
   ),
   transports: [
-    new transports.Console(),
+    new transports.Console({
+      format: format.combine(
+        format.colorize(),
+        format.printf(
+          (info) => `${info.timestamp} ${info.level}: ${info.message}`
+        )
+      ),
+    }),
     new DailyRotateFile({
-      filename: "BBF-QBackend-%DATE%.log",
+      filename: "logs/BBF-QBackend-%DATE%.log",
       datePattern: "YYYY-MM-DD",
       zippedArchive: true,
       maxSize: "20m",
       maxFiles: "14d",
+      level: Config.LOG_LEVEL,
     }),
   ],
 });
@@ -28,12 +35,24 @@ function ErrorHandler(
   res: Response,
   next: NextFunction
 ) {
-  logger.error(err.stack);
-  res.status(500).send("Something went wrong");
+  logger.error(
+    `Error: ${err.message} | URL: ${req.originalUrl} | IP: ${req.ip} | User-Agent: ${req.headers["user-agent"]}`
+  );
+  res
+    .status(500)
+    .json({ error: "Something went wrong. Please try again later." });
+
+  next(err.message);
 }
 
 function Logger(req: Request, res: Response, next: NextFunction) {
-  logger.info(`${req.method} ${req.url}`);
+  const { method, originalUrl, ip } = req;
+  const userAgent = req.headers["user-agent"] || "unknown";
+  res.on("finish", () => {
+    logger.info(
+      `${method} ${originalUrl} [${res.statusCode}] - IP: ${ip} - User-Agent: ${userAgent}`
+    );
+  });
   next();
 }
 
