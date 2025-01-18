@@ -1,5 +1,5 @@
-import { timeStamp } from "console";
-import { Schema, model, Model } from "mongoose";
+
+import { Schema, model } from "mongoose";
 import { IUser } from "../interfaces";
 
 const UserSchema = new Schema<IUser>(
@@ -19,19 +19,43 @@ const UserSchema = new Schema<IUser>(
       required: true,
       lowercase: true,
     },
-    hashedPassword: {
+    password: {
       type: String,
     },
-    authKey: {},
-    course: {},
-    role: {},
+    authKey: {
+      type: String,
+      lowercase: true,
+    },
+    course: {
+      type: Schema.Types.ObjectId,
+      ref: "Course",
+    },
+    role: {
+      type: String,
+      required: true,
+      enum: ["student", "admin", "moderator"],
+      default: "student",
+    },
     isBanned: {
       type: Boolean,
       default: false,
     },
-    isSubscribed: {},
-    paymentId: {},
-    lastLogin: {},
+    isSubscribed: {
+      type: Boolean,
+      default: false,
+    },
+    paymentId: {
+      type: Schema.Types.ObjectId,
+      ref: "Payment",
+    },
+    lastLogin: {
+      type: Date,
+      default: Date.now,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
