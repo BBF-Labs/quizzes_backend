@@ -9,17 +9,17 @@ const QuizSchema = new Schema<IQuiz>(
     },
     description: {
       type: String,
-      required: false, 
+      required: false,
     },
     courseCode: {
-      type: String,
+      type: Schema.Types.ObjectId,
       ref: "Course",
       required: true,
     },
     questions: [
       {
         type: Schema.Types.ObjectId,
-        ref: "Question", 
+        ref: "Question",
         required: true,
       },
     ],
@@ -31,15 +31,13 @@ const QuizSchema = new Schema<IQuiz>(
     isPublished: {
       type: Boolean,
       required: true,
-      default: false, 
+      default: false,
     },
   },
   {
     timestamps: true,
   }
 );
-
-
 
 const Quiz: Model<IQuiz> = model<IQuiz>("Quiz", QuizSchema);
 export default Quiz;

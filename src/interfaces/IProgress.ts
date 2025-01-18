@@ -1,11 +1,11 @@
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
 
 interface IProgress extends Document {
   id: string;
-  userId: string;
+  userId: Types.ObjectId;
   score: number;
-  courseCode: string;
-  quizId: string;
+  courseCode: Types.ObjectId;
+  quizId: Types.ObjectId;
   completedAt: Date;
 }
 

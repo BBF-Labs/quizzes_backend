@@ -26,7 +26,7 @@ const PackageSchema: Schema<IPackage> = new Schema(
       default: 0,
     },
     quizzes: {
-      type: [String],
+      type: [Schema.Types.ObjectId],
       default: [],
     },
     numberOfCourses: {
@@ -34,7 +34,7 @@ const PackageSchema: Schema<IPackage> = new Schema(
       default: 0,
     },
     courses: {
-      type: [String],
+      type: [Schema.Types.ObjectId],
       default: [],
     },
     discountCode: {
@@ -43,7 +43,7 @@ const PackageSchema: Schema<IPackage> = new Schema(
     },
   },
   {
-    timestamps: true, 
+    timestamps: true,
   }
 );
 

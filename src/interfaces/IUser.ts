@@ -1,4 +1,4 @@
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
 
 interface IUser extends Document {
   id: string;
@@ -6,11 +6,11 @@ interface IUser extends Document {
   email: string;
   password: string;
   authKey?: string;
-  course?: string;
+  course?: Types.ObjectId;
   role: "student" | "admin" | "moderator";
   isBanned: boolean;
   isSubscribed: boolean;
-  paymentId?: string;
+  paymentId?: Types.ObjectId;
   lastLogin?: Date;
   isDeleted?: boolean;
 }

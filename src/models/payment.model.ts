@@ -40,7 +40,7 @@ const PaymentSchema: Schema<IPayment> = new Schema(
       required: true,
     },
     package: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Package",
       required: true,
     },
@@ -48,8 +48,6 @@ const PaymentSchema: Schema<IPayment> = new Schema(
   {
     timestamps: true,
   }
-
-
 );
 
 const Payment: Model<IPayment> = model<IPayment>("Payment", PaymentSchema);

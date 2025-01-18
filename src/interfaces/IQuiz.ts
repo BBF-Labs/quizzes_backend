@@ -1,12 +1,12 @@
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
 
 interface IQuiz extends Document {
   id: string;
   title: string;
   description?: string;
-  courseCode: string;
-  questions: string[];
-  creator: string;
+  courseCode: Types.ObjectId;
+  questions: Types.ObjectId[];
+  creator: Types.ObjectId;
   isPublished: boolean;
 }
 

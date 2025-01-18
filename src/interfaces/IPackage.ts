@@ -1,4 +1,4 @@
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
 
 interface IPackage extends Document {
   id: string;
@@ -6,9 +6,9 @@ interface IPackage extends Document {
   name: string;
   duration: number;
   numberOfCourses?: number;
-  courses?: string[];
+  courses?: Types.ObjectId[];
   numberOfQuizzes?: number;
-  quizzes?: string[];
+  quizzes?: Types.ObjectId[];
   discountCode?: string;
 }
 
