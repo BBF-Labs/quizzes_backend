@@ -4,64 +4,58 @@ import { v4 as uuidv4 } from "uuid";
 import { hashPassword } from "./auth.controller";
 import { Config } from "../config";
 
-async function isUserValid(prop: string | undefined) {
-  const user = await User.findOne({ prop });
-
-  if (user) {
-    return true;
-  }
-
-  return false;
+async function isUserValid(prop: {
+  email?: string;
+  userId?: string;
+  username?: string;
+}) {
+  const user = await User.findOne({
+    $or: [
+      { email: prop.email },
+      { userId: prop.username },
+      { username: prop.username },
+    ],
+  });
+  return user !== null;
 }
 
 async function generateUUID() {
-  const id = await uuidv4();
-
-  const isValid = await isUserValid(id);
-
-  if (isValid) {
-    return generateUUID();
+  const maxAttempts = 5;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const id = uuidv4();
+    const isValid = await isUserValid({ email: id });
+    if (!isValid) return id;
   }
-
-  return id;
+  throw new Error("Failed to generate unique ID after multiple attempts");
 }
 
 async function createUser(user: Partial<IUser>) {
   try {
-    const isValid = await isUserValid(user.email);
-
-    if (isValid) {
-      throw new Error("User already exists");
-    }
+    const existingUser = await User.findOne({ email: user.email });
+    if (existingUser) throw new Error("User already exists");
 
     const id = await generateUUID();
     const { password, ...userDetails } = user;
-
     const hashedPassword = await hashPassword(password!);
 
     const newUser = new User({
-      id: id,
+      id,
       password: hashedPassword,
       ...userDetails,
     });
 
     await newUser.save();
-
     const { _id, ...userDoc } = newUser.toObject();
-
     return userDoc;
   } catch (err: any) {
-    throw err.message;
+    throw new Error(`Error creating user: ${err.message}`);
   }
 }
 
 async function updateUser(userId: string, updatedUser: Partial<IUser>) {
   try {
-    const isValid = await isUserValid(userId);
-
-    if (!isValid) {
-      throw new Error("User not found");
-    }
+    const user = await User.findOne({ id: userId });
+    if (!user) throw new Error("User not found");
 
     if (updatedUser.password) {
       updatedUser.password = await hashPassword(updatedUser.password);
@@ -73,21 +67,18 @@ async function updateUser(userId: string, updatedUser: Partial<IUser>) {
       { new: true }
     );
 
-    if (!updatedUserData) {
-      throw new Error("Error updating user");
-    }
+    if (!updatedUserData) throw new Error("Error updating user");
 
     const { _id, ...updatedUserDoc } = updatedUserData.toObject();
-
     return updatedUserDoc;
   } catch (err: any) {
-    throw err.message;
+    throw new Error(`Error updating user: ${err.message}`);
   }
 }
 
 async function deleteUser(userId: string) {
   try {
-    const isValid = await isUserValid(userId);
+    const isValid = await isUserValid({ userId: userId });
 
     if (!isValid) {
       throw new Error("User not found");
