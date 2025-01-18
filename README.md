@@ -192,7 +192,7 @@ Winston logger is configured for:
 
 ## Configuration
 
-Different configuration levels are supported through the `CONFIG_LEVEL` environment variable:
+Different configuration levels are supported through the `LOG_LEVEL` and `NODE_ENV` environment variable:
 
 - Development
 - Testing
