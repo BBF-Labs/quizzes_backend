@@ -38,13 +38,12 @@ app.get("/", (req: Request, res: Response) => {
 app.use(ErrorHandler);
 app.use(Logger);
 
-const server = app.listen(Config.PORT, () => {
-  Config.ENV === "development" &&
-    console.log(`Server running on http://localhost:${Config.PORT}`);
-});
-
 async function startServer() {
   try {
+    const server = app.listen(Config.PORT, () => {
+      Config.ENV === "development" &&
+        console.log(`Server running on http://localhost:${Config.PORT}`);
+    });
     return server;
   } catch (error: any) {
     Config.ENV === "development" &&
@@ -53,7 +52,7 @@ async function startServer() {
   }
 }
 
-async function stopServer() {
+async function stopServer(server: any) {
   try {
     server.close();
   } catch (error: any) {
