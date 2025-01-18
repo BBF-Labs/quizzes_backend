@@ -1,4 +1,9 @@
-import { authorizeRoles, authenticateUser, Passport } from "./auth.middleware";
+import {
+  authorizeRoles,
+  authenticateUser,
+  Passport,
+  authGuard,
+} from "./auth.middleware";
 import { Limiter, initializeSessionMiddleware } from "./session.middleware";
 import { ErrorHandler, Logger } from "./logger.middleware";
 
@@ -10,4 +15,5 @@ export {
   Passport,
   ErrorHandler,
   Logger,
+  authGuard,
 };

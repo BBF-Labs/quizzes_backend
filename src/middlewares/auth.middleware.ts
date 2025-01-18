@@ -7,20 +7,18 @@ import {
 } from "../controllers";
 import { IUser } from "../interfaces";
 import passport from "passport";
-
-interface RequestWithUser extends Request {
-  user?: IUser;
-}
+import { StatusCodes } from "../config";
 
 async function authenticateUser(
-  req: RequestWithUser,
+  req: Request,
   res: Response,
   next: NextFunction
 ) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
-    return res.status(401).send("Token is required");
+    res.status(StatusCodes.UNAUTHORIZED).json({ message: "Token is required" });
+    return;
   }
 
   const token = authHeader.split(" ")[1];
@@ -29,36 +27,63 @@ async function authenticateUser(
     const tokenUser = await verifyToken(token);
 
     if (!tokenUser) {
-      return res.status(401).send("Invalid Token");
+      res.status(StatusCodes.UNAUTHORIZED).json({ message: "Invalid Token" });
+      return;
     }
 
     const user = await findUserByUsername(tokenUser.email);
 
     if (!user) {
-      return res.status(401).send("User not found");
+      res.status(StatusCodes.UNAUTHORIZED).json({ message: "User not found" });
+      return;
     }
 
     req.user = user as IUser;
     next();
   } catch (err) {
-    res.status(400).send("Invalid Token");
+    res.status(StatusCodes.BAD_REQUEST).json({ message: "Invalid Token" });
+  }
+}
+
+async function authGuard(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const user = req.user as IUser | undefined;
+
+    if (!user) {
+      res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json({ message: "You are not authenticated" });
+      return;
+    }
+
+    next();
+  } catch (error) {
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal server error" });
   }
 }
 
 async function authorizeRoles() {
   const allowedRoles = ["admin", "moderator"];
 
-  return (req: RequestWithUser, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     const user = req.user as IUser | undefined;
 
     if (!user) {
-      return res.status(401).send("You are not authenticated");
+      return res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json({ message: "You are not authenticated" });
     }
 
     if (!allowedRoles.includes(user.role)) {
       return res
-        .status(403)
-        .send("You are not authorized to perform this action");
+        .status(StatusCodes.FORBIDDEN)
+        .json({ message: "You are not authorized to perform this action" });
     }
     next();
   };
@@ -101,4 +126,4 @@ const Passport = passport.use(
   )
 );
 
-export { authenticateUser, authorizeRoles, Passport };
+export { authenticateUser, authorizeRoles, Passport, authGuard };
