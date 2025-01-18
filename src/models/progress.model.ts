@@ -1,7 +1,7 @@
 import mongoose, { Schema, model, Model } from "mongoose";
 import { IProgress } from "../interfaces";
 
-const ProgressSchema =  new Schema<IProgress>(
+const ProgressSchema = new Schema<IProgress>(
   {
     id: {
       type: String,
@@ -18,12 +18,11 @@ const ProgressSchema =  new Schema<IProgress>(
       required: true,
     },
     courseCode: {
-      type: String,
+      type: Schema.Types.ObjectId,
       required: true,
-      trim: true,
     },
     quizId: {
-      type: String,
+      type: Schema.Types.ObjectId,
       required: true,
     },
     completedAt: {
@@ -32,7 +31,7 @@ const ProgressSchema =  new Schema<IProgress>(
     },
   },
   {
-    timestamps: true, 
+    timestamps: true,
   }
 );
 

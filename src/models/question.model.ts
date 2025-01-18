@@ -8,9 +8,9 @@ const QuestionSchema = new Schema<IQuestion>(
       unique: true,
     },
     courseCode: {
-      type: String,
+      type: Schema.Types.ObjectId,
       required: true,
-      ref: "Course", 
+      ref: "Course",
     },
     options: {
       type: [String],
@@ -22,7 +22,7 @@ const QuestionSchema = new Schema<IQuestion>(
     },
     type: {
       type: String,
-      enum: ["mcq", "fill-in", "true-false"], 
+      enum: ["mcq", "fill-in", "true-false"],
       required: true,
     },
     explanation: {
@@ -33,7 +33,7 @@ const QuestionSchema = new Schema<IQuestion>(
     },
     author: {
       type: Schema.Types.ObjectId,
-      ref: "User", 
+      ref: "User",
       required: true,
     },
     isModerated: {
@@ -42,7 +42,7 @@ const QuestionSchema = new Schema<IQuestion>(
     },
   },
   {
-    timestamps: true, 
+    timestamps: true,
   }
 );
 

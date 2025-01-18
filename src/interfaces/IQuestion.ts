@@ -1,14 +1,14 @@
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
 
 interface IQuestion extends Document {
   id: string;
-  courseCode: string;
+  courseCode: Types.ObjectId;
   options: string[];
   answer: string;
   type: "mcq" | "fill-in" | "true-false";
   explanation?: string;
   lectureNumber?: number;
-  author: string;
+  author: Types.ObjectId;
   isModerated: boolean;
 }
 
