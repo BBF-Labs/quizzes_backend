@@ -1,4 +1,5 @@
-import { Express, Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
+import passport from "passport";
 import * as passportStrategy from "passport-local";
 import {
   verifyToken,
@@ -6,7 +7,6 @@ import {
   verifyPassword,
 } from "../controllers";
 import { IUser } from "../interfaces";
-import passport from "passport";
 import { StatusCodes } from "../config";
 
 async function authenticateUser(
@@ -17,8 +17,9 @@ async function authenticateUser(
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
-    res.status(StatusCodes.UNAUTHORIZED).json({ message: "Token is required" });
-    return;
+    return res
+      .status(StatusCodes.UNAUTHORIZED)
+      .json({ message: "Token is required" });
   }
 
   const token = authHeader.split(" ")[1];
@@ -27,52 +28,50 @@ async function authenticateUser(
     const tokenUser = await verifyToken(token);
 
     if (!tokenUser) {
-      res.status(StatusCodes.UNAUTHORIZED).json({ message: "Invalid Token" });
-      return;
+      return res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json({ message: "Invalid Token" });
     }
 
     const user = await findUserByUsername(tokenUser.email);
 
     if (!user) {
-      res.status(StatusCodes.UNAUTHORIZED).json({ message: "User not found" });
-      return;
-    }
-
-    req.user = user as IUser;
-    next();
-  } catch (err) {
-    res.status(StatusCodes.BAD_REQUEST).json({ message: "Invalid Token" });
-  }
-}
-
-async function authGuard(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  try {
-    const user = req.user as IUser | undefined;
-
-    if (!user) {
-      res
+      return res
         .status(StatusCodes.UNAUTHORIZED)
-        .json({ message: "You are not authenticated" });
-      return;
+        .json({ message: "User not found" });
     }
 
+    req.user = user;
     next();
-  } catch (error) {
-    res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ message: "Internal server error" });
+  } catch (err: any) {
+    if (err.name === "TokenExpiredError") {
+      res.status(StatusCodes.UNAUTHORIZED).json({ message: "Token expired" });
+    } else if (err.name === "JsonWebTokenError") {
+      res.status(StatusCodes.UNAUTHORIZED).json({ message: "Invalid token" });
+    } else {
+      res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ message: "Internal server error" });
+    }
   }
 }
 
-async function authorizeRoles() {
-  const allowedRoles = ["admin", "moderator"];
+function authGuard(req: Request, res: Response, next: NextFunction): void {
+  const user = req.session.user;
 
+  if (!user) {
+    res
+      .status(StatusCodes.UNAUTHORIZED)
+      .json({ message: "You are not authenticated" });
+    return;
+  }
+
+  next();
+}
+
+function authorizeRoles(...allowedRoles: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
-    const user = req.user as IUser | undefined;
+    const user = req.session.user;
 
     if (!user) {
       return res
@@ -83,11 +82,33 @@ async function authorizeRoles() {
     if (!allowedRoles.includes(user.role)) {
       return res
         .status(StatusCodes.FORBIDDEN)
-        .json({ message: "You are not authorized to perform this action" });
+        .json({ message: "Forbidden: Insufficient permissions" });
     }
+
     next();
   };
 }
+
+passport.serializeUser((user: Partial<IUser>, done) => {
+  const sessionUser = {
+    username: user.username!,
+    role: user.role!,
+  };
+  done(null, sessionUser);
+});
+
+passport.deserializeUser(async (sessionUser: any, done) => {
+  try {
+    const user = await findUserByUsername(sessionUser.username);
+    if (user) {
+      done(null, user);
+    } else {
+      done(null, false);
+    }
+  } catch (error) {
+    done(error);
+  }
+});
 
 const Passport = passport.use(
   new passportStrategy.Strategy(
@@ -97,31 +118,19 @@ const Passport = passport.use(
         const user = await findUserByUsername(username);
 
         if (!user) {
-          throw new Error("User does not exist");
+          return done(null, false, { message: "User does not exist" });
         }
 
         const isValidPassword = await verifyPassword(password, user.password);
-        if (user.username === username && isValidPassword) {
+
+        if (isValidPassword) {
           return done(null, user);
         } else {
-          return done(null, false);
+          return done(null, false, { message: "Invalid password" });
         }
-      } catch (error: any) {
-        done(error.message);
+      } catch (error) {
+        return done(error);
       }
-
-      passport.serializeUser((user: Partial<IUser>, done) => {
-        done(null, user.username);
-      });
-
-      passport.deserializeUser(async (username: string, done) => {
-        try {
-          const user = await findUserByUsername(username);
-          done(null, user);
-        } catch (error: any) {
-          done(error);
-        }
-      });
     }
   )
 );

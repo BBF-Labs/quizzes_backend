@@ -22,30 +22,21 @@ const genUUID = () => {
   return uuidv4();
 };
 
-async function initializeSessionMiddleware() {
-  // Wait until the database is connected
-  if (!mongoose.connection.readyState) {
-    await connectToDB();
-  }
+const Session = session({
+  secret: Config.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false, // Set to false for production
+  cookie: {
+    secure: Config.ENV === "production",
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 24, // 1 day
+  },
+  genid: function () {
+    return genUUID();
+  },
+  store: MongoStore.create({
+    client: mongoose.connection.getClient(),
+  }),
+});
 
-  const sessionMiddleware = session({
-    secret: Config.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false, // Set to false for production
-    cookie: {
-      secure: Config.ENV === "production",
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24, // 1 day
-    },
-    genid: function () {
-      return genUUID();
-    },
-    store: MongoStore.create({
-      client: mongoose.connection.getClient(),
-    }),
-  });
-
-  return sessionMiddleware;
-}
-
-export { Limiter, initializeSessionMiddleware };
+export { Limiter, Session };
