@@ -22,21 +22,26 @@ const genUUID = () => {
   return uuidv4();
 };
 
-const Session = session({
-  secret: Config.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false, // Set to false for production
-  cookie: {
-    secure: Config.ENV === "production",
-    httpOnly: true,
-    maxAge: 1000 * 60 * 60 * 24, // 1 day
-  },
-  genid: function () {
-    return genUUID();
-  },
-  store: MongoStore.create({
-    client: mongoose.connection.getClient(),
-  }),
-});
+const startSession = async () => {
+  await connectToDB();
+  const Session = session({
+    secret: Config.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false, // Set to false for production
+    cookie: {
+      secure: Config.ENV === "production",
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
+    },
+    genid: function () {
+      return genUUID();
+    },
+    store: MongoStore.create({
+      client: mongoose.connection.getClient(),
+    }),
+  });
 
-export { Limiter, Session };
+  return Session;
+};
+
+export { Limiter, startSession };

@@ -2,36 +2,50 @@ import express, { Express, NextFunction, Request, Response } from "express";
 import { Config } from "./config";
 import {
   Limiter,
-  Session,
+  startSession,
   Passport,
   ErrorHandler,
   Logger,
 } from "./middlewares";
 import helmet from "helmet";
 import { userRoutes, authRoutes } from "./routes";
+import { session } from "passport";
 
 const app: Express = express();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.disable("x-powered-by");
-app.use(Limiter);
-app.use(Session);
-app.use(helmet());
-app.use(Passport.initialize());
-app.use(Passport.session());
-app.use("/api/v1/users", userRoutes);
-app.use("/api/v1/auth", authRoutes);
+type User = {
+  username: string;
+  role: string;
+};
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hello World");
-});
-
-app.use(ErrorHandler);
-app.use(Logger);
+declare module "express-session" {
+  interface SessionData {
+    user: User;
+  }
+}
 
 async function startServer() {
   try {
+    const Session = await startSession();
+
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
+    app.disable("x-powered-by");
+    app.use(Session);
+    app.use(Limiter);
+    app.use(helmet());
+    app.use(Passport.initialize());
+    app.use(Passport.session());
+    app.use("/api/v1/users", userRoutes);
+    app.use("/api/v1/auth", authRoutes);
+
+    app.get("/", (req: Request, res: Response) => {
+      res.send("Hello World");
+    });
+
+    app.use(ErrorHandler);
+    app.use(Logger);
+
     const server = app.listen(Config.PORT, () => {
       Config.ENV === "development" &&
         console.log(`Server running on http://localhost:${Config.PORT}`);

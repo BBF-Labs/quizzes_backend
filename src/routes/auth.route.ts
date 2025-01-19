@@ -41,8 +41,12 @@ authRoutes.post("/login", (req: Request, res: Response) => {
           return;
         }
 
-        req.session.user = user;
-        res.status(StatusCodes.OK).json({ user });
+        const sessionUser = { username: user.username, role: user.role };
+
+        req.session.user = sessionUser;
+        res
+          .status(StatusCodes.OK)
+          .json({ message: "Success", user: sessionUser });
       }
     )(req, res);
   } catch (error: any) {

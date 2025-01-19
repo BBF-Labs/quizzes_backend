@@ -20,13 +20,11 @@ async function isUserValid(prop: {
 }
 
 async function generateUUID() {
-  const maxAttempts = 5;
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const id = uuidv4();
-    const isValid = await isUserValid({ email: id });
-    if (!isValid) return id;
+  let id = uuidv4();
+  while (await isUserValid({ userId: id })) {
+    id = uuidv4();
   }
-  throw new Error("Failed to generate unique ID after multiple attempts");
+  return id;
 }
 
 async function createUser(user: Partial<IUser>) {

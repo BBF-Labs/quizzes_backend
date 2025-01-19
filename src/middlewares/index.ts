@@ -4,12 +4,12 @@ import {
   Passport,
   authGuard,
 } from "./auth.middleware";
-import { Limiter, Session } from "./session.middleware";
+import { Limiter, startSession } from "./session.middleware";
 import { ErrorHandler, Logger } from "./logger.middleware";
 
 export {
   Limiter,
-  Session,
+  startSession,
   authenticateUser,
   authorizeRoles,
   Passport,
