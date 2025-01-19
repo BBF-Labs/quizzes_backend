@@ -56,17 +56,27 @@ async function authenticateUser(
   }
 }
 
-function authGuard(req: Request, res: Response, next: NextFunction): void {
-  const user = req.session.user;
+async function authGuard(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const user = req.session.user;
 
-  if (!user) {
+    if (!user) {
+      res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json({ message: "You are not authenticated" });
+      return;
+    }
+
+    next();
+  } catch (error) {
     res
-      .status(StatusCodes.UNAUTHORIZED)
-      .json({ message: "You are not authenticated" });
-    return;
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal server error" });
   }
-
-  next();
 }
 
 function authorizeRoles(...allowedRoles: string[]) {
