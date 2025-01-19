@@ -8,9 +8,9 @@ async function connectToDB() {
   try {
     await mongoose.connect(Config.MONGO_URI);
 
-    Config.ENV === "development" && console.log("Connected to DB");
+    Config.ENV === "development" && console.log("Connected to Remote DB");
   } catch (error: any) {
-    console.log("Error connecting to DB: ", error.message);
+    console.log("Error connecting to Remote DB: ", error.message);
 
     mongoServer = await MongoMemoryServer.create();
     const mongoUri = mongoServer.getUri();
