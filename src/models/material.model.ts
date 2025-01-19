@@ -1,4 +1,4 @@
-import mongoose, { Schema,  model, Model } from "mongoose";
+import mongoose, { Schema, model, Model } from "mongoose";
 import { IMaterial } from "../interfaces";
 
 const MaterialSchema: Schema<IMaterial> = new Schema(
@@ -33,7 +33,7 @@ const MaterialSchema: Schema<IMaterial> = new Schema(
     },
   },
   {
-    timestamps: true, 
+    timestamps: true,
   }
 );
 
