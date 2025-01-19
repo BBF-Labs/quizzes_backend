@@ -14,7 +14,9 @@ async function authenticateUser(
     const user = req.session.user;
 
     if (!user) {
-      res.status(StatusCodes.UNAUTHORIZED).json({ message: "" });
+      res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json({ message: "Login to get access to this route" });
       return;
     }
 
