@@ -1,7 +1,32 @@
-// This is the index file for src/controllers
-console.log("index.ts created in src/controllers");
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyToken,
+  verifyRefreshToken,
+  hashPassword,
+  verifyPassword,
+} from "./auth.controller";
 
-/**
- * create an export a function verifyToken that takes a token as an argument and returns a user object
- * It would be used in the authMiddleware
- */
+import {
+  createUser,
+  updateUser,
+  deleteUser,
+  findUserByEmail,
+  findUserByUsername,
+  getUserRole,
+} from "./user.controller";
+
+export {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyToken,
+  verifyRefreshToken,
+  hashPassword,
+  verifyPassword,
+  createUser,
+  updateUser,
+  deleteUser,
+  findUserByEmail,
+  findUserByUsername,
+  getUserRole,
+};

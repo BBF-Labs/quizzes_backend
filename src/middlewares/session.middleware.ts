@@ -1,6 +1,6 @@
 import rateLimit from "express-rate-limit";
 import session from "express-session";
-import { Config } from "../config";
+import { Config, connectToDB } from "../config";
 import { v4 as uuidv4 } from "uuid";
 import MongoStore from "connect-mongo";
 import mongoose from "mongoose";
@@ -22,16 +22,16 @@ const genUUID = () => {
   return uuidv4();
 };
 
-const sessionMiddleware = session({
+const Session = session({
   secret: Config.SESSION_SECRET,
   resave: false,
-  saveUninitialized: false, // would be false when log in is implemented
+  saveUninitialized: false, // Set to false for production
   cookie: {
     secure: Config.ENV === "production",
     httpOnly: true,
-    maxAge: 1000 * 60 * 60 * 24,
+    maxAge: 1000 * 60 * 60 * 24, // 1 day
   },
-  genid: function (req) {
+  genid: function () {
     return genUUID();
   },
   store: MongoStore.create({
@@ -39,4 +39,4 @@ const sessionMiddleware = session({
   }),
 });
 
-export { Limiter, sessionMiddleware };
+export { Limiter, Session };

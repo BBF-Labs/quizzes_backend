@@ -2,21 +2,26 @@ import express, { Express, NextFunction, Request, Response } from "express";
 import { Config } from "./config";
 import {
   Limiter,
-  sessionMiddleware,
+  Session,
   Passport,
   ErrorHandler,
   Logger,
 } from "./middlewares";
 import helmet from "helmet";
+import { userRoutes, authRoutes } from "./routes";
 
 const app: Express = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.disable("x-powered-by");
 app.use(Limiter);
-app.use(sessionMiddleware);
+app.use(Session);
 app.use(helmet());
 app.use(Passport.initialize());
+app.use(Passport.session());
+app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/auth", authRoutes);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World");
@@ -25,13 +30,12 @@ app.get("/", (req: Request, res: Response) => {
 app.use(ErrorHandler);
 app.use(Logger);
 
-const server = app.listen(Config.PORT, () => {
-  Config.ENV === "development" &&
-    console.log(`Server running on http://localhost:${Config.PORT}`);
-});
-
 async function startServer() {
   try {
+    const server = app.listen(Config.PORT, () => {
+      Config.ENV === "development" &&
+        console.log(`Server running on http://localhost:${Config.PORT}`);
+    });
     return server;
   } catch (error: any) {
     Config.ENV === "development" &&
@@ -40,7 +44,7 @@ async function startServer() {
   }
 }
 
-async function stopServer() {
+async function stopServer(server: any) {
   try {
     server.close();
   } catch (error: any) {
