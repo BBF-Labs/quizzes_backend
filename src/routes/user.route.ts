@@ -39,7 +39,7 @@ userRoutes.get(
   authGuard,
   async (req: Request, res: Response) => {
     try {
-      const user = req.user as IUser;
+      const user = req.session.user;
 
       if (!user) {
         res
@@ -48,9 +48,7 @@ userRoutes.get(
         return;
       }
 
-      const userDoc = user.email
-        ? await findUserByEmail(user.email)
-        : await findUserByUsername(user.username!);
+      const userDoc = await findUserByUsername(user.username);
 
       if (!userDoc) {
         res
@@ -74,15 +72,16 @@ userRoutes.put(
   authGuard,
   async (req: Request, res: Response) => {
     try {
-      const user = req.user as IUser;
+      const user = req.session.user;
 
       if (!user) {
         res
           .status(StatusCodes.UNAUTHORIZED)
           .json({ message: "You are not authorized to perform this action" });
+        return;
       }
 
-      const userDoc = await findUserByUsername(user.username!);
+      const userDoc = await findUserByUsername(user.username);
 
       if (!userDoc) {
         res.status(StatusCodes.NOT_FOUND).json({ message: "User not found" });
@@ -94,6 +93,7 @@ userRoutes.put(
         res
           .status(StatusCodes.BAD_REQUEST)
           .json({ message: "Invalid Request" });
+        return;
       }
 
       await updateUser(userDoc.id, updates);
