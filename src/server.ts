@@ -2,13 +2,13 @@ import express, { Express, NextFunction, Request, Response } from "express";
 import { Config } from "./config";
 import {
   Limiter,
-  initializeSessionMiddleware,
+  Session,
   Passport,
   ErrorHandler,
   Logger,
 } from "./middlewares";
 import helmet from "helmet";
-import { userRoutes } from "./routes";
+import { userRoutes, authRoutes } from "./routes";
 
 const app: Express = express();
 
@@ -16,20 +16,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.disable("x-powered-by");
 app.use(Limiter);
-
-(async () => {
-  try {
-    const sessionMiddleware = await initializeSessionMiddleware();
-    app.use(sessionMiddleware);
-  } catch (error: any) {
-    console.error("Error initializing session middleware:", error.message);
-    process.exit(1);
-  }
-})();
-
+app.use(Session);
 app.use(helmet());
 app.use(Passport.initialize());
+app.use(Passport.session());
 app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/auth", authRoutes);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World");
