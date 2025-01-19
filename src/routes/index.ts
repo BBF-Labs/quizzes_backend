@@ -1,2 +1,4 @@
-// This is the index file for src/routes
-console.log('index.ts created in src/routes')
+import userRoutes from "./user.route";
+import authRoutes from "./auth.route";
+
+export { userRoutes, authRoutes };

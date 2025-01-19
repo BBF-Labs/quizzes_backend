@@ -1,2 +1,19 @@
-// This is the index file for src/middlewares
-console.log('index.ts created in src/middlewares')
+import {
+  authorizeRoles,
+  authenticateUser,
+  Passport,
+  authGuard,
+} from "./auth.middleware";
+import { Limiter, startSession } from "./session.middleware";
+import { ErrorHandler, Logger } from "./logger.middleware";
+
+export {
+  Limiter,
+  startSession,
+  authenticateUser,
+  authorizeRoles,
+  Passport,
+  ErrorHandler,
+  Logger,
+  authGuard,
+};
