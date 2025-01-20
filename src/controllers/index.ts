@@ -14,7 +14,18 @@ import {
   findUserByEmail,
   findUserByUsername,
   getUserRole,
+  findUserById,
 } from "./user.controller";
+
+import {
+  createCourse,
+  updateCourse,
+  getAllCourses,
+  deleteCourse,
+  findCourseById,
+  findCourseByCode,
+  getUserCourses,
+} from "./course.controller";
 
 export {
   generateAccessToken,
@@ -29,4 +40,12 @@ export {
   findUserByEmail,
   findUserByUsername,
   getUserRole,
+  findUserById,
+  createCourse,
+  updateCourse,
+  getAllCourses,
+  deleteCourse,
+  findCourseById,
+  findCourseByCode,
+  getUserCourses,
 };
