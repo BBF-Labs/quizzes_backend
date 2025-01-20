@@ -12,7 +12,7 @@ async function isUserValid(prop: {
   const user = await User.findOne({
     $or: [
       { email: prop.email },
-      { userId: prop.username },
+      { userId: prop.userId },
       { username: prop.username },
     ],
   });

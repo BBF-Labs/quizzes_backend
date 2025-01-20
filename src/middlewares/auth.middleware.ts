@@ -1,39 +1,19 @@
 import { Request, Response, NextFunction } from "express";
+import { StatusCodes } from "../config";
+import { findUserByUsername, verifyPassword } from "../controllers";
 import passport from "passport";
 import * as passportStrategy from "passport-local";
-import { findUserByUsername, verifyPassword } from "../controllers";
 import { IUser } from "../interfaces";
-import { StatusCodes } from "../config";
 
-async function authenticateUser(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  try {
-    const user = req.session.user;
-
-    if (!user) {
-      res
-        .status(StatusCodes.UNAUTHORIZED)
-        .json({ message: "Login to get access to this route" });
-      return;
-    }
-
-    const userDoc = await findUserByUsername(user.username);
-
-    if (!userDoc) {
-      res.status(StatusCodes.UNAUTHORIZED).json({ message: "User not found" });
-      return;
-    }
-    next();
-  } catch (err: any) {
-    res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ message: "There was an error processing request" });
-  }
+interface SerializedUser {
+  username: string;
+  role: string;
+  isBanned: boolean;
 }
 
+/**
+ * Basic authentication check - verifies if user is logged in
+ */
 async function authGuard(
   req: Request,
   res: Response,
@@ -45,7 +25,7 @@ async function authGuard(
     if (!user) {
       res
         .status(StatusCodes.UNAUTHORIZED)
-        .json({ message: "You are not authenticated" });
+        .json({ message: "Login required to access this route" });
       return;
     }
 
@@ -57,43 +37,136 @@ async function authGuard(
   }
 }
 
-function authorizeRoles(...allowedRoles: string[]) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const user = req.session.user;
-
-    if (!user) {
-      return res
+/**
+ * Full authentication check - verifies session, user exists in DB, and user status
+ */
+async function authenticateUser(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const sessionUser = req.session.user;
+    if (!sessionUser) {
+      res
         .status(StatusCodes.UNAUTHORIZED)
-        .json({ message: "You are not authenticated" });
+        .json({ message: "Login required to access this route" });
+      return;
     }
 
-    if (!allowedRoles.includes(user.role)) {
-      return res
-        .status(StatusCodes.FORBIDDEN)
-        .json({ message: "Forbidden: Insufficient permissions" });
+    const userDoc = await findUserByUsername(sessionUser.username);
+    if (!userDoc) {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Session destruction failed:", err);
+        }
+      });
+
+      res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json({ message: "User account not found" });
+      return;
     }
+
+    if (userDoc.isBanned) {
+      res
+        .status(StatusCodes.FORBIDDEN)
+        .json({ message: "Account has been suspended" });
+      return;
+    }
+
+    req.session.user = {
+      username: userDoc.username,
+      role: userDoc.role,
+      isBanned: userDoc.isBanned,
+    };
 
     next();
+  } catch (err) {
+    console.error("Authentication error:", err);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "Authentication process failed" });
+  }
+}
+
+/**
+ * Role-based authorization check
+ */
+function authorizeRoles(...allowedRoles: string[]) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = req.session.user;
+
+      if (!user) {
+        res
+          .status(StatusCodes.UNAUTHORIZED)
+          .json({ message: "Login required to access this route" });
+        return;
+      }
+
+      if (!allowedRoles.includes(user.role)) {
+        res
+          .status(StatusCodes.FORBIDDEN)
+          .json({ message: "Insufficient permissions to access this route" });
+        return;
+      }
+
+      next();
+    } catch (error) {
+      res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ message: "Authorization process failed" });
+    }
   };
 }
 
 passport.serializeUser((user: Partial<IUser>, done) => {
-  const sessionUser = {
-    username: user.username!,
-    role: user.role!,
-  };
-  done(null, sessionUser);
+  try {
+    if (!user.username || !user.role) {
+      throw new Error("Invalid user data for serialization");
+    }
+
+    const sessionUser: SerializedUser = {
+      username: user.username,
+      role: user.role,
+      isBanned: user.isBanned || false,
+    };
+
+    done(null, sessionUser);
+  } catch (error) {
+    done(error);
+  }
 });
 
-passport.deserializeUser(async (sessionUser: { username: string }, done) => {
+passport.deserializeUser(async (serializedUser: SerializedUser, done) => {
   try {
-    const user = await findUserByUsername(sessionUser.username);
-
-    if (user) {
-      done(null, user);
-    } else {
-      done(null, false);
+    if (!serializedUser.username) {
+      throw new Error("Invalid session data");
     }
+
+    const user = await findUserByUsername(serializedUser.username);
+
+    if (!user) {
+      return done(null, false);
+    }
+
+    if (user.isBanned) {
+      return done(new Error("User is banned"), false);
+    }
+
+    if (user.isDeleted) {
+      return done(new Error("Account is deactivated"), false);
+    }
+
+    const sanitizedUser = {
+      username: user.username,
+      role: user.role,
+      isBanned: user.isBanned,
+      isDeleted: user.isDeleted,
+    };
+
+    done(null, sanitizedUser);
   } catch (error) {
     done(error);
   }
@@ -124,4 +197,4 @@ const Passport = passport.use(
   )
 );
 
-export { authenticateUser, authorizeRoles, Passport, authGuard };
+export { authGuard, authenticateUser, authorizeRoles, Passport };
