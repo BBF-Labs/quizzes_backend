@@ -185,20 +185,24 @@ authRoutes.post(
   }
 );
 
-authRoutes.get("/session-status", authGuard, (req: Request, res: Response) => {
-  if (!req.session || !req.session.user) {
-    res.status(StatusCodes.OK).json({
-      isAuthenticated: false,
-      message: "No active session",
-    });
-    return;
-  }
+authRoutes.get(
+  "/session-status",
+  authenticateUser,
+  (req: Request, res: Response) => {
+    if (!req.session || !req.session.user) {
+      res.status(StatusCodes.OK).json({
+        isAuthenticated: false,
+        message: "No active session",
+      });
+      return;
+    }
 
-  res.status(StatusCodes.OK).json({
-    isAuthenticated: true,
-    user: req.session.user,
-    message: "Active session found",
-  });
-});
+    res.status(StatusCodes.OK).json({
+      isAuthenticated: true,
+      user: req.session.user,
+      message: "Active session found",
+    });
+  }
+);
 
 export default authRoutes;

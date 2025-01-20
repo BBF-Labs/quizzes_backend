@@ -7,6 +7,9 @@ const UserSchema = new Schema<IUser>(
       type: String,
       unique: true,
     },
+    name: {
+      type: String,
+    },
     username: {
       type: String,
       unique: true,
@@ -25,8 +28,8 @@ const UserSchema = new Schema<IUser>(
       type: String,
       lowercase: true,
     },
-    course: {
-      type: Schema.Types.ObjectId,
+    courses: {
+      type: [Schema.Types.ObjectId],
       ref: "Course",
     },
     role: {
