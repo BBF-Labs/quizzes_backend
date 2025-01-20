@@ -16,6 +16,7 @@ const app: Express = express();
 type User = {
   username: string;
   role: string;
+  isBanned: boolean;
 };
 
 declare module "express-session" {
