@@ -8,8 +8,7 @@ import {
   Logger,
 } from "./middlewares";
 import helmet from "helmet";
-import { userRoutes, authRoutes } from "./routes";
-import { session } from "passport";
+import { userRoutes, authRoutes, adminRoutes } from "./routes";
 
 const app: Express = express();
 
@@ -39,6 +38,7 @@ async function startServer() {
     app.use(Passport.session());
     app.use("/api/v1/users", userRoutes);
     app.use("/api/v1/auth", authRoutes);
+    app.use("/api/v1/admin", adminRoutes);
 
     app.get("/", (req: Request, res: Response) => {
       res.send("Hello World");
