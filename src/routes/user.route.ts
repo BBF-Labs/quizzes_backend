@@ -11,8 +11,25 @@ userRoutes.post("/register", async (req: Request, res: Response) => {
   try {
     const user = req.body;
 
-    if (!user) {
-      res.status(StatusCodes.BAD_REQUEST).json({ message: "Invalid request" });
+    if (!user || !user.email || !user.password) {
+      res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Invalid request data" });
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(user.email)) {
+      res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Invalid email format" });
+      return;
+    }
+
+    if (user.password.length < 8) {
+      res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Password must be at least 8 characters long" });
       return;
     }
 
@@ -36,19 +53,17 @@ userRoutes.post("/register", async (req: Request, res: Response) => {
 userRoutes.get(
   "/profile",
   authenticateUser,
-  authGuard,
   async (req: Request, res: Response) => {
     try {
-      const user = req.session.user;
-
-      if (!user) {
+      if (!req.session.user?.username) {
         res
           .status(StatusCodes.UNAUTHORIZED)
           .json({ message: "User not found" });
         return;
       }
 
-      const userDoc = await findUserByUsername(user.username);
+      const username = req.session.user.username;
+      const userDoc = await findUserByUsername(username);
 
       if (!userDoc) {
         res
@@ -87,8 +102,8 @@ userRoutes.put(
         res.status(StatusCodes.NOT_FOUND).json({ message: "User not found" });
         return;
       }
-      const updates = req.body;
 
+      const updates = req.body;
       if (!updates) {
         res
           .status(StatusCodes.BAD_REQUEST)
@@ -96,9 +111,41 @@ userRoutes.put(
         return;
       }
 
+      if (updates.role && user.role !== "admin") {
+        res
+          .status(StatusCodes.FORBIDDEN)
+          .json({ message: "You are not authorized to perform this action" });
+        return;
+      }
+
       await updateUser(userDoc.id, updates);
 
-      res.status(StatusCodes.OK).json({ message: "User updated successfully" });
+      req.session.regenerate((err) => {
+        if (err) {
+          res
+            .status(StatusCodes.INTERNAL_SERVER_ERROR)
+            .json({ message: "Error regenerating session" });
+          return;
+        }
+
+        req.session.user = {
+          username: updates.username || userDoc.username,
+          isBanned: updates.isBanned ?? userDoc.isBanned,
+          role: updates.role || userDoc.role,
+        };
+
+        req.session.save((err) => {
+          if (err) {
+            res
+              .status(StatusCodes.INTERNAL_SERVER_ERROR)
+              .json({ message: "Error saving session" });
+            return;
+          }
+          res
+            .status(StatusCodes.OK)
+            .json({ message: "User updated successfully" });
+        });
+      });
     } catch (err: any) {
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
