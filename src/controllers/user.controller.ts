@@ -146,6 +146,22 @@ async function getUserRole(email: string) {
   }
 }
 
+async function findUserById(userId: string) {
+  try {
+    const user = await User.findOne({ id: userId });
+
+    if (!user) {
+      return null;
+    }
+
+    const { _id, ...userDoc } = user.toObject();
+
+    return userDoc;
+  } catch (err: any) {
+    throw err.message;
+  }
+}
+
 export {
   createUser,
   updateUser,
@@ -153,4 +169,5 @@ export {
   findUserByEmail,
   findUserByUsername,
   getUserRole,
+  findUserById,
 };
