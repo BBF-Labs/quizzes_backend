@@ -7,10 +7,10 @@ const CourseSchema = new Schema<ICourse>(
       type: String,
       unique: true,
     },
-    
+
     code: {
       type: String,
-      unique: true, 
+      unique: true,
       required: true,
     },
     about: {
@@ -19,16 +19,24 @@ const CourseSchema = new Schema<ICourse>(
     },
     numberOfLectures: {
       type: Number,
-      required: false, 
+      required: false,
     },
     approvedQuestionsCount: {
       type: Number,
       required: true,
-      default: 0, 
+      default: 0,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    students: {
+      type: [Schema.Types.ObjectId],
+      ref: "User",
     },
   },
   {
-    timestamps: true, 
+    timestamps: true,
   }
 );
 

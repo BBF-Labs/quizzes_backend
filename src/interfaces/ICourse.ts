@@ -1,4 +1,4 @@
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
 
 interface ICourse extends Document {
   id: string;
@@ -6,6 +6,8 @@ interface ICourse extends Document {
   about: string;
   numberOfLectures?: number;
   approvedQuestionsCount: number;
+  isDeleted?: boolean;
+  students?: Types.ObjectId[];
 }
 
 export default ICourse;

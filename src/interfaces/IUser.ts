@@ -2,11 +2,12 @@ import { Document, Types } from "mongoose";
 
 interface IUser extends Document {
   id: string;
+  name?: string;
   username: string;
   email: string;
   password: string;
   authKey?: string;
-  course?: Types.ObjectId;
+  courses?: Types.ObjectId[];
   role: "student" | "admin" | "moderator";
   isBanned: boolean;
   isSubscribed: boolean;
