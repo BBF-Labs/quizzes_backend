@@ -31,6 +31,7 @@ async function startServer() {
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.disable("x-powered-by");
+    app.set("trust proxy", 1);
     app.use(Session);
     app.use(Limiter);
     app.use(helmet());
