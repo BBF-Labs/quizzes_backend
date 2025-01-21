@@ -8,7 +8,7 @@ import {
   Logger,
 } from "./middlewares";
 import helmet from "helmet";
-import { userRoutes, authRoutes, adminRoutes } from "./routes";
+import { userRoutes, authRoutes, adminRoutes, courseRoutes } from "./routes";
 
 const app: Express = express();
 
@@ -40,6 +40,7 @@ async function startServer() {
     app.use("/api/v1/users", userRoutes);
     app.use("/api/v1/auth", authRoutes);
     app.use("/api/v1/admin", adminRoutes);
+    app.use("/api/v1/courses", courseRoutes);
 
     app.get("/", (req: Request, res: Response) => {
       res.send("Hello World");
