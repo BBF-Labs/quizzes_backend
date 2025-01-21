@@ -1,5 +1,7 @@
 import express, { Express, NextFunction, Request, Response } from "express";
 import { Config } from "./config";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./swaggerConfig";
 import {
   Limiter,
   startSession,
@@ -9,6 +11,7 @@ import {
 } from "./middlewares";
 import helmet from "helmet";
 import { userRoutes, authRoutes, adminRoutes } from "./routes";
+
 
 const app: Express = express();
 
@@ -36,6 +39,7 @@ async function startServer() {
     app.use(helmet());
     app.use(Passport.initialize());
     app.use(Passport.session());
+    app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
     app.use("/api/v1/users", userRoutes);
     app.use("/api/v1/auth", authRoutes);
     app.use("/api/v1/admin", adminRoutes);
