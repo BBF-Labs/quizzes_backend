@@ -8,11 +8,6 @@ const swaggerDefinition = {
     version: "1.0.0",
     description: "Interactive API documentation",
   },
-  servers: [
-    {
-      url: `http://localhost:${Config.PORT}`,
-    },
-  ],
 };
 
 const options = {
