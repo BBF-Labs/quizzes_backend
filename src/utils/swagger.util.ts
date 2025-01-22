@@ -1,5 +1,4 @@
 import swaggerJsdoc from "swagger-jsdoc";
-import { Config } from "../config";
 
 const swaggerDefinition = {
   openapi: "3.0.0",
