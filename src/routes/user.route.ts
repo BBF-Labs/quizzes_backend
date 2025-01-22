@@ -18,9 +18,9 @@ userRoutes.post("/register", async (req: Request, res: Response) => {
       return;
     }
 
-    if (user.role) {
-      user.role = "student";
-    }
+    // if (user.role) {
+    //   user.role = "student";
+    // }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(user.email)) {
@@ -122,7 +122,7 @@ userRoutes.put(
         return;
       }
 
-      await updateUser(userDoc.id, updates);
+      await updateUser(userDoc._id.toString(), updates);
 
       req.session.regenerate((err) => {
         if (err) {

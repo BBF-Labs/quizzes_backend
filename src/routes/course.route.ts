@@ -23,9 +23,7 @@ courseRoutes.get("/", async (req: Request, res: Response) => {
       return;
     }
 
-    const filteredCourses = courses.filter((course) => !course.isDeleted);
-
-    res.status(StatusCodes.OK).json({ message: "Success", filteredCourses });
+    res.status(StatusCodes.OK).json({ message: "Success", courses: courses });
   } catch (err: any) {
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -33,7 +31,7 @@ courseRoutes.get("/", async (req: Request, res: Response) => {
   }
 });
 
-courseRoutes.get("/:courseCode", async (req: Request, res: Response) => {
+courseRoutes.get("/code/:courseCode", async (req: Request, res: Response) => {
   try {
     const { courseCode } = req.params;
     const course = await findCourseByCode(courseCode);
@@ -59,7 +57,8 @@ courseRoutes.get("/:courseCode", async (req: Request, res: Response) => {
 courseRoutes.get("/id/:courseId", async (req: Request, res: Response) => {
   try {
     const { courseId } = req.params;
-    const course = await findCourseById(courseId);
+
+    const course = await findCourseById(courseId.trim());
 
     if (!course) {
       res.status(StatusCodes.NOT_FOUND).json({ message: "Course not found" });
@@ -106,7 +105,8 @@ courseRoutes.post(
         return;
       }
 
-      const id = userDoc.id;
+      const id = userDoc._id.toString();
+
       const course = await createCourse(id, req.body);
 
       res
@@ -120,7 +120,7 @@ courseRoutes.post(
   }
 );
 
-courseRoutes.put("/:courseId", async (req: Request, res: Response) => {
+courseRoutes.put("/update/:courseId", async (req: Request, res: Response) => {
   try {
     const { courseId } = req.params;
     const course = await findCourseById(courseId);
@@ -135,6 +135,13 @@ courseRoutes.put("/:courseId", async (req: Request, res: Response) => {
       return;
     }
 
+    if (req.body.isDeleted) {
+      res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Cannot delete course on this route" });
+      return;
+    }
+
     const updatedCourse = await updateCourse(courseId, req.body);
 
     res
@@ -146,5 +153,37 @@ courseRoutes.put("/:courseId", async (req: Request, res: Response) => {
       .json({ message: err.message });
   }
 });
+
+courseRoutes.delete(
+  "/delete/:courseId",
+  authenticateUser,
+  authorizeRoles("admin"),
+  async (req: Request, res: Response) => {
+    try {
+      const { courseId } = req.params;
+      const course = await findCourseById(courseId);
+
+      if (!course) {
+        res.status(StatusCodes.NOT_FOUND).json({ message: "Course not found" });
+        return;
+      }
+
+      if (course.isDeleted) {
+        res.status(StatusCodes.NOT_FOUND).json({ message: "Course not found" });
+        return;
+      }
+
+      const deletedCourse = await deleteCourse(courseId);
+
+      res
+        .status(StatusCodes.OK)
+        .json({ message: "Course deleted", deletedCourse });
+    } catch (err: any) {
+      res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ message: err.message });
+    }
+  }
+);
 
 export default courseRoutes;

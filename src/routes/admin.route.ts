@@ -33,7 +33,7 @@ adminRoutes.put("/update", async (req: Request, res: Response) => {
         return;
       }
 
-      const updatedUser = await updateUser(userDoc.id, user);
+      const updatedUser = await updateUser(userDoc._id.toString(), user);
 
       res
         .status(StatusCodes.OK)
@@ -49,7 +49,7 @@ adminRoutes.put("/update", async (req: Request, res: Response) => {
         return;
       }
 
-      const updatedUser = await updateUser(userDoc.id, user);
+      const updatedUser = await updateUser(userDoc._id.toString(), user);
 
       res
         .status(StatusCodes.OK)
@@ -66,7 +66,7 @@ adminRoutes.put("/update", async (req: Request, res: Response) => {
         return;
       }
 
-      const updatedUser = await updateUser(userDoc.id, user);
+      const updatedUser = await updateUser(userDoc._id.toString(), user);
 
       res
         .status(StatusCodes.OK)
