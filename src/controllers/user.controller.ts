@@ -1,8 +1,6 @@
 import { User } from "../models";
 import { IUser } from "../interfaces";
-import { v4 as uuidv4 } from "uuid";
 import { hashPassword } from "./auth.controller";
-import { Config } from "../config";
 
 async function isUserValid(prop: {
   email?: string;
@@ -12,19 +10,11 @@ async function isUserValid(prop: {
   const user = await User.findOne({
     $or: [
       { email: prop.email },
-      { userId: prop.userId },
+      { _id: prop.userId },
       { username: prop.username },
     ],
   });
   return user !== null;
-}
-
-async function generateUUID() {
-  let id = uuidv4();
-  while (await isUserValid({ userId: id })) {
-    id = uuidv4();
-  }
-  return id;
 }
 
 async function createUser(user: Partial<IUser>) {
@@ -32,12 +22,10 @@ async function createUser(user: Partial<IUser>) {
     const existingUser = await User.findOne({ email: user.email });
     if (existingUser) throw new Error("User already exists");
 
-    const id = await generateUUID();
     const { password, ...userDetails } = user;
     const hashedPassword = await hashPassword(password!);
 
     const newUser = new User({
-      id,
       password: hashedPassword,
       ...userDetails,
     });
@@ -52,7 +40,7 @@ async function createUser(user: Partial<IUser>) {
 
 async function updateUser(userId: string, updatedUser: Partial<IUser>) {
   try {
-    const user = await User.findOne({ id: userId });
+    const user = await User.findOne({ _id: userId });
     if (!user) throw new Error("User not found");
 
     if (updatedUser.password) {
@@ -60,7 +48,7 @@ async function updateUser(userId: string, updatedUser: Partial<IUser>) {
     }
 
     const updatedUserData = await User.findOneAndUpdate(
-      { id: userId },
+      { _id: userId },
       { $set: updatedUser },
       { new: true }
     );
@@ -83,7 +71,7 @@ async function deleteUser(userId: string) {
     }
 
     const userDoc = await User.findOneAndUpdate(
-      { id: userId },
+      { _id: userId },
       { $set: { isDeleted: true } },
       { new: true }
     );
@@ -108,9 +96,7 @@ async function findUserByEmail(email: string) {
       return null;
     }
 
-    const { _id, ...userDoc } = user.toObject();
-
-    return userDoc;
+    return user;
   } catch (err: any) {
     throw err.message;
   }
@@ -124,9 +110,7 @@ async function findUserByUsername(username: string) {
       return null;
     }
 
-    const { _id, ...userDoc } = user.toObject();
-
-    return userDoc;
+    return user;
   } catch (err: any) {
     throw err.message;
   }
@@ -148,15 +132,13 @@ async function getUserRole(email: string) {
 
 async function findUserById(userId: string) {
   try {
-    const user = await User.findOne({ id: userId });
+    const user = await User.findOne({ _id: userId });
 
     if (!user) {
       return null;
     }
 
-    const { _id, ...userDoc } = user.toObject();
-
-    return userDoc;
+    return user;
   } catch (err: any) {
     throw err.message;
   }
