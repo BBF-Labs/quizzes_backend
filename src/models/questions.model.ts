@@ -2,10 +2,6 @@ import { Schema, model, Model } from "mongoose";
 import { IQuestions } from "../interfaces";
 
 const FilteredQuestionsSchema = new Schema({
-  id: {
-    type: String,
-    unique: true,
-  },
   name: {
     type: String,
     required: true,

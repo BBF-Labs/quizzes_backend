@@ -1,7 +1,7 @@
 import { Document, Types } from "mongoose";
 
 interface IQuiz extends Document {
-  id: string;
+  _id: Types.ObjectId;
   title: string;
   description?: string;
   courseCode: Types.ObjectId;

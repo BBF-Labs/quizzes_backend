@@ -1,7 +1,7 @@
 import { Document, Types } from "mongoose";
 
 interface IPayment extends Document {
-  id: string;
+  _id: Types.ObjectId;
   userId: Types.ObjectId;
   amount: number;
   date: Date;

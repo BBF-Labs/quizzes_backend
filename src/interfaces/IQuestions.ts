@@ -1,4 +1,4 @@
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
 import IQuestion from "./IQuestion";
 
 interface FilteredQuestions {
@@ -7,7 +7,7 @@ interface FilteredQuestions {
 }
 
 interface IQuestions extends Document {
-  id: string;
+  _id: Types.ObjectId;
   courseCode: string;
   isApproved: boolean;
   questions: FilteredQuestions[];

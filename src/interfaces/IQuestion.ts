@@ -1,7 +1,7 @@
 import { Document, Types } from "mongoose";
 
 interface IQuestion extends Document {
-  id: string;
+  _id: Types.ObjectId;
   courseCode: Types.ObjectId;
   options: string[];
   answer: string;

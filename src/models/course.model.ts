@@ -3,15 +3,13 @@ import { ICourse } from "../interfaces";
 
 const CourseSchema = new Schema<ICourse>(
   {
-    id: {
-      type: String,
-      unique: true,
-    },
-
     code: {
       type: String,
       unique: true,
       required: true,
+    },
+    title: {
+      type: String,
     },
     about: {
       type: String,
@@ -33,6 +31,11 @@ const CourseSchema = new Schema<ICourse>(
     students: {
       type: [Schema.Types.ObjectId],
       ref: "User",
+    },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
   },
   {
