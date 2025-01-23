@@ -8,6 +8,10 @@ const QuestionSchema = new Schema<IQuestion>(
       required: true,
       ref: "Course",
     },
+    question: {
+      type: String,
+      required: true,
+    },
     options: {
       type: [String],
       required: true,
@@ -35,6 +39,10 @@ const QuestionSchema = new Schema<IQuestion>(
     isModerated: {
       type: Boolean,
       default: false,
+    },
+    moderatedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
     },
   },
   {
