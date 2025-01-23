@@ -146,7 +146,7 @@ courseRoutes.put("/update/:courseId", async (req: Request, res: Response) => {
 
     res
       .status(StatusCodes.OK)
-      .json({ message: "Course updated", updatedCourse });
+      .json({ message: "Course updated", course: updatedCourse });
   } catch (err: any) {
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -177,7 +177,7 @@ courseRoutes.delete(
 
       res
         .status(StatusCodes.OK)
-        .json({ message: "Course deleted", deletedCourse });
+        .json({ message: "Course deleted", course: deletedCourse });
     } catch (err: any) {
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)

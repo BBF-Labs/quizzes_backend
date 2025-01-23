@@ -12,72 +12,67 @@ import {
 } from "../controllers";
 
 import { authenticateUser, authorizeRoles } from "../middlewares";
+import { StatusCodes } from "../config";
 
 const questionRoutes: Router = Router();
 
-questionRoutes.get(
-  "/id/c/:courseId",
-  authenticateUser,
-  async (req: Request, res: Response) => {
-    try {
-      const courseId = req.params.courseId;
+questionRoutes.use(authenticateUser);
 
-      if (!courseId) {
-        throw new Error("Course ID is required");
-      }
+questionRoutes.get("/id/c/:courseId", async (req: Request, res: Response) => {
+  try {
+    const courseId = req.params.courseId;
 
-      const questions = await getCourseQuestions(courseId);
+    const user = req.session.user;
 
-      res.status(200).json({ message: "Success", questions });
-    } catch (err: any) {
-      res.status(400).json({ message: err.message });
+    if (!user) {
+      res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json({ message: "You are not authorized to use this route" });
+      return;
     }
-  }
-);
 
-questionRoutes.get(
-  "/id/:questionId",
-  authenticateUser,
-  async (req: Request, res: Response) => {
-    try {
-      const questionId = req.params.questionId;
-
-      if (!questionId) {
-        throw new Error("Question ID is required");
-      }
-
-      const question = await getQuestionById(questionId);
-
-      res.status(200).json({ message: "Success", question });
-    } catch (err: any) {
-      res.status(400).json({ message: err.message });
+    if (!courseId) {
+      throw new Error("Course ID is required");
     }
+
+    const questions = await getCourseQuestions(courseId);
+
+    const moderationCount = questions.filter(
+      (question) => question.isModerated == false
+    ).length;
+
+    const questionDoc = questions.filter(
+      (question) => question.isModerated == true
+    );
+
+    res.status(StatusCodes.OK).json({
+      message: "Success",
+      question: questionDoc,
+      moderation: moderationCount,
+    });
+  } catch (err: any) {
+    res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
   }
-);
+});
 
-questionRoutes.get(
-  "/:courseId",
-  authenticateUser,
-  async (req: Request, res: Response) => {
-    try {
-      const courseId = req.params.courseId;
+questionRoutes.get("/id/:questionId", async (req: Request, res: Response) => {
+  try {
+    const questionId = req.params.questionId;
 
-      if (!courseId) {
-        throw new Error("Course ID is required");
-      }
-
-      const questions = await getQuestions(courseId);
-
-      res.status(200).json({ message: "Success", questions });
-    } catch (err: any) {
-      res.status(400).json({ message: err.message });
+    if (!questionId) {
+      throw new Error("Question ID is required");
     }
+
+    const question = await getQuestionById(questionId);
+
+    res.status(StatusCodes.OK).json({ message: "Success", question: question });
+  } catch (err: any) {
+    res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
   }
-);
+});
 
 questionRoutes.get(
   "/unchecked/:courseId",
-  authenticateUser,
   async (req: Request, res: Response) => {
     try {
       const courseId = req.params.courseId;
@@ -88,16 +83,17 @@ questionRoutes.get(
 
       const questions = await getUncheckedQuestions(courseId);
 
-      res.status(200).json({ message: "Success", questions });
+      res
+        .status(StatusCodes.OK)
+        .json({ message: "Success", question: questions });
     } catch (err: any) {
-      res.status(400).json({ message: err.message });
+      res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
     }
   }
 );
 
 questionRoutes.get(
   "/course/:courseCode",
-  authenticateUser,
   async (req: Request, res: Response) => {
     try {
       const courseCode = req.params.courseCode;
@@ -108,19 +104,40 @@ questionRoutes.get(
 
       const questions = await getQuestionByCourseCode(courseCode);
 
-      res.status(200).json({ message: "Success", questions });
+      const moderationCount = questions.filter(
+        (question) => question.isModerated == false
+      ).length;
+
+      const questionDoc = questions.filter(
+        (question) => question.isModerated == true
+      );
+
+      res.status(StatusCodes.OK).json({
+        message: "Success",
+        question: questionDoc,
+        moderation: moderationCount,
+      });
     } catch (err: any) {
-      res.status(400).json({ message: err.message });
+      res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
     }
   }
 );
 
 questionRoutes.post(
   "/moderate",
-  authenticateUser,
   authorizeRoles("admin", "moderator"),
   async (req: Request, res: Response) => {
     try {
+      const user = req.session.user;
+
+      if (!user) {
+        res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: "Login to access this route" });
+        return;
+      }
+
+      const moderator = user.username;
       const { questionId } = req.body;
 
       if (!questionId) {
@@ -128,44 +145,62 @@ questionRoutes.post(
       }
 
       if (questionId.length > 1) {
-        const questions = await batchModerateQuestions(questionId);
-        res.status(200).json({ message: "Success", questions });
+        const questions = await batchModerateQuestions(questionId, moderator);
+        res.status(StatusCodes.OK).json({ message: "Success", questions });
         return;
       }
 
       const question = await updateQuestion(questionId, { isModerated: true });
 
-      res.status(200).json({ message: "Success", question });
+      res
+        .status(StatusCodes.OK)
+        .json({ message: "Success", question: question });
     } catch (error: any) {
-      res.status(400).json({ message: error.message });
+      res.status(StatusCodes.BAD_REQUEST).json({ message: error.message });
     }
   }
 );
 
-questionRoutes.post(
-  "/create",
-  authenticateUser,
-  async (req: Request, res: Response) => {
-    try {
-      const { question, courseId } = req.body;
+questionRoutes.post("/create", async (req: Request, res: Response) => {
+  try {
+    const { question } = req.body;
 
-      if (!question || !courseId) {
-        throw new Error("Question and Course ID are required");
-      }
-
-      if (question.length > 1) {
-        const questions = await batchCreateQuestions(question, courseId);
-        res.status(200).json({ message: "Success", questions });
-        return;
-      }
-
-      const newQuestion = await createQuestion(question, courseId);
-
-      res.status(200).json({ message: "Success", newQuestion });
-    } catch (err: any) {
-      res.status(400).json({ message: err.message });
+    if (!question) {
+      throw new Error("Question fields are required");
     }
+
+    const courseId = question.courseId;
+
+    const author = req.session.user?.username;
+
+    if (!author) {
+      res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json({ message: "You are not authorized to make this request" });
+      return;
+    }
+
+    if (Array.isArray(req.body.question)) {
+      const questionDoc = await batchCreateQuestions(
+        question,
+        author,
+        courseId
+      );
+
+      res
+        .status(StatusCodes.OK)
+        .json({ message: "Success", question: questionDoc });
+      return;
+    }
+
+    const newQuestion = await createQuestion(question, author, courseId);
+
+    res
+      .status(StatusCodes.OK)
+      .json({ message: "Success", question: newQuestion });
+  } catch (err: any) {
+    res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
   }
-);
+});
 
 export default questionRoutes;
