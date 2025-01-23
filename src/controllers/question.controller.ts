@@ -1,15 +1,48 @@
-import { Question } from "../models";
+import { Course, Question } from "../models";
+import { isValidObjectId } from "mongoose";
 import { IQuestion } from "../interfaces";
-import { findCourseByCode } from "./course.controller";
+import { findCourseByCode, findCourseById } from "./course.controller";
+import { findUserByUsername } from "./user.controller";
 
-async function createQuestion(question: Partial<IQuestion>, courseId: string) {
+async function createQuestion(
+  question: Partial<IQuestion>,
+  author: string,
+  courseId?: string
+) {
   try {
+    const user = await findUserByUsername(author);
+
+    if (!user) {
+      throw new Error("Your account does not exist");
+    }
+
+    const { _id } = user;
+
+    if (courseId) {
+      const isValidCourse = await findCourseById(courseId);
+
+      if (!isValidCourse) {
+        throw new Error("Course does not exist");
+      }
+    }
+
+    if (question.courseId) {
+      const isValidCourse = await findCourseById(question.courseId.toString());
+
+      if (!isValidCourse) {
+        throw new Error("Course does not exist");
+      }
+    }
+
     const newQuestion = new Question({
       ...question,
-      courseId,
+      courseId: question.courseId || courseId,
+      author: _id,
     });
 
     await newQuestion.save();
+
+    return newQuestion;
   } catch (err: any) {
     throw new Error(err.message);
   }
@@ -90,11 +123,15 @@ async function getCourseQuestions(courseId: string) {
 
 async function getUncheckedQuestions(courseId: string) {
   try {
-    const questions = await Question.find({ courseId, isModerated: false });
+    const questions = await Question.find({
+      courseId,
+      isModerated: { $ne: true },
+    });
 
     if (!questions) {
-      throw new Error("Unchecked Questions not found");
+      throw new Error("Course Questions not found");
     }
+
     return questions;
   } catch (err: any) {
     throw new Error(err.message);
@@ -122,27 +159,90 @@ async function getQuestionByCourseCode(courseCode: string) {
 }
 
 async function batchCreateQuestions(
-  questions: Partial<IQuestion>[],
-  courseId: string
+  questions: Partial<IQuestion> | Partial<IQuestion>[],
+  author: string,
+  courseId?: string
 ) {
   try {
-    const newQuestions = questions.map((question) => ({
+    const user = await findUserByUsername(author);
+    if (!user) {
+      throw new Error("Your account does not exist");
+    }
+
+    if (courseId && !isValidObjectId(courseId)) {
+      throw new Error(`Invalid course ID format: ${courseId}`);
+    }
+
+    if (courseId) {
+      const isValidCourse = await findCourseById(courseId);
+      if (!isValidCourse) {
+        throw new Error("Course does not exist");
+      }
+    }
+
+    const { _id } = user;
+    const questionArray = Array.isArray(questions) ? questions : [questions];
+
+    const courseIds = questionArray
+      .map((q) => q.courseId)
+      .filter((id) => id !== undefined);
+
+    const invalidIds = courseIds.filter((id) => !isValidObjectId(id));
+
+    if (invalidIds.length > 0) {
+      throw new Error(`Invalid course ID format(s): ${invalidIds.join(", ")}`);
+    }
+
+    const validCourses = await Course.find({ _id: { $in: courseIds } });
+    const validCourseIds = new Set(
+      validCourses.map((course) => course._id.toString())
+    );
+
+    const nonexistentIds = courseIds.filter(
+      (id) => !validCourseIds.has(id.toString())
+    );
+
+    if (nonexistentIds.length > 0) {
+      throw new Error(`Course IDs do not exist: ${nonexistentIds.join(", ")}`);
+    }
+
+    const newQuestions = questionArray.map((question) => ({
       ...question,
-      courseId,
+      courseId: question.courseId || courseId,
+      author: _id,
     }));
 
     await Question.insertMany(newQuestions);
+
+    return newQuestions;
   } catch (err: any) {
     throw new Error(err.message);
   }
 }
 
-async function batchModerateQuestions(questionIds: string[]) {
+async function batchModerateQuestions(
+  questionIds: string[],
+  moderator: string
+) {
   try {
-    await Question.updateMany(
+    const user = await findUserByUsername(moderator);
+
+    if (!user) {
+      throw new Error("Your account does not exist");
+    }
+
+    const { _id } = user;
+
+    const question = await Question.updateMany(
       { _id: { $in: questionIds } },
-      { $set: { isModerated: true } }
+      { $set: { isModerated: true, moderatedBy: _id } }
     );
+
+    if (!question) {
+      throw new Error("Questions not found");
+    }
+
+    return question;
   } catch (err: any) {
     throw new Error(err.message);
   }
