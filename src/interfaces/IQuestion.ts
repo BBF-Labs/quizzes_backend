@@ -2,7 +2,7 @@ import { Document, Types } from "mongoose";
 
 interface IQuestion extends Document {
   _id: Types.ObjectId;
-  courseCode: Types.ObjectId;
+  courseId: Types.ObjectId;
   options: string[];
   answer: string;
   type: "mcq" | "fill-in" | "true-false";
