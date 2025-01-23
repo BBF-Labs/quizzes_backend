@@ -17,7 +17,7 @@ const FilteredQuestionsSchema = new Schema({
 
 const QuestionsSchema = new Schema<IQuestions>(
   {
-    courseCode: {
+    courseId: {
       type: String,
       required: true,
       ref: "Course",

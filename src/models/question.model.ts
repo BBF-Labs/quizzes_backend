@@ -3,7 +3,7 @@ import { IQuestion } from "../interfaces";
 
 const QuestionSchema = new Schema<IQuestion>(
   {
-    courseCode: {
+    courseId: {
       type: Schema.Types.ObjectId,
       required: true,
       ref: "Course",
