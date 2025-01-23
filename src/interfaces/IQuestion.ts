@@ -3,6 +3,7 @@ import { Document, Types } from "mongoose";
 interface IQuestion extends Document {
   _id: Types.ObjectId;
   courseId: Types.ObjectId;
+  question: string;
   options: string[];
   answer: string;
   type: "mcq" | "fill-in" | "true-false";
@@ -10,6 +11,7 @@ interface IQuestion extends Document {
   lectureNumber?: number;
   author: Types.ObjectId;
   isModerated: boolean;
+  moderatedBy: Types.ObjectId;
 }
 
 export default IQuestion;
