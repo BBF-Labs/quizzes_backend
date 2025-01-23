@@ -27,6 +27,18 @@ import {
   getUserCourses,
 } from "./course.controller";
 
+import {
+  createQuestion,
+  getQuestions,
+  getQuestionById,
+  updateQuestion,
+  getCourseQuestions,
+  getUncheckedQuestions,
+  getQuestionByCourseCode,
+  batchCreateQuestions,
+  batchModerateQuestions,
+} from "./question.controller";
+
 export {
   generateAccessToken,
   generateRefreshToken,
@@ -48,4 +60,13 @@ export {
   findCourseById,
   findCourseByCode,
   getUserCourses,
+  createQuestion,
+  getQuestions,
+  getQuestionById,
+  updateQuestion,
+  getCourseQuestions,
+  getUncheckedQuestions,
+  getQuestionByCourseCode,
+  batchCreateQuestions,
+  batchModerateQuestions,
 };

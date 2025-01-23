@@ -19,8 +19,13 @@ async function isUserValid(prop: {
 
 async function createUser(user: Partial<IUser>) {
   try {
-    const existingUser = await User.findOne({ email: user.email });
-    if (existingUser) throw new Error("User already exists");
+    const existingUser = await User.findOne({
+      $or: [{ email: user.email }, { username: user.username }],
+    });
+
+    if (existingUser) {
+      throw new Error("User already exists");
+    }
 
     const { password, ...userDetails } = user;
     const hashedPassword = await hashPassword(password!);
@@ -28,10 +33,12 @@ async function createUser(user: Partial<IUser>) {
     const newUser = new User({
       password: hashedPassword,
       ...userDetails,
+      role: userDetails.role || "user",
     });
 
-    await newUser.save();
-    const { _id, ...userDoc } = newUser.toObject();
+    const savedUser = await newUser.save();
+
+    const { password: _, ...userDoc } = savedUser.toObject();
     return userDoc;
   } catch (err: any) {
     throw new Error(`Error creating user: ${err.message}`);
