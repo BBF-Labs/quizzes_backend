@@ -37,7 +37,7 @@ adminRoutes.put("/update", async (req: Request, res: Response) => {
 
       res
         .status(StatusCodes.OK)
-        .json({ message: "User has been updated", updatedUser });
+        .json({ message: "User has been updated", user: updatedUser });
       return;
     }
 
@@ -53,7 +53,7 @@ adminRoutes.put("/update", async (req: Request, res: Response) => {
 
       res
         .status(StatusCodes.OK)
-        .json({ message: "User has been updated", updatedUser });
+        .json({ message: "User has been updated", user: updatedUser });
 
       return;
     }
@@ -119,7 +119,7 @@ adminRoutes.post("/create", async (res: Response, req: Request) => {
       return;
     }
 
-    res.status(StatusCodes.CREATED).json({ message: "Success", newUser });
+    res.status(StatusCodes.CREATED).json({ message: "Success", user: newUser });
   } catch (err: any) {
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
