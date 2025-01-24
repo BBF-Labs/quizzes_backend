@@ -1,8 +1,13 @@
 import { Course, Question } from "../models";
 import { isValidObjectId } from "mongoose";
 import { IQuestion } from "../interfaces";
-import { findCourseByCode, findCourseById } from "./course.controller";
+import {
+  findCourseByCode,
+  findCourseById,
+  updateCourse,
+} from "./course.controller";
 import { findUserByUsername } from "./user.controller";
+import mongoose from "mongoose";
 
 async function createQuestion(
   question: Partial<IQuestion>,
@@ -11,24 +16,16 @@ async function createQuestion(
 ) {
   try {
     const user = await findUserByUsername(author);
-
     if (!user) {
       throw new Error("Your account does not exist");
     }
 
-    const { _id } = user;
+    const { _id: authorId } = user;
 
-    if (courseId) {
-      const isValidCourse = await findCourseById(courseId);
+    const validCourseId = question.courseId || courseId;
 
-      if (!isValidCourse) {
-        throw new Error("Course does not exist");
-      }
-    }
-
-    if (question.courseId) {
-      const isValidCourse = await findCourseById(question.courseId.toString());
-
+    if (validCourseId) {
+      const isValidCourse = await findCourseById(validCourseId.toString());
       if (!isValidCourse) {
         throw new Error("Course does not exist");
       }
@@ -36,8 +33,8 @@ async function createQuestion(
 
     const newQuestion = new Question({
       ...question,
-      courseId: question.courseId || courseId,
-      author: _id,
+      courseId: new mongoose.Types.ObjectId(validCourseId),
+      author: authorId,
     });
 
     await newQuestion.save();
@@ -47,7 +44,6 @@ async function createQuestion(
     throw new Error(err.message);
   }
 }
-
 async function getQuestions(courseId: string) {
   try {
     const questions = await Question.find({ courseId, isModerated: true });
@@ -226,23 +222,38 @@ async function batchModerateQuestions(
 ) {
   try {
     const user = await findUserByUsername(moderator);
-
     if (!user) {
       throw new Error("Your account does not exist");
     }
 
-    const { _id } = user;
-
-    const question = await Question.updateMany(
+    const updateResult = await Question.updateMany(
       { _id: { $in: questionIds } },
-      { $set: { isModerated: true, moderatedBy: _id } }
+      {
+        $set: {
+          isModerated: true,
+          moderatedBy: user._id,
+        },
+      }
     );
 
-    if (!question) {
-      throw new Error("Questions not found");
+    if (updateResult.modifiedCount === 0) {
+      throw new Error("No questions found to moderate");
     }
 
-    return question;
+    const moderatedQuestions = await Question.find({
+      _id: { $in: questionIds },
+    });
+
+    const uniqueCourseIds = moderatedQuestions.map(
+      (question) => question.courseId
+    );
+
+    await Course.updateMany(
+      { _id: { $in: uniqueCourseIds } },
+      { $inc: { approvedQuestionsCount: 1 } }
+    );
+
+    return updateResult;
   } catch (err: any) {
     throw new Error(err.message);
   }
