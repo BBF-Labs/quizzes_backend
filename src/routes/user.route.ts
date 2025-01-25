@@ -18,9 +18,9 @@ userRoutes.post("/register", async (req: Request, res: Response) => {
       return;
     }
 
-    // if (user.role) {
-    //   user.role = "student";
-    // }
+    if (user.role) {
+      user.role = "student";
+    }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(user.email)) {
@@ -145,12 +145,10 @@ userRoutes.put(
               .json({ message: "Error saving session" });
             return;
           }
-          res
-            .status(StatusCodes.OK)
-            .json({
-              message: "User updated successfully",
-              user: updatedUserDoc,
-            });
+          res.status(StatusCodes.OK).json({
+            message: "User updated successfully",
+            user: updatedUserDoc,
+          });
         });
       });
     } catch (err: any) {
