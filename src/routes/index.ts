@@ -3,7 +3,7 @@ import authRoutes from "./auth.route";
 import adminRoutes from "./admin.route";
 import courseRoutes from "./course.route";
 import questionRoutes from "./question.route";
-import questionsRoutes from "./questions.route";
+import quizQuestionsRoutes from "./quizquestions.route";
 
 export {
   userRoutes,
@@ -11,5 +11,5 @@ export {
   adminRoutes,
   courseRoutes,
   questionRoutes,
-  questionsRoutes,
+  quizQuestionsRoutes,
 };

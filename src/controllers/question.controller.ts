@@ -31,6 +31,17 @@ async function createQuestion(
       }
     }
 
+    // Check for duplicate question
+    const existingQuestion = await Question.findOne({
+      courseId: new mongoose.Types.ObjectId(validCourseId),
+      question: question.question,
+      type: question.type,
+    });
+
+    if (existingQuestion) {
+      throw new Error("Duplicate question already exists in this course");
+    }
+
     const newQuestion = new Question({
       ...question,
       courseId: new mongoose.Types.ObjectId(validCourseId),
@@ -44,6 +55,7 @@ async function createQuestion(
     throw new Error(err.message);
   }
 }
+
 async function getQuestions(courseId: string) {
   try {
     const questions = await Question.find({ courseId, isModerated: true });
@@ -202,15 +214,26 @@ async function batchCreateQuestions(
       throw new Error(`Course IDs do not exist: ${nonexistentIds.join(", ")}`);
     }
 
-    const newQuestions = questionArray.map((question) => ({
-      ...question,
-      courseId: question.courseId || courseId,
-      author: _id,
-    }));
+    const preparedQuestions = [];
+    for (const question of questionArray) {
+      const existingQuestion = await Question.findOne({
+        courseId: question.courseId || courseId,
+        question: question.question,
+        type: question.type,
+      });
 
-    await Question.insertMany(newQuestions);
+      if (!existingQuestion) {
+        preparedQuestions.push({
+          ...question,
+          courseId: question.courseId || courseId,
+          author: _id,
+        });
+      }
+    }
 
-    return newQuestions;
+    const insertedQuestions = await Question.insertMany(preparedQuestions);
+
+    return insertedQuestions;
   } catch (err: any) {
     throw new Error(err.message);
   }
@@ -259,6 +282,44 @@ async function batchModerateQuestions(
   }
 }
 
+async function approveAllByModerator(courseId: string, moderator: string) {
+  try {
+    const user = await findUserByUsername(moderator);
+    if (!user) {
+      throw new Error("Your account does not exist");
+    }
+
+    const unmoderatedQuestions = await Question.find({
+      courseId,
+      isModerated: { $ne: true },
+    });
+
+    if (unmoderatedQuestions.length === 0) {
+      throw new Error("No unmoderated questions found for this course");
+    }
+
+    const questionIds = unmoderatedQuestions.map((q) => q._id);
+
+    const updateResult = await Question.updateMany(
+      { _id: { $in: questionIds } },
+      {
+        $set: {
+          isModerated: true,
+          moderatedBy: user._id,
+        },
+      }
+    );
+
+    await Course.findByIdAndUpdate(courseId, {
+      $inc: { approvedQuestionsCount: updateResult.modifiedCount },
+    });
+
+    return updateResult;
+  } catch (err: any) {
+    throw new Error(err.message);
+  }
+}
+
 export {
   createQuestion,
   getQuestions,
@@ -269,4 +330,5 @@ export {
   getQuestionByCourseCode,
   batchCreateQuestions,
   batchModerateQuestions,
+  approveAllByModerator,
 };

@@ -6,11 +6,11 @@ interface FilteredQuestions {
   questions: Types.ObjectId[];
 }
 
-interface IQuestions extends Document {
+interface IQuizQuestion extends Document {
   _id: Types.ObjectId;
   courseId: Types.ObjectId;
   isApproved: boolean;
   quizQuestions: FilteredQuestions[];
 }
 
-export default IQuestions;
+export default IQuizQuestion;

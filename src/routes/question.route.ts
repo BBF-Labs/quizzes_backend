@@ -1,7 +1,6 @@
 import { Router, Response, Request } from "express";
 import {
   createQuestion,
-  getQuestions,
   getQuestionById,
   updateQuestion,
   getCourseQuestions,
@@ -9,12 +8,12 @@ import {
   getQuestionByCourseCode,
   batchCreateQuestions,
   batchModerateQuestions,
-  createQuizQuestions,
+  batchCreateQuizQuestions,
+  approveAllByModerator,
 } from "../controllers";
 
 import { authenticateUser, authorizeRoles } from "../middlewares";
 import { StatusCodes } from "../config";
-import { IQuestion } from "../interfaces";
 
 const questionRoutes: Router = Router();
 
@@ -158,6 +157,7 @@ questionRoutes.post(
       }
 
       const moderator = user.username;
+
       const { questionId } = req.body;
 
       if (!questionId) {
@@ -167,15 +167,21 @@ questionRoutes.post(
       if (questionId.length > 1) {
         const questions = await batchModerateQuestions(questionId, moderator);
 
-        await createQuizQuestions(questionId);
+        await batchCreateQuizQuestions(questionId);
 
-        res.status(StatusCodes.OK).json({ message: "Success", questions });
+        res.status(StatusCodes.OK).json({
+          message: "Success",
+          stats: {
+            approvedQuestions: questions.modifiedCount,
+            matchedQuestions: questions.matchedCount,
+          },
+        });
         return;
       }
 
       const question = await updateQuestion(questionId, { isModerated: true });
 
-      await createQuizQuestions([questionId]);
+      await batchCreateQuizQuestions([questionId]);
 
       res
         .status(StatusCodes.OK)
@@ -227,5 +233,46 @@ questionRoutes.post("/create", async (req: Request, res: Response) => {
     res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
   }
 });
+
+questionRoutes.post(
+  "/moderate/all/:courseId",
+  authorizeRoles("admin", "moderator"),
+  async (req: Request, res: Response) => {
+    try {
+      const user = req.session.user;
+
+      if (!user) {
+        res
+          .status(StatusCodes.UNAUTHORIZED)
+          .json({ message: "Login to access this route" });
+        return;
+      }
+
+      const moderator = req.body.moderator || user.username;
+      const { courseId } = req.params;
+
+      if (!courseId) {
+        throw new Error("Course ID is required");
+      }
+
+      const approvalResult = await approveAllByModerator(courseId, moderator);
+
+      const questionDocs = await getCourseQuestions(courseId);
+
+      const questionIds = questionDocs
+        .filter((q) => q.isModerated)
+        .map((q) => q._id.toString());
+
+      await batchCreateQuizQuestions(questionIds);
+
+      res.status(StatusCodes.OK).json({
+        message: "Success",
+        approvedQuestions: approvalResult.modifiedCount,
+      });
+    } catch (error: any) {
+      res.status(StatusCodes.BAD_REQUEST).json({ message: error.message });
+    }
+  }
+);
 
 export default questionRoutes;

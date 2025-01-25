@@ -37,12 +37,15 @@ import {
   getQuestionByCourseCode,
   batchCreateQuestions,
   batchModerateQuestions,
+  approveAllByModerator,
 } from "./question.controller";
 
 import {
   getQuizQuestions,
   getCourseQuizQuestions,
-  createQuizQuestions,
+  batchCreateQuizQuestions,
+  updateQuizQuestion,
+  getFullQuizInformation,
 } from "./questions.controller";
 
 export {
@@ -77,5 +80,8 @@ export {
   batchModerateQuestions,
   getQuizQuestions,
   getCourseQuizQuestions,
-  createQuizQuestions,
+  batchCreateQuizQuestions,
+  updateQuizQuestion,
+  getFullQuizInformation,
+  approveAllByModerator,
 };
