@@ -1,7 +1,7 @@
 import { Document, Types } from "mongoose";
 
 interface IPackage extends Document {
-  id: string;
+  _id: Types.ObjectId;
   price: number;
   name: string;
   duration: number;

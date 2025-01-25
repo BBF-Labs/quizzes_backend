@@ -1,13 +1,15 @@
 import { Document, Types } from "mongoose";
 
 interface ICourse extends Document {
-  id: string;
+  _id: Types.ObjectId;
   code: string;
+  title?: string;
   about: string;
   numberOfLectures?: number;
   approvedQuestionsCount: number;
   isDeleted?: boolean;
   students?: Types.ObjectId[];
+  createdBy: Types.ObjectId;
 }
 
 export default ICourse;

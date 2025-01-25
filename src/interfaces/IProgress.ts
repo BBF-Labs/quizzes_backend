@@ -1,7 +1,7 @@
 import { Document, Types } from "mongoose";
 
 interface IProgress extends Document {
-  id: string;
+  _id: Types.ObjectId;
   userId: Types.ObjectId;
   score: number;
   courseCode: Types.ObjectId;

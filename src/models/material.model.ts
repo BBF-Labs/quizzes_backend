@@ -3,11 +3,6 @@ import { IMaterial } from "../interfaces";
 
 const MaterialSchema: Schema<IMaterial> = new Schema(
   {
-    id: {
-      type: String,
-      required: true,
-      unique: true,
-    },
     title: {
       type: String,
       required: true,
