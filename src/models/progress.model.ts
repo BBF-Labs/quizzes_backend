@@ -3,11 +3,6 @@ import { IProgress } from "../interfaces";
 
 const ProgressSchema = new Schema<IProgress>(
   {
-    id: {
-      type: String,
-      required: true,
-      unique: true,
-    },
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",

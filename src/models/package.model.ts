@@ -3,11 +3,6 @@ import { IPackage } from "../interfaces";
 
 const PackageSchema: Schema<IPackage> = new Schema(
   {
-    id: {
-      type: String,
-      required: true,
-      unique: true,
-    },
     name: {
       type: String,
       required: true,

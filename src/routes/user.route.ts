@@ -76,7 +76,7 @@ userRoutes.post("/register", async (req: Request, res: Response) => {
       return;
     }
 
-    res.status(StatusCodes.CREATED).json({ message: "Success", newUser });
+    res.status(StatusCodes.CREATED).json({ message: "Success", user: user });
   } catch (err: any) {
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -138,7 +138,7 @@ userRoutes.get(
         return;
       }
 
-      res.status(StatusCodes.OK).json({ message: "Success", userDoc });
+      res.status(StatusCodes.OK).json({ message: "Success", user: userDoc });
     } catch (err: any) {
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -222,7 +222,7 @@ userRoutes.put(
         return;
       }
 
-      await updateUser(userDoc.id, updates);
+      const updatedUserDoc = await updateUser(userDoc._id.toString(), updates);
 
       req.session.regenerate((err) => {
         if (err) {
@@ -245,9 +245,10 @@ userRoutes.put(
               .json({ message: "Error saving session" });
             return;
           }
-          res
-            .status(StatusCodes.OK)
-            .json({ message: "User updated successfully" });
+          res.status(StatusCodes.OK).json({
+            message: "User updated successfully",
+            user: updatedUserDoc,
+          });
         });
       });
     } catch (err: any) {

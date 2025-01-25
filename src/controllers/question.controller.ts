@@ -1,0 +1,334 @@
+import { Course, Question } from "../models";
+import { isValidObjectId } from "mongoose";
+import { IQuestion } from "../interfaces";
+import {
+  findCourseByCode,
+  findCourseById,
+  updateCourse,
+} from "./course.controller";
+import { findUserByUsername } from "./user.controller";
+import mongoose from "mongoose";
+
+async function createQuestion(
+  question: Partial<IQuestion>,
+  author: string,
+  courseId?: string
+) {
+  try {
+    const user = await findUserByUsername(author);
+    if (!user) {
+      throw new Error("Your account does not exist");
+    }
+
+    const { _id: authorId } = user;
+
+    const validCourseId = question.courseId || courseId;
+
+    if (validCourseId) {
+      const isValidCourse = await findCourseById(validCourseId.toString());
+      if (!isValidCourse) {
+        throw new Error("Course does not exist");
+      }
+    }
+
+    // Check for duplicate question
+    const existingQuestion = await Question.findOne({
+      courseId: new mongoose.Types.ObjectId(validCourseId),
+      question: question.question,
+      type: question.type,
+    });
+
+    if (existingQuestion) {
+      throw new Error("Duplicate question already exists in this course");
+    }
+
+    const newQuestion = new Question({
+      ...question,
+      courseId: new mongoose.Types.ObjectId(validCourseId),
+      author: authorId,
+    });
+
+    await newQuestion.save();
+
+    return newQuestion;
+  } catch (err: any) {
+    throw new Error(err.message);
+  }
+}
+
+async function getQuestions(courseId: string) {
+  try {
+    const questions = await Question.find({ courseId, isModerated: true });
+
+    if (!questions) {
+      const courseCode = await findCourseByCode(courseId);
+
+      if (!courseCode) {
+        throw new Error("Course Questions not found");
+      }
+
+      const questions = await Question.find({ courseId: courseCode._id });
+
+      if (!questions) {
+        throw new Error("Course Questions not found");
+      }
+
+      return questions;
+    }
+
+    return questions;
+  } catch (err: any) {
+    throw new Error(err.message);
+  }
+}
+
+async function getQuestionById(questionId: string) {
+  try {
+    const question = await Question.findById(questionId);
+
+    if (!question) {
+      throw new Error("Question not found");
+    }
+
+    return question;
+  } catch (err: any) {
+    throw new Error(err.message);
+  }
+}
+
+async function updateQuestion(
+  questionId: string,
+  question: Partial<IQuestion>
+) {
+  try {
+    const questionDoc = await Question.findByIdAndUpdate(questionId, question, {
+      new: true,
+    });
+
+    if (!questionDoc) {
+      throw new Error("Question not found");
+    }
+
+    return questionDoc;
+  } catch (err: any) {
+    throw new Error(err.message);
+  }
+}
+
+async function getCourseQuestions(courseId: string) {
+  try {
+    const questions = await Question.find({ courseId });
+
+    if (!questions) {
+      throw new Error("Course Questions not found");
+    }
+
+    return questions;
+  } catch (err: any) {
+    throw new Error(err.message);
+  }
+}
+
+async function getUncheckedQuestions(courseId: string) {
+  try {
+    const questions = await Question.find({
+      courseId,
+      isModerated: { $ne: true },
+    });
+
+    if (!questions) {
+      throw new Error("Course Questions not found");
+    }
+
+    return questions;
+  } catch (err: any) {
+    throw new Error(err.message);
+  }
+}
+
+async function getQuestionByCourseCode(courseCode: string) {
+  try {
+    const course = await findCourseByCode(courseCode);
+
+    if (!course) {
+      throw new Error("Course Questions not found");
+    }
+
+    const questions = await Question.find({ courseId: course?._id });
+
+    if (!questions) {
+      throw new Error("Course Questions not found");
+    }
+
+    return questions;
+  } catch (err: any) {
+    throw new Error(err.message);
+  }
+}
+
+async function batchCreateQuestions(
+  questions: Partial<IQuestion> | Partial<IQuestion>[],
+  author: string,
+  courseId?: string
+) {
+  try {
+    const user = await findUserByUsername(author);
+    if (!user) {
+      throw new Error("Your account does not exist");
+    }
+
+    if (courseId && !isValidObjectId(courseId)) {
+      throw new Error(`Invalid course ID format: ${courseId}`);
+    }
+
+    if (courseId) {
+      const isValidCourse = await findCourseById(courseId);
+      if (!isValidCourse) {
+        throw new Error("Course does not exist");
+      }
+    }
+
+    const { _id } = user;
+    const questionArray = Array.isArray(questions) ? questions : [questions];
+
+    const courseIds = questionArray
+      .map((q) => q.courseId)
+      .filter((id) => id !== undefined);
+
+    const invalidIds = courseIds.filter((id) => !isValidObjectId(id));
+
+    if (invalidIds.length > 0) {
+      throw new Error(`Invalid course ID format(s): ${invalidIds.join(", ")}`);
+    }
+
+    const validCourses = await Course.find({ _id: { $in: courseIds } });
+    const validCourseIds = new Set(
+      validCourses.map((course) => course._id.toString())
+    );
+
+    const nonexistentIds = courseIds.filter(
+      (id) => !validCourseIds.has(id.toString())
+    );
+
+    if (nonexistentIds.length > 0) {
+      throw new Error(`Course IDs do not exist: ${nonexistentIds.join(", ")}`);
+    }
+
+    const preparedQuestions = [];
+    for (const question of questionArray) {
+      const existingQuestion = await Question.findOne({
+        courseId: question.courseId || courseId,
+        question: question.question,
+        type: question.type,
+      });
+
+      if (!existingQuestion) {
+        preparedQuestions.push({
+          ...question,
+          courseId: question.courseId || courseId,
+          author: _id,
+        });
+      }
+    }
+
+    const insertedQuestions = await Question.insertMany(preparedQuestions);
+
+    return insertedQuestions;
+  } catch (err: any) {
+    throw new Error(err.message);
+  }
+}
+
+async function batchModerateQuestions(
+  questionIds: string[],
+  moderator: string
+) {
+  try {
+    const user = await findUserByUsername(moderator);
+    if (!user) {
+      throw new Error("Your account does not exist");
+    }
+
+    const updateResult = await Question.updateMany(
+      { _id: { $in: questionIds } },
+      {
+        $set: {
+          isModerated: true,
+          moderatedBy: user._id,
+        },
+      }
+    );
+
+    if (updateResult.modifiedCount === 0) {
+      throw new Error("No questions found to moderate");
+    }
+
+    const moderatedQuestions = await Question.find({
+      _id: { $in: questionIds },
+    });
+
+    const uniqueCourseIds = moderatedQuestions.map(
+      (question) => question.courseId
+    );
+
+    await Course.updateMany(
+      { _id: { $in: uniqueCourseIds } },
+      { $inc: { approvedQuestionsCount: 1 } }
+    );
+
+    return updateResult;
+  } catch (err: any) {
+    throw new Error(err.message);
+  }
+}
+
+async function approveAllByModerator(courseId: string, moderator: string) {
+  try {
+    const user = await findUserByUsername(moderator);
+    if (!user) {
+      throw new Error("Your account does not exist");
+    }
+
+    const unmoderatedQuestions = await Question.find({
+      courseId,
+      isModerated: { $ne: true },
+    });
+
+    if (unmoderatedQuestions.length === 0) {
+      throw new Error("No unmoderated questions found for this course");
+    }
+
+    const questionIds = unmoderatedQuestions.map((q) => q._id);
+
+    const updateResult = await Question.updateMany(
+      { _id: { $in: questionIds } },
+      {
+        $set: {
+          isModerated: true,
+          moderatedBy: user._id,
+        },
+      }
+    );
+
+    await Course.findByIdAndUpdate(courseId, {
+      $inc: { approvedQuestionsCount: updateResult.modifiedCount },
+    });
+
+    return updateResult;
+  } catch (err: any) {
+    throw new Error(err.message);
+  }
+}
+
+export {
+  createQuestion,
+  getQuestions,
+  getQuestionById,
+  updateQuestion,
+  getCourseQuestions,
+  getUncheckedQuestions,
+  getQuestionByCourseCode,
+  batchCreateQuestions,
+  batchModerateQuestions,
+  approveAllByModerator,
+};

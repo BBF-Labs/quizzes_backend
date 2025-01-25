@@ -6,7 +6,7 @@ import IMaterial from "./IMaterial";
 import IProgress from "./IProgress";
 import IPayment from "./IPayment";
 import IPackage from "./IPackage";
-import IQuestions from "./IQuestions";
+import IQuizQuestion from "./IQuizQuestion";
 
 export {
   ICourse,
@@ -17,5 +17,5 @@ export {
   IProgress,
   IPayment,
   IPackage,
-  IQuestions,
+  IQuizQuestion,
 };
