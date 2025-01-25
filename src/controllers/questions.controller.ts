@@ -1,84 +1,104 @@
-import { IQuestion } from "../interfaces";
-import { Question, Questions } from "../models";
-import { Types } from "mongoose";
+import { IQuizQuestion } from "../interfaces";
+import { Question, Course, QuizQuestion } from "../models";
+import mongoose from "mongoose";
 
-async function createQuizQuestions(
-  questions: Partial<IQuestion[]> | Partial<IQuestion>
-): Promise<void> {
-  try {
-    // Normalize input to always be an array
-    const questionArray = Array.isArray(questions) ? questions : [questions];
+async function batchCreateQuizQuestions(questionIds: string | string[]) {
+  if (
+    !questionIds ||
+    (Array.isArray(questionIds) && questionIds.length === 0)
+  ) {
+    throw new Error("No question IDs provided");
+  }
 
-    // Find questions with matching IDs
-    const questionDocs = await Question.find({
-      _id: { $in: questionArray.map((q) => q?._id).filter(Boolean) },
-    });
+  // Normalize input to array
+  const questionIdArray = Array.isArray(questionIds)
+    ? questionIds
+    : [questionIds];
 
-    if (!questionDocs.length) {
-      throw new Error("No valid questions found");
+  // Validate ObjectIds
+  const validQuestionIds = questionIdArray.map((id) =>
+    mongoose.Types.ObjectId.createFromHexString(id)
+  );
+
+  // Fetch questions with course and lecture info
+  const questions = await Question.find({
+    _id: { $in: validQuestionIds },
+  }).lean();
+
+  if (questions.length === 0) {
+    throw new Error("No questions found");
+  }
+
+  // Group questions by course and lecture number
+  const courseQuestionMap = questions.reduce((acc, question) => {
+    if (!acc[question.courseId.toString()]) {
+      acc[question.courseId.toString()] = {};
     }
 
-    // Assuming all questions are from the same course
-    const courseId = questionDocs[0].courseId;
+    const lectureKey = `Lecture ${question.lectureNumber}`;
+    if (!acc[question.courseId.toString()][lectureKey]) {
+      acc[question.courseId.toString()][lectureKey] = [];
+    }
 
-    // Organize questions by lecture
-    const lectureQuestions = questionDocs.reduce((acc, doc) => {
-      const lectureName = `Lecture ${doc.lectureNumber}`;
-      acc[lectureName] ??= [];
-      acc[lectureName].push(doc._id);
-      return acc;
-    }, {} as Record<string, Types.ObjectId[]>);
+    acc[question.courseId.toString()][lectureKey].push(question._id);
+    return acc;
+  }, {} as Record<string, Record<string, mongoose.Types.ObjectId[]>>);
 
-    // Find existing quiz for the course
-    let existingQuiz = await Questions.findOne({ courseId });
+  // Batch create/update quiz documents
+  const updatedQuizDocuments = await Promise.all(
+    Object.entries(courseQuestionMap).map(
+      async ([courseId, lectureGroupings]) => {
+        let quizDocument = await QuizQuestion.findOne({ courseId });
 
-    if (existingQuiz) {
-      // Update existing quiz
-      for (const [lectureName, questionIds] of Object.entries(
-        lectureQuestions
-      )) {
-        const lectureIndex = existingQuiz.quizQuestions.findIndex(
-          (q) => q.name === lectureName
-        );
-
-        if (lectureIndex >= 0) {
-          existingQuiz.quizQuestions[lectureIndex].questions = [
-            ...new Set([
-              ...existingQuiz.quizQuestions[lectureIndex].questions,
-              ...questionIds,
-            ]),
-          ];
+        if (!quizDocument) {
+          quizDocument = new QuizQuestion({
+            courseId: new mongoose.Types.ObjectId(courseId),
+            quizQuestions: Object.entries(lectureGroupings).map(
+              ([name, questions]) => ({
+                name,
+                questions,
+              })
+            ),
+          });
         } else {
-          existingQuiz.quizQuestions.push({
-            name: lectureName,
-            questions: questionIds,
+          // Update existing quiz document
+          Object.entries(lectureGroupings).forEach(([name, questions]) => {
+            const existingLectureIndex = quizDocument?.quizQuestions.findIndex(
+              (lq) => lq.name === name
+            );
+
+            if (existingLectureIndex !== -1) {
+              // Update existing lecture's questions, avoiding duplicates
+              const uniqueQuestions = [
+                ...new Set([
+                  ...quizDocument!.quizQuestions[existingLectureIndex!]
+                    .questions,
+                  ...questions,
+                ]),
+              ];
+              quizDocument!.quizQuestions[existingLectureIndex!].questions =
+                uniqueQuestions;
+            } else {
+              // Add new lecture to quiz questions
+              quizDocument!.quizQuestions.push({ name, questions });
+            }
           });
         }
+
+        return await quizDocument.save();
       }
+    )
+  );
 
-      await existingQuiz.save();
-    } else {
-      // Create new quiz
-      const newQuiz = new Questions({
-        courseId,
-        quizQuestions: Object.entries(lectureQuestions).map(
-          ([name, questions]) => ({ name, questions })
-        ),
-      });
-
-      await newQuiz.save();
-    }
-  } catch (err: any) {
-    throw new Error(err.message);
-  }
+  return updatedQuizDocuments;
 }
 
 async function getCourseQuizQuestions(courseId: string) {
   try {
-    const questions = await Questions.find({ courseId });
+    const questions = await QuizQuestion.findOne({ courseId });
 
     if (!questions) {
-      throw new Error("Course Questions not found");
+      return null;
     }
 
     return questions;
@@ -89,9 +109,9 @@ async function getCourseQuizQuestions(courseId: string) {
 
 async function getQuizQuestions() {
   try {
-    const questions = await Questions.find();
+    const questions = await QuizQuestion.find();
 
-    if (!questions) {
+    if (questions.length == 0) {
       throw new Error("Quiz Questions not found");
     }
 
@@ -101,4 +121,74 @@ async function getQuizQuestions() {
   }
 }
 
-export { getCourseQuizQuestions, getQuizQuestions, createQuizQuestions };
+async function updateQuizQuestion(quiz: Partial<IQuizQuestion>) {
+  try {
+    const { courseId, ...quizDetails } = quiz;
+
+    const updateQuizDoc = await QuizQuestion.findOneAndUpdate(
+      { courseId: courseId },
+      { $set: quizDetails },
+      { new: true }
+    );
+
+    return updateQuizDoc;
+  } catch (err: any) {
+    throw new Error(err.message);
+  }
+}
+interface IFullQuizInfo {
+  courseCode: string;
+  isApproved: boolean;
+  quizQuestions: Array<{
+    name: string;
+    questions: Array<{
+      question: string;
+      options: string[];
+      answer: string;
+      type: "mcq" | "fill-in" | "true-false";
+      explanation?: string;
+      lectureNumber?: number;
+    }>;
+  }>;
+}
+
+async function getFullQuizInformation(
+  courseId: string
+): Promise<IFullQuizInfo> {
+  const quizDocument = await QuizQuestion.findOne({ courseId }).lean();
+
+  if (!quizDocument) {
+    throw new Error("No quiz found for this course");
+  }
+
+  const course = await Course.findById(courseId).select("name code").lean();
+
+  if (!course) {
+    throw new Error("Course not found");
+  }
+
+  const fullQuizQuestions = await Promise.all(
+    quizDocument.quizQuestions.map(async (lectureQuiz) => ({
+      name: lectureQuiz.name,
+      questions: await Question.find({
+        _id: { $in: lectureQuiz.questions },
+      })
+        .lean()
+        .select("question options answer type explanation lectureNumber"),
+    }))
+  );
+
+  return {
+    courseCode: course.code,
+    isApproved: quizDocument.isApproved,
+    quizQuestions: fullQuizQuestions,
+  };
+}
+
+export {
+  getCourseQuizQuestions,
+  getQuizQuestions,
+  batchCreateQuizQuestions,
+  updateQuizQuestion,
+  getFullQuizInformation,
+};
