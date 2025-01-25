@@ -9,10 +9,12 @@ import {
   getQuestionByCourseCode,
   batchCreateQuestions,
   batchModerateQuestions,
+  createQuizQuestions,
 } from "../controllers";
 
 import { authenticateUser, authorizeRoles } from "../middlewares";
 import { StatusCodes } from "../config";
+import { IQuestion } from "../interfaces";
 
 const questionRoutes: Router = Router();
 
@@ -66,6 +68,24 @@ questionRoutes.get("/id/:questionId", async (req: Request, res: Response) => {
     const question = await getQuestionById(questionId);
 
     res.status(StatusCodes.OK).json({ message: "Success", question: question });
+  } catch (err: any) {
+    res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
+  }
+});
+
+questionRoutes.post("/update", async (req: Request, res: Response) => {
+  try {
+    const { questionId, question } = req.body;
+
+    if (!questionId || !question) {
+      throw new Error("Question details are required");
+    }
+
+    const questionDoc = await updateQuestion(questionId, question);
+
+    res
+      .status(StatusCodes.OK)
+      .json({ message: "Success", question: questionDoc });
   } catch (err: any) {
     res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
   }
@@ -146,11 +166,16 @@ questionRoutes.post(
 
       if (questionId.length > 1) {
         const questions = await batchModerateQuestions(questionId, moderator);
+
+        await createQuizQuestions(questionId);
+
         res.status(StatusCodes.OK).json({ message: "Success", questions });
         return;
       }
 
       const question = await updateQuestion(questionId, { isModerated: true });
+
+      await createQuizQuestions([questionId]);
 
       res
         .status(StatusCodes.OK)

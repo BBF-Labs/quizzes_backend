@@ -39,6 +39,12 @@ import {
   batchModerateQuestions,
 } from "./question.controller";
 
+import {
+  getQuizQuestions,
+  getCourseQuizQuestions,
+  createQuizQuestions,
+} from "./questions.controller";
+
 export {
   generateAccessToken,
   generateRefreshToken,
@@ -69,4 +75,7 @@ export {
   getQuestionByCourseCode,
   batchCreateQuestions,
   batchModerateQuestions,
+  getQuizQuestions,
+  getCourseQuizQuestions,
+  createQuizQuestions,
 };

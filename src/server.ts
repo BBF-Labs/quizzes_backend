@@ -14,6 +14,7 @@ import {
   adminRoutes,
   courseRoutes,
   questionRoutes,
+  questionsRoutes,
 } from "./routes";
 
 const app: Express = express();
@@ -48,6 +49,7 @@ async function startServer() {
     app.use("/api/v1/admin", adminRoutes);
     app.use("/api/v1/courses", courseRoutes);
     app.use("/api/v1/question", questionRoutes);
+    app.use("/api/v1/quizzes", questionsRoutes);
 
     app.get("/", (req: Request, res: Response) => {
       res.send("Hello World");
