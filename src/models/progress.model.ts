@@ -8,10 +8,12 @@ const ProgressSchema = new Schema<IProgress>(
       ref: "User",
       required: true,
     },
-    score: {
-      type: Number,
-      required: true,
-    },
+    score: [
+      {
+        type: Number,
+        required: true,
+      },
+    ],
     courseCode: {
       type: Schema.Types.ObjectId,
       required: true,
