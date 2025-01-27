@@ -48,6 +48,13 @@ import {
   getFullQuizInformation,
 } from "./questions.controller";
 
+import {
+  createProgress,
+  getUserProgress,
+  getUserProgressByCourseId,
+  updateUserProgress,
+} from "./progress.controller";
+
 export {
   generateAccessToken,
   generateRefreshToken,
@@ -84,4 +91,8 @@ export {
   updateQuizQuestion,
   getFullQuizInformation,
   approveAllByModerator,
+  createProgress,
+  getUserProgress,
+  getUserProgressByCourseId,
+  updateUserProgress,
 };
