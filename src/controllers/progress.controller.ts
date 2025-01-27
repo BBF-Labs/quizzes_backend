@@ -1,8 +1,9 @@
 import { IProgress } from "../interfaces";
 import { Progress } from "../models";
+import { findUserByUsername } from "./user.controller";
 
 async function createProgress(
-  userId: string,
+  username: string,
   progressData: Partial<IProgress>
 ) {
   try {
@@ -10,9 +11,15 @@ async function createProgress(
       throw new Error("Course code and quiz ID are required");
     }
 
+    const user = await findUserByUsername(username);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
     const existingProgress = await Progress.findOneAndUpdate(
       {
-        userId,
+        userId: user._id,
         courseCode: progressData.courseCode,
         quizId: progressData.quizId,
       },
@@ -33,10 +40,16 @@ async function createProgress(
   }
 }
 
-async function getUserProgressByCourseId(userId: string, courseCode: string) {
+async function getUserProgressByCourseId(username: string, courseCode: string) {
   try {
+    const user = await findUserByUsername(username);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
     const progresses = await Progress.find({
-      userId,
+      userId: user._id,
       courseCode,
     }).populate("quizId");
 
@@ -47,9 +60,15 @@ async function getUserProgressByCourseId(userId: string, courseCode: string) {
   }
 }
 
-async function getUserProgress(userId: string) {
+async function getUserProgress(username: string) {
   try {
-    const progresses = await Progress.find({ userId })
+    const user = await findUserByUsername(username);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const progresses = await Progress.find({ userId: user._id })
       .populate("courseCode")
       .populate("quizId");
 
