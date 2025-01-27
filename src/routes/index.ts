@@ -4,6 +4,7 @@ import adminRoutes from "./admin.route";
 import courseRoutes from "./course.route";
 import questionRoutes from "./question.route";
 import quizQuestionsRoutes from "./quizquestions.route";
+import progressRoutes from "./progess.route";
 
 export {
   userRoutes,
@@ -12,4 +13,5 @@ export {
   courseRoutes,
   questionRoutes,
   quizQuestionsRoutes,
+  progressRoutes,
 };
