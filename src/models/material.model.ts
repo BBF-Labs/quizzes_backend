@@ -22,9 +22,10 @@ const MaterialSchema: Schema<IMaterial> = new Schema(
       ref: "User",
       required: true,
     },
-    subject: {
-      type: String,
-      default: null,
+    courseId: {
+      type: Schema.Types.ObjectId,
+      ref: "Course",
+      required: true,
     },
   },
   {

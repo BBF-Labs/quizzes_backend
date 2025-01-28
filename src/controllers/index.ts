@@ -55,6 +55,13 @@ import {
   updateUserProgress,
 } from "./progress.controller";
 
+import {
+  uploadMaterial,
+  getMaterials,
+  getUserMaterials,
+  getCourseMaterials,
+} from "./material.controller";
+
 export {
   generateAccessToken,
   generateRefreshToken,
@@ -95,4 +102,8 @@ export {
   getUserProgress,
   getUserProgressByCourseId,
   updateUserProgress,
+  uploadMaterial,
+  getMaterials,
+  getUserMaterials,
+  getCourseMaterials,
 };
