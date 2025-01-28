@@ -6,6 +6,7 @@ import {
 } from "./auth.middleware";
 import { Limiter, startSession } from "./session.middleware";
 import { ErrorHandler, Logger } from "./logger.middleware";
+import { CorsOption } from "./cors.middleware";
 
 export {
   Limiter,
@@ -16,4 +17,5 @@ export {
   ErrorHandler,
   Logger,
   authGuard,
+  CorsOption,
 };

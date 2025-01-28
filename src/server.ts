@@ -8,6 +8,7 @@ import {
   Passport,
   ErrorHandler,
   Logger,
+  CorsOption,
 } from "./middlewares";
 import helmet from "helmet";
 import {
@@ -20,6 +21,7 @@ import {
   progressRoutes,
   materialRoutes,
 } from "./routes";
+import cors from "cors";
 
 const app: Express = express();
 
@@ -45,6 +47,7 @@ async function startServer() {
     app.set("trust proxy", 1);
     app.use(Session);
     app.use(Limiter);
+    app.use(cors(CorsOption));
     app.use(helmet());
     app.use(Passport.initialize());
     app.use(Passport.session());

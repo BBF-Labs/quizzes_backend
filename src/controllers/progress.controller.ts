@@ -7,7 +7,7 @@ async function createProgress(
   progressData: Partial<IProgress>
 ) {
   try {
-    if (!progressData.courseCode || !progressData.quizId) {
+    if (!progressData) {
       throw new Error("Course code and quiz ID are required");
     }
 
