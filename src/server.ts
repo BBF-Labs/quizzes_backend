@@ -18,6 +18,7 @@ import {
   questionRoutes,
   quizQuestionsRoutes,
   progressRoutes,
+  materialRoutes,
 } from "./routes";
 
 const app: Express = express();
@@ -55,6 +56,7 @@ async function startServer() {
     app.use("/api/v1/question", questionRoutes);
     app.use("/api/v1/quizzes", quizQuestionsRoutes);
     app.use("/api/v1/progress", progressRoutes);
+    app.use("/api/v1/materials", materialRoutes);
 
     app.get("/", (req: Request, res: Response) => {
       res.send("Hello World");
