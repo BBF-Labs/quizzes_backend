@@ -47,6 +47,7 @@ materialRoutes.post(
   async (req: Request, res: Response) => {
     try {
       const user = req.session.user;
+
       if (!user) {
         res.status(StatusCodes.UNAUTHORIZED).json({
           message: "User not found",

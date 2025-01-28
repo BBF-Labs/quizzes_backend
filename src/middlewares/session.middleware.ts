@@ -45,12 +45,12 @@ const startSession = async () => {
   const Session = session({
     secret: Config.SESSION_SECRET,
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     rolling: true,
     name: "sid",
     cookie: {
       maxAge: 1000 * 60 * 60 * 24, // 1 day
-      sameSite: "lax",
+      sameSite: "none",
       secure: Config.ENV === "production",
       httpOnly: true,
     },

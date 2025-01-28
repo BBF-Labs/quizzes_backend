@@ -6,7 +6,7 @@ import { findUserByUsername } from "./user.controller";
 
 interface FileUpload {
   buffer: Buffer;
-  filename: string;
+  originalname: string;
   mimetype: string;
 }
 
@@ -27,8 +27,8 @@ async function uploadMaterial(
   username: string
 ) {
   try {
-    if (!file) {
-      throw new Error("No file provided");
+    if (!file || !file.originalname || !file.buffer) {
+      throw new Error("Invalid file data provided");
     }
 
     const user = await findUserByUsername(username);
@@ -37,27 +37,37 @@ async function uploadMaterial(
       throw new Error("User not found");
     }
 
-    const filename = `${user.username}-${Date.now()}-${file.filename}`;
+    const title = file.originalname;
+    if (!title) {
+      throw new Error("File title is required");
+    }
 
+    const filename = `${user.username}-${Date.now()}-${title}`;
     const storageRef = ref(storage, `materials/${filename}`);
 
     await uploadBytes(storageRef, file.buffer);
-
     const url = await getDownloadURL(storageRef);
 
+    const fileType = getFileType(file.mimetype, file.originalname);
+
     const material = new Material({
-      title: file.filename,
+      title: title.trim(),
       url: url,
-      type: getFileType(file.mimetype, file.filename),
+      type: fileType,
       uploadedBy: user._id,
       courseId: courseId,
     });
 
-    await material.save();
+    const validationError = material.validateSync();
+    if (validationError) {
+      throw new Error(`Validation failed: ${validationError.message}`);
+    }
 
+    await material.save();
     return material;
   } catch (err: any) {
-    throw new Error(err.message);
+    console.error("Material upload error:", err);
+    throw new Error(err.message || "Error uploading material");
   }
 }
 
