@@ -3,14 +3,14 @@ import { IQuestion } from "../interfaces";
 
 const QuestionSchema = new Schema<IQuestion>(
   {
-    id: {
-      type: String,
-      unique: true,
-    },
-    courseCode: {
+    courseId: {
       type: Schema.Types.ObjectId,
       required: true,
       ref: "Course",
+    },
+    question: {
+      type: String,
+      required: true,
     },
     options: {
       type: [String],
@@ -39,6 +39,10 @@ const QuestionSchema = new Schema<IQuestion>(
     isModerated: {
       type: Boolean,
       default: false,
+    },
+    moderatedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
     },
   },
   {

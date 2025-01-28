@@ -27,6 +27,41 @@ import {
   getUserCourses,
 } from "./course.controller";
 
+import {
+  createQuestion,
+  getQuestions,
+  getQuestionById,
+  updateQuestion,
+  getCourseQuestions,
+  getUncheckedQuestions,
+  getQuestionByCourseCode,
+  batchCreateQuestions,
+  batchModerateQuestions,
+  approveAllByModerator,
+} from "./question.controller";
+
+import {
+  getQuizQuestions,
+  getCourseQuizQuestions,
+  batchCreateQuizQuestions,
+  updateQuizQuestion,
+  getFullQuizInformation,
+} from "./questions.controller";
+
+import {
+  createProgress,
+  getUserProgress,
+  getUserProgressByCourseId,
+  updateUserProgress,
+} from "./progress.controller";
+
+import {
+  uploadMaterial,
+  getMaterials,
+  getUserMaterials,
+  getCourseMaterials,
+} from "./material.controller";
+
 export {
   generateAccessToken,
   generateRefreshToken,
@@ -48,4 +83,27 @@ export {
   findCourseById,
   findCourseByCode,
   getUserCourses,
+  createQuestion,
+  getQuestions,
+  getQuestionById,
+  updateQuestion,
+  getCourseQuestions,
+  getUncheckedQuestions,
+  getQuestionByCourseCode,
+  batchCreateQuestions,
+  batchModerateQuestions,
+  getQuizQuestions,
+  getCourseQuizQuestions,
+  batchCreateQuizQuestions,
+  updateQuizQuestion,
+  getFullQuizInformation,
+  approveAllByModerator,
+  createProgress,
+  getUserProgress,
+  getUserProgressByCourseId,
+  updateUserProgress,
+  uploadMaterial,
+  getMaterials,
+  getUserMaterials,
+  getCourseMaterials,
 };

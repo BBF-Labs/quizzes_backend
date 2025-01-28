@@ -1,7 +1,7 @@
 import { Document, Types } from "mongoose";
 
 interface IUser extends Document {
-  id: string;
+  _id: Types.ObjectId;
   name?: string;
   username: string;
   email: string;

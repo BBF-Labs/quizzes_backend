@@ -3,11 +3,6 @@ import { IMaterial } from "../interfaces";
 
 const MaterialSchema: Schema<IMaterial> = new Schema(
   {
-    id: {
-      type: String,
-      required: true,
-      unique: true,
-    },
     title: {
       type: String,
       required: true,
@@ -27,9 +22,10 @@ const MaterialSchema: Schema<IMaterial> = new Schema(
       ref: "User",
       required: true,
     },
-    subject: {
-      type: String,
-      default: null,
+    courseId: {
+      type: Schema.Types.ObjectId,
+      ref: "Course",
+      required: true,
     },
   },
   {

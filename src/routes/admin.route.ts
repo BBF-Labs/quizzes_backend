@@ -33,11 +33,11 @@ adminRoutes.put("/update", async (req: Request, res: Response) => {
         return;
       }
 
-      const updatedUser = await updateUser(userDoc.id, user);
+      const updatedUser = await updateUser(userDoc._id.toString(), user);
 
       res
         .status(StatusCodes.OK)
-        .json({ message: "User has been updated", updatedUser });
+        .json({ message: "User has been updated", user: updatedUser });
       return;
     }
 
@@ -49,11 +49,11 @@ adminRoutes.put("/update", async (req: Request, res: Response) => {
         return;
       }
 
-      const updatedUser = await updateUser(userDoc.id, user);
+      const updatedUser = await updateUser(userDoc._id.toString(), user);
 
       res
         .status(StatusCodes.OK)
-        .json({ message: "User has been updated", updatedUser });
+        .json({ message: "User has been updated", user: updatedUser });
 
       return;
     }
@@ -66,7 +66,7 @@ adminRoutes.put("/update", async (req: Request, res: Response) => {
         return;
       }
 
-      const updatedUser = await updateUser(userDoc.id, user);
+      const updatedUser = await updateUser(userDoc._id.toString(), user);
 
       res
         .status(StatusCodes.OK)
@@ -119,7 +119,7 @@ adminRoutes.post("/create", async (res: Response, req: Request) => {
       return;
     }
 
-    res.status(StatusCodes.CREATED).json({ message: "Success", newUser });
+    res.status(StatusCodes.CREATED).json({ message: "Success", user: newUser });
   } catch (err: any) {
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)

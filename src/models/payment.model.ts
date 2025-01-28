@@ -3,11 +3,6 @@ import { IPayment } from "../interfaces";
 
 const PaymentSchema: Schema<IPayment> = new Schema(
   {
-    id: {
-      type: String,
-      required: true,
-      unique: true,
-    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
