@@ -1,15 +1,15 @@
 import { Request, Response, NextFunction } from "express";
+import { IUser } from "../interfaces";
 import { StatusCodes } from "../config";
 import { findUserByUsername, verifyPassword } from "../controllers";
 import passport from "passport";
 import * as passportStrategy from "passport-local";
-import { IUser } from "../interfaces";
 
-interface SerializedUser {
+type User = {
   username: string;
   role: string;
   isBanned: boolean;
-}
+};
 
 /**
  * Basic authentication check - verifies if user is logged in
@@ -37,16 +37,13 @@ async function authGuard(
   }
 }
 
-/**
- * Full authentication check - verifies session, user exists in DB, and user status
- */
 async function authenticateUser(
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
   try {
-    const sessionUser = req.session.user;
+    const sessionUser = req.session?.user;
     if (!sessionUser) {
       res
         .status(StatusCodes.UNAUTHORIZED)
@@ -57,11 +54,8 @@ async function authenticateUser(
     const userDoc = await findUserByUsername(sessionUser.username);
     if (!userDoc) {
       req.session.destroy((err) => {
-        if (err) {
-          console.error("Session destruction failed:", err);
-        }
+        if (err) console.error("Session destruction failed:", err);
       });
-
       res
         .status(StatusCodes.UNAUTHORIZED)
         .json({ message: "User account not found" });
@@ -75,13 +69,23 @@ async function authenticateUser(
       return;
     }
 
-    req.session.user = {
+    const user: User = {
       username: userDoc.username,
       role: userDoc.role,
       isBanned: userDoc.isBanned,
     };
 
-    next();
+    req.session.user = user;
+
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error:", err);
+        return res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .json({ message: "Session update failed" });
+      }
+      next();
+    });
   } catch (err) {
     console.error("Authentication error:", err);
     res
@@ -90,44 +94,13 @@ async function authenticateUser(
   }
 }
 
-/**
- * Role-based authorization check
- */
-function authorizeRoles(...allowedRoles: string[]) {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const user = req.session.user;
-
-      if (!user) {
-        res
-          .status(StatusCodes.UNAUTHORIZED)
-          .json({ message: "Login required to access this route" });
-        return;
-      }
-
-      if (!allowedRoles.includes(user.role)) {
-        res
-          .status(StatusCodes.FORBIDDEN)
-          .json({ message: "Insufficient permissions to access this route" });
-        return;
-      }
-
-      next();
-    } catch (error) {
-      res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .json({ message: "Authorization process failed" });
-    }
-  };
-}
-
 passport.serializeUser((user: Partial<IUser>, done) => {
   try {
     if (!user.username || !user.role) {
       throw new Error("Invalid user data for serialization");
     }
 
-    const sessionUser: SerializedUser = {
+    const sessionUser: User = {
       username: user.username,
       role: user.role,
       isBanned: user.isBanned || false,
@@ -139,7 +112,7 @@ passport.serializeUser((user: Partial<IUser>, done) => {
   }
 });
 
-passport.deserializeUser(async (serializedUser: SerializedUser, done) => {
+passport.deserializeUser(async (serializedUser: User, done) => {
   try {
     if (!serializedUser.username) {
       throw new Error("Invalid session data");
@@ -159,11 +132,10 @@ passport.deserializeUser(async (serializedUser: SerializedUser, done) => {
       return done(new Error("Account is deactivated"), false);
     }
 
-    const sanitizedUser = {
+    const sanitizedUser: User = {
       username: user.username,
       role: user.role,
       isBanned: user.isBanned,
-      isDeleted: user.isDeleted,
     };
 
     done(null, sanitizedUser);
@@ -196,5 +168,33 @@ const Passport = passport.use(
     }
   )
 );
+
+function authorizeRoles(...allowedRoles: string[]) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = req.session.user;
+
+      if (!user) {
+        res
+          .status(StatusCodes.UNAUTHORIZED)
+          .json({ message: "Login required to access this route" });
+        return;
+      }
+
+      if (!allowedRoles.includes(user.role)) {
+        res
+          .status(StatusCodes.FORBIDDEN)
+          .json({ message: "Insufficient permissions to access this route" });
+        return;
+      }
+
+      next();
+    } catch (error) {
+      res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ message: "Authorization process failed" });
+    }
+  };
+}
 
 export { authGuard, authenticateUser, authorizeRoles, Passport };

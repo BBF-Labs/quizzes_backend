@@ -6,7 +6,7 @@ interface IMaterial extends Document {
   url: string;
   type: "pdf" | "doc" | "slides" | "text" | "img";
   uploadedBy: Types.ObjectId;
-  subject?: string;
+  courseId: Types.ObjectId;
 }
 
 export default IMaterial;

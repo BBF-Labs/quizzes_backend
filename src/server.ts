@@ -1,4 +1,4 @@
-import express, { Express, NextFunction, Request, Response } from "express";
+import express, { Express, Request, Response } from "express";
 import { Config } from "./config";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./utils";
@@ -8,6 +8,7 @@ import {
   Passport,
   ErrorHandler,
   Logger,
+  CorsOption,
 } from "./middlewares";
 import helmet from "helmet";
 import {
@@ -17,7 +18,10 @@ import {
   courseRoutes,
   questionRoutes,
   quizQuestionsRoutes,
+  progressRoutes,
+  materialRoutes,
 } from "./routes";
+import cors from "cors";
 
 const app: Express = express();
 
@@ -43,6 +47,7 @@ async function startServer() {
     app.set("trust proxy", 1);
     app.use(Session);
     app.use(Limiter);
+    app.use(cors(CorsOption));
     app.use(helmet());
     app.use(Passport.initialize());
     app.use(Passport.session());
@@ -53,6 +58,8 @@ async function startServer() {
     app.use("/api/v1/courses", courseRoutes);
     app.use("/api/v1/question", questionRoutes);
     app.use("/api/v1/quizzes", quizQuestionsRoutes);
+    app.use("/api/v1/progress", progressRoutes);
+    app.use("/api/v1/materials", materialRoutes);
 
     app.get("/", (req: Request, res: Response) => {
       res.send("Hello World");

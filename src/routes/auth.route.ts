@@ -37,69 +37,62 @@ authRoutes.post(
         return;
       }
 
-      passport.authenticate(
-        "local",
-        { session: true },
-        (err: any, user: any, info: any) => {
+      passport.authenticate("local", (err: any, user: any, info: any) => {
+        if (err) {
+          res
+            .status(StatusCodes.INTERNAL_SERVER_ERROR)
+            .json({ message: err.message });
+          return;
+        }
+
+        if (!user) {
+          res
+            .status(StatusCodes.UNAUTHORIZED)
+            .json({ message: info?.message || "Authentication failed" });
+          return;
+        }
+
+        if (user.isBanned || user.isDeleted) {
+          res.status(StatusCodes.FORBIDDEN).json({
+            message: user.isBanned ? "User is banned" : "Account Deactivated",
+          });
+          return;
+        }
+
+        req.logIn(user, (err) => {
           if (err) {
             res
               .status(StatusCodes.INTERNAL_SERVER_ERROR)
-              .json({ message: err.message });
+              .json({ message: "Failed to establish session" });
             return;
           }
 
-          if (!user) {
-            res
-              .status(StatusCodes.UNAUTHORIZED)
-              .json({ message: info?.message || "Authentication failed" });
-            return;
-          }
-
-          if (user.isBanned) {
-            res
-              .status(StatusCodes.FORBIDDEN)
-              .json({ message: "User is banned" });
-            return;
-          }
-
-          if (user.isDeleted) {
-            res
-              .status(StatusCodes.FORBIDDEN)
-              .json({ message: "Account Deactivated" });
-            return;
-          }
-
-          const sessionUser: ISessionUser = {
+          req.session.user = {
             username: user.username,
             role: user.role,
             isBanned: user.isBanned,
           };
 
-          req.session.regenerate((err) => {
+          req.session.save((err) => {
             if (err) {
               res
                 .status(StatusCodes.INTERNAL_SERVER_ERROR)
-                .json({ message: "Failed to generate session" });
+                .json({ message: "Failed to save session" });
+              return;
               return;
             }
 
-            req.session.user = sessionUser;
-
-            req.session.save((err) => {
-              if (err) {
-                res
-                  .status(StatusCodes.INTERNAL_SERVER_ERROR)
-                  .json({ message: "Failed to save session" });
-                return;
-              }
-
-              res
-                .status(StatusCodes.OK)
-                .json({ message: "Success", user: sessionUser });
+            res.status(StatusCodes.OK).json({
+              message: "Success",
+              user: {
+                username: user.username,
+                role: user.role,
+                isBanned: user.isBanned,
+              },
             });
           });
-        }
-      )(req, res);
+        });
+      })(req, res);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Internal server error";
