@@ -4,30 +4,19 @@ import { Config } from "../config";
 import { IUser } from "../interfaces";
 
 interface TokenUser {
-  role: "student" | "admin" | "moderator";
-  isBanned: boolean;
   username: string;
+  role: string;
+  isBanned: boolean;
 }
 
 async function generateAccessToken(user: Partial<IUser> | null) {
-  try {
-    if (!user) {
-      throw new Error("User is undefined");
-    }
-    return await Jwt.sign(user, Config.ACCESS_TOKEN_SECRET, {
-      expiresIn: "15m",
-    });
-  } catch (err: any) {
-    throw new Error("User is undefined");
-  }
+  return await Jwt.sign(user!, Config.ACCESS_TOKEN_SECRET, {
+    expiresIn: "15m",
+  });
 }
 
 async function generateRefreshToken(user: Partial<IUser>) {
-  try {
-    return await Jwt.sign(user, Config.REFRESH_TOKEN_SECRET);
-  } catch (err: any) {
-    throw new Error("User is undefined");
-  }
+  return await Jwt.sign(user, Config.REFRESH_TOKEN_SECRET);
 }
 
 async function verifyToken(token: string): Promise<TokenUser | null> {
@@ -45,7 +34,7 @@ async function verifyToken(token: string): Promise<TokenUser | null> {
     const role = decoded.role;
     const isBanned = decoded.isBanned;
 
-    return { username, role, isBanned } as TokenUser;
+    return { username, role, isBanned };
   } catch (err: any) {
     return null;
   }
@@ -62,29 +51,22 @@ async function verifyRefreshToken(token: string) {
       throw new Error("Invalid token format");
     }
 
-    const userId = decoded.id;
-    const email = decoded.email;
+    const username = decoded.username;
+    const role = decoded.role;
+    const isBanned = decoded.isBanned;
 
-    return { id: userId, email: email } as Partial<IUser>;
+    return { username, role, isBanned };
   } catch (err: any) {
     return null;
   }
 }
 
 async function hashPassword(password: string) {
-  try {
-    return await bcrypt.hash(password, Config.SALT_ROUNDS);
-  } catch (err: any) {
-    throw new Error("Password is required");
-  }
+  return await bcrypt.hash(password, Config.SALT_ROUNDS);
 }
 
 async function verifyPassword(password: string, hashedPassword: string) {
-  try {
-    return await bcrypt.compare(password, hashedPassword);
-  } catch (err: any) {
-    throw new Error("Password is required");
-  }
+  return await bcrypt.compare(password, hashedPassword);
 }
 
 export {

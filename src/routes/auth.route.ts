@@ -1,5 +1,4 @@
 import { Router, Request, Response } from "express";
-import { Session } from "express-session";
 import {
   generateAccessToken,
   verifyPassword,
@@ -52,8 +51,8 @@ authRoutes.post("/login", async (req: Request, res: Response) => {
       isBanned: user.isBanned,
     };
 
-    const accessToken = generateAccessToken(payload);
-    const refreshToken = generateRefreshToken(payload);
+    const accessToken = await generateAccessToken(payload);
+    const refreshToken = await generateRefreshToken(payload);
 
     res.json({
       accessToken,
