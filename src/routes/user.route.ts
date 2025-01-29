@@ -123,14 +123,14 @@ userRoutes.get(
   authenticateUser,
   async (req: Request, res: Response) => {
     try {
-      if (!req.session.user?.username) {
+      if (!req.user?.username) {
         res
           .status(StatusCodes.UNAUTHORIZED)
           .json({ message: "User not found" });
         return;
       }
 
-      const username = req.session.user.username;
+      const username = req.user.username;
       const userDoc = await findUserByUsername(username);
 
       if (!userDoc) {
@@ -193,7 +193,7 @@ userRoutes.put(
   authGuard,
   async (req: Request, res: Response) => {
     try {
-      const user = req.session.user;
+      const user = req.user;
 
       if (!user) {
         res
@@ -226,33 +226,18 @@ userRoutes.put(
 
       const updatedUserDoc = await updateUser(userDoc._id.toString(), updates);
 
-      req.session.regenerate((err) => {
-        if (err) {
-          res
-            .status(StatusCodes.INTERNAL_SERVER_ERROR)
-            .json({ message: "Error regenerating session" });
-          return;
-        }
-
-        req.session.user = {
-          username: updates.username || userDoc.username,
-          isBanned: updates.isBanned ?? userDoc.isBanned,
-          role: updates.role || userDoc.role,
-        };
-
-        req.session.save((err) => {
-          if (err) {
-            res
-              .status(StatusCodes.INTERNAL_SERVER_ERROR)
-              .json({ message: "Error saving session" });
-            return;
-          }
-          res.status(StatusCodes.OK).json({
-            message: "User updated successfully",
-            user: updatedUserDoc,
-          });
+      if (!updatedUserDoc) {
+        res.status(StatusCodes.NOT_FOUND).json({
+          error: "Error",
+          message: "User not found",
         });
-      });
+      }
+
+      req.user = {
+        username: updates.username || userDoc.username,
+        isBanned: updates.isBanned ?? userDoc.isBanned,
+        role: updates.role || userDoc.role,
+      };
     } catch (err: any) {
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)

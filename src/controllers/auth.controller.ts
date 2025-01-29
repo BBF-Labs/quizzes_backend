@@ -4,12 +4,15 @@ import { Config } from "../config";
 import { IUser } from "../interfaces";
 
 interface TokenUser {
-  id: string;
-  email: string;
+  username: string;
+  role: string;
+  isBanned: boolean;
 }
 
-async function generateAccessToken(user: Partial<IUser>) {
-  return await Jwt.sign(user, Config.ACCESS_TOKEN_SECRET, { expiresIn: "15m" });
+async function generateAccessToken(user: Partial<IUser> | null) {
+  return await Jwt.sign(user!, Config.ACCESS_TOKEN_SECRET, {
+    expiresIn: "15m",
+  });
 }
 
 async function generateRefreshToken(user: Partial<IUser>) {
@@ -27,17 +30,35 @@ async function verifyToken(token: string): Promise<TokenUser | null> {
       throw new Error("Invalid token format");
     }
 
-    const userId = decoded.id;
-    const email = decoded.email;
+    const username = decoded.username;
+    const role = decoded.role;
+    const isBanned = decoded.isBanned;
 
-    return { id: userId, email: email };
+    return { username, role, isBanned };
   } catch (err: any) {
     return null;
   }
 }
 
 async function verifyRefreshToken(token: string) {
-  return await Jwt.verify(token, Config.REFRESH_TOKEN_SECRET);
+  try {
+    const decoded = (await Jwt.verify(
+      token,
+      Config.REFRESH_TOKEN_SECRET
+    )) as JwtPayload;
+
+    if (!decoded || !decoded.id) {
+      throw new Error("Invalid token format");
+    }
+
+    const username = decoded.username;
+    const role = decoded.role;
+    const isBanned = decoded.isBanned;
+
+    return { username, role, isBanned };
+  } catch (err: any) {
+    return null;
+  }
 }
 
 async function hashPassword(password: string) {

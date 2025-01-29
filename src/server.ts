@@ -2,14 +2,7 @@ import express, { Express, Request, Response } from "express";
 import { Config } from "./config";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./utils";
-import {
-  Limiter,
-  startSession,
-  Passport,
-  ErrorHandler,
-  Logger,
-  CorsOption,
-} from "./middlewares";
+import { Limiter, ErrorHandler, Logger, CorsOption } from "./middlewares";
 import helmet from "helmet";
 import {
   userRoutes,
@@ -25,32 +18,15 @@ import cors from "cors";
 
 const app: Express = express();
 
-type User = {
-  username: string;
-  role: string;
-  isBanned: boolean;
-};
-
-declare module "express-session" {
-  interface SessionData {
-    user: User;
-  }
-}
-
 async function startServer() {
   try {
-    const Session = await startSession();
-
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.disable("x-powered-by");
     app.set("trust proxy", 1);
-    app.use(Session);
     app.use(Limiter);
     app.use(cors(CorsOption));
     app.use(helmet());
-    app.use(Passport.initialize());
-    app.use(Passport.session());
     app.use("/api/v1/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
     app.use("/api/v1/users", userRoutes);
     app.use("/api/v1/auth", authRoutes);

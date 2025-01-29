@@ -46,14 +46,18 @@ function ErrorHandler(
 }
 
 function Logger(req: Request, res: Response, next: NextFunction) {
-  const { method, originalUrl, ip } = req;
-  const userAgent = req.headers["user-agent"] || "unknown";
-  res.on("finish", () => {
-    logger.info(
-      `${method} ${originalUrl} [${res.statusCode}] - IP: ${ip} - User-Agent: ${userAgent}`
-    );
-  });
-  next();
+  try {
+    const { method, originalUrl, ip } = req;
+    const userAgent = req.headers["user-agent"] || "unknown";
+    res.on("finish", () => {
+      logger.info(
+        `${method} ${originalUrl} [${res.statusCode}] - IP: ${ip} - User-Agent: ${userAgent}`
+      );
+    });
+    next();
+  } catch (err: any) {
+    next(err.message);
+  }
 }
 
 export { ErrorHandler, Logger };

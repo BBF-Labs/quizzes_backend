@@ -23,7 +23,7 @@ questionRoutes.get("/id/c/:courseId", async (req: Request, res: Response) => {
   try {
     const courseId = req.params.courseId;
 
-    const user = req.session.user;
+    const user = req.user;
 
     if (!user) {
       res
@@ -147,7 +147,7 @@ questionRoutes.post(
   authorizeRoles("admin", "moderator"),
   async (req: Request, res: Response) => {
     try {
-      const user = req.session.user;
+      const user = req.user;
 
       if (!user) {
         res
@@ -202,7 +202,7 @@ questionRoutes.post("/create", async (req: Request, res: Response) => {
 
     const courseId = question.courseId;
 
-    const author = req.session.user?.username;
+    const author = req.user?.username;
 
     if (!author) {
       res
@@ -239,7 +239,7 @@ questionRoutes.post(
   authorizeRoles("admin", "moderator"),
   async (req: Request, res: Response) => {
     try {
-      const user = req.session.user;
+      const user = req.user;
 
       if (!user) {
         res
