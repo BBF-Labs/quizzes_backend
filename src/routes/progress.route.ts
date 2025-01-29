@@ -15,7 +15,7 @@ progressRoutes.use(authenticateUser);
 progressRoutes.get("/user/:courseId", async (req: Request, res: Response) => {
   try {
     const { courseId } = req.params;
-    const user = req.session.user;
+    const user = req.user;
 
     if (!user) {
       res
@@ -44,7 +44,7 @@ progressRoutes.get("/user/:courseId", async (req: Request, res: Response) => {
 
 progressRoutes.get("/user", async (req: Request, res: Response) => {
   try {
-    const user = req.session.user;
+    const user = req.user;
 
     if (!user) {
       res
@@ -67,7 +67,7 @@ progressRoutes.get("/user", async (req: Request, res: Response) => {
 
 progressRoutes.post("/create", async (req: Request, res: Response) => {
   try {
-    const user = req.session.user;
+    const user = req.user;
 
     if (!user) {
       res
@@ -92,7 +92,7 @@ progressRoutes.post("/create", async (req: Request, res: Response) => {
 
 progressRoutes.put("/:progressId", async (req: Request, res: Response) => {
   try {
-    const user = req.session.user;
+    const user = req.user;
 
     if (!user) {
       res

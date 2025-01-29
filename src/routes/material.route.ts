@@ -46,7 +46,7 @@ materialRoutes.post(
   upload.single("file"),
   async (req: Request, res: Response) => {
     try {
-      const user = req.session.user;
+      const user = req.user;
 
       if (!user) {
         res.status(StatusCodes.UNAUTHORIZED).json({
@@ -103,7 +103,7 @@ materialRoutes.get("/", async (req: Request, res: Response) => {
 
 materialRoutes.get("/user", async (req: Request, res: Response) => {
   try {
-    const user = req.session.user;
+    const user = req.user;
 
     if (!user) {
       res.status(StatusCodes.UNAUTHORIZED).json({

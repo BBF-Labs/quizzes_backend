@@ -4,16 +4,30 @@ import { Config } from "../config";
 import { IUser } from "../interfaces";
 
 interface TokenUser {
-  id: string;
-  email: string;
+  role: "student" | "admin" | "moderator";
+  isBanned: boolean;
+  username: string;
 }
 
-async function generateAccessToken(user: Partial<IUser>) {
-  return await Jwt.sign(user, Config.ACCESS_TOKEN_SECRET, { expiresIn: "15m" });
+async function generateAccessToken(user: Partial<IUser> | null) {
+  try {
+    if (!user) {
+      throw new Error("User is undefined");
+    }
+    return await Jwt.sign(user, Config.ACCESS_TOKEN_SECRET, {
+      expiresIn: "15m",
+    });
+  } catch (err: any) {
+    throw new Error("User is undefined");
+  }
 }
 
 async function generateRefreshToken(user: Partial<IUser>) {
-  return await Jwt.sign(user, Config.REFRESH_TOKEN_SECRET);
+  try {
+    return await Jwt.sign(user, Config.REFRESH_TOKEN_SECRET);
+  } catch (err: any) {
+    throw new Error("User is undefined");
+  }
 }
 
 async function verifyToken(token: string): Promise<TokenUser | null> {
@@ -27,25 +41,50 @@ async function verifyToken(token: string): Promise<TokenUser | null> {
       throw new Error("Invalid token format");
     }
 
-    const userId = decoded.id;
-    const email = decoded.email;
+    const username = decoded.username;
+    const role = decoded.role;
+    const isBanned = decoded.isBanned;
 
-    return { id: userId, email: email };
+    return { username, role, isBanned } as TokenUser;
   } catch (err: any) {
     return null;
   }
 }
 
 async function verifyRefreshToken(token: string) {
-  return await Jwt.verify(token, Config.REFRESH_TOKEN_SECRET);
+  try {
+    const decoded = (await Jwt.verify(
+      token,
+      Config.REFRESH_TOKEN_SECRET
+    )) as JwtPayload;
+
+    if (!decoded || !decoded.id) {
+      throw new Error("Invalid token format");
+    }
+
+    const userId = decoded.id;
+    const email = decoded.email;
+
+    return { id: userId, email: email } as Partial<IUser>;
+  } catch (err: any) {
+    return null;
+  }
 }
 
 async function hashPassword(password: string) {
-  return await bcrypt.hash(password, Config.SALT_ROUNDS);
+  try {
+    return await bcrypt.hash(password, Config.SALT_ROUNDS);
+  } catch (err: any) {
+    throw new Error("Password is required");
+  }
 }
 
 async function verifyPassword(password: string, hashedPassword: string) {
-  return await bcrypt.compare(password, hashedPassword);
+  try {
+    return await bcrypt.compare(password, hashedPassword);
+  } catch (err: any) {
+    throw new Error("Password is required");
+  }
 }
 
 export {

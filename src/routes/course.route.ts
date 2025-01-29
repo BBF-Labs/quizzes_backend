@@ -84,7 +84,7 @@ courseRoutes.post(
   authorizeRoles("admin"),
   async (req: Request, res: Response) => {
     try {
-      const user = req.session.user;
+      const user = req.user;
 
       if (!user) {
         res.status(StatusCodes.UNAUTHORIZED).json({ message: "Unauthorized" });
