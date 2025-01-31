@@ -20,14 +20,22 @@ const app: Express = express();
 
 async function startServer() {
   try {
+    // 🛠️ request body parsers
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
+
     app.disable("x-powered-by");
     app.set("trust proxy", 1);
-    app.use(Limiter);
+
+    // 🛠️ security and other middleware
     app.use(cors(CorsOption));
     app.use(helmet());
+    app.use(Limiter);
+
+    // Swagger Docs
     app.use("/api/v1/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+    // Routes
     app.use("/api/v1/users", userRoutes);
     app.use("/api/v1/auth", authRoutes);
     app.use("/api/v1/admin", adminRoutes);
@@ -37,22 +45,25 @@ async function startServer() {
     app.use("/api/v1/progress", progressRoutes);
     app.use("/api/v1/materials", materialRoutes);
 
+    // Root Route
     app.get("/", (req: Request, res: Response) => {
       res.send("Hello World");
     });
 
+    // Error Handling & Logging Middleware
     app.use(ErrorHandler);
     app.use(Logger);
 
+    // Start Server
     const server = app.listen(Config.PORT, () => {
-      Config.ENV === "development" &&
-        console.log(`Server running on http://localhost:${Config.PORT}`);
+      if (Config.ENV === "development") {
+        console.log(`🚀 Server running on http://localhost:${Config.PORT}`);
+      }
     });
+
     return server;
   } catch (error: any) {
-    Config.ENV === "development" &&
-      console.error("Error starting server: ", error.message);
-    Config.ENV !== "development" && console.error("Error starting Server");
+    console.error(`❌ Error starting server: ${error.message}`);
   }
 }
 
