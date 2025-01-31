@@ -41,6 +41,43 @@ const upload = multer({
 
 materialRoutes.use(authenticateUser);
 
+/**
+ * @swagger
+ * /api/v1/materials/upload:
+ *   post:
+ *     summary: Upload course material
+ *     description: Upload a new course material file
+ *     tags:
+ *       - Materials
+ *     security:
+ *      - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - file
+ *               - courseId
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: Material file (max 10MB)
+ *               courseId:
+ *                 type: string
+ *                 description: ID of the course
+ *     responses:
+ *       201:
+ *         description: Material uploaded successfully
+ *       400:
+ *         description: Invalid file or missing course ID
+ *       401:
+ *         description: Not authenticated
+ *       500:
+ *         description: Internal server error
+ */
 materialRoutes.post(
   "/upload",
   upload.single("file"),
@@ -87,6 +124,42 @@ materialRoutes.post(
   }
 );
 
+/**
+ * @swagger
+ * /api/v1/materials:
+ *   get:
+ *     summary: Get all materials
+ *     description: Retrieve all course materials
+ *     tags:
+ *       - Materials
+ *     security:
+ *      - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Materials retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 materials:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       filename:
+ *                         type: string
+ *                       courseId:
+ *                         type: string
+ *                       uploadedBy:
+ *                         type: string
+ *                       url:
+ *                         type: string
+ *       401:
+ *         description: Not authenticated
+ *       500:
+ *         description: Internal server error
+ */
 materialRoutes.get("/", async (req: Request, res: Response) => {
   try {
     const materials = await getMaterials();
@@ -101,6 +174,46 @@ materialRoutes.get("/", async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/materials/user:
+ *   get:
+ *     summary: Get user materials
+ *     description: Retrieve all materials uploaded by the authenticated user
+ *     tags:
+ *       - Materials
+ *     security:
+ *      - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User materials retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 materials:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       filename:
+ *                         type: string
+ *                         description: Name of the uploaded file
+ *                       courseId:
+ *                         type: string
+ *                         description: ID of the course the material belongs to
+ *                       uploadedBy:
+ *                         type: string
+ *                         description: Username of the user who uploaded the material
+ *                       url:
+ *                         type: string
+ *                         description: URL to access the material
+ *       401:
+ *         description: Not authenticated
+ *       500:
+ *         description: Internal server error
+ */
 materialRoutes.get("/user", async (req: Request, res: Response) => {
   try {
     const user = req.user;
@@ -127,6 +240,53 @@ materialRoutes.get("/user", async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/materials/course/{courseId}:
+ *   get:
+ *     summary: Get course materials
+ *     description: Retrieve all materials for a specific course
+ *     tags:
+ *       - Materials
+ *     security:
+ *      - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the course to get materials for
+ *     responses:
+ *       200:
+ *         description: Course materials retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 materials:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       filename:
+ *                         type: string
+ *                         description: Name of the uploaded file
+ *                       courseId:
+ *                         type: string
+ *                         description: ID of the course the material belongs to
+ *                       uploadedBy:
+ *                         type: string
+ *                         description: Username of the user who uploaded the material
+ *                       url:
+ *                         type: string
+ *                         description: URL to access the material
+ *       400:
+ *         description: Course ID is required
+ *       500:
+ *         description: Internal server error
+ */
 materialRoutes.get("/course/:courseId", async (req: Request, res: Response) => {
   try {
     const courseId = req.params.courseId;
