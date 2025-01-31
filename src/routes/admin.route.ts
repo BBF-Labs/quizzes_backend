@@ -23,7 +23,7 @@ adminRoutes.use(authorizeRoles("admin"));
  *     tags:
  *       - Admin
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -128,7 +128,7 @@ adminRoutes.put("/update", async (req: Request, res: Response) => {
  *     tags:
  *       - Admin
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:

@@ -297,7 +297,7 @@ questionRoutes.get(
  *     tags:
  *       - Questions
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -394,7 +394,7 @@ questionRoutes.post("/moderate", async (req: Request, res: Response) => {
  *     tags:
  *       - Questions
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -503,7 +503,7 @@ questionRoutes.post("/create", async (req: Request, res: Response) => {
  *     tags:
  *       - Questions
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: courseId

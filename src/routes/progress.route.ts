@@ -21,7 +21,7 @@ progressRoutes.use(authenticateUser);
  *     tags:
  *       - Progress
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: courseId
@@ -95,7 +95,7 @@ progressRoutes.get("/user/:courseId", async (req: Request, res: Response) => {
  *     tags:
  *       - Progress
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     responses:
  *       200:
  *         description: Progress retrieved successfully
@@ -155,7 +155,7 @@ progressRoutes.get("/user", async (req: Request, res: Response) => {
  *     tags:
  *       - Progress
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -223,7 +223,7 @@ progressRoutes.post("/create", async (req: Request, res: Response) => {
  *     tags:
  *       - Progress
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: progressId

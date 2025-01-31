@@ -21,7 +21,7 @@ quizQuestionsRoutes.use(authenticateUser);
  *     tags:
  *       - Quiz Questions
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     responses:
  *       200:
  *         description: Success
@@ -67,7 +67,7 @@ quizQuestionsRoutes.get("/", async (req: Request, res: Response) => {
  *     tags:
  *       - Quiz Questions
  *     security:
- *     - bearerAuth: []
+ *     - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -125,7 +125,7 @@ quizQuestionsRoutes.post(
  *     tags:
  *       - Quiz Questions
  *     security:
- *     - bearerAuth: []
+ *     - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -168,7 +168,7 @@ quizQuestionsRoutes.put("/update", async (req: Request, res: Response) => {
  *     tags:
  *       - Quiz Questions
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: courseId
@@ -224,7 +224,7 @@ quizQuestionsRoutes.get(
  *     tags:
  *       - Quiz Questions
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: courseId

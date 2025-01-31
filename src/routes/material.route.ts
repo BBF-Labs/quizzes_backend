@@ -50,7 +50,7 @@ materialRoutes.use(authenticateUser);
  *     tags:
  *       - Materials
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -133,7 +133,7 @@ materialRoutes.post(
  *     tags:
  *       - Materials
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     responses:
  *       200:
  *         description: Materials retrieved successfully
@@ -183,7 +183,7 @@ materialRoutes.get("/", async (req: Request, res: Response) => {
  *     tags:
  *       - Materials
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     responses:
  *       200:
  *         description: User materials retrieved successfully
@@ -249,7 +249,7 @@ materialRoutes.get("/user", async (req: Request, res: Response) => {
  *     tags:
  *       - Materials
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: courseId

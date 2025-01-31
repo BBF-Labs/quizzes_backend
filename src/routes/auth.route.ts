@@ -131,7 +131,7 @@ authRoutes.post("/login", async (req: Request, res: Response) => {
  *     tags:
  *       - Auth
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
