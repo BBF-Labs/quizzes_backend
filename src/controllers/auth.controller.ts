@@ -9,14 +9,28 @@ interface TokenUser {
   isBanned: boolean;
 }
 
-async function generateAccessToken(user: Partial<IUser> | null) {
-  return await Jwt.sign(user!, Config.ACCESS_TOKEN_SECRET, {
-    expiresIn: "15m",
-  });
+async function generateAccessToken(user: TokenUser) {
+  if (!user || Object.keys(user).length === 0) {
+    throw new Error("Invalid user object for access token generation");
+  }
+
+  return Jwt.sign(
+    { username: user.username, role: user.role, isBanned: user.isBanned },
+    Config.ACCESS_TOKEN_SECRET,
+    { expiresIn: "15m" }
+  );
 }
 
 async function generateRefreshToken(user: Partial<IUser>) {
-  return await Jwt.sign(user, Config.REFRESH_TOKEN_SECRET);
+  if (!user || Object.keys(user).length === 0) {
+    throw new Error("Invalid user object for access token generation");
+  }
+
+  return Jwt.sign(
+    { username: user.username, role: user.role, isBanned: user.isBanned },
+    Config.REFRESH_TOKEN_SECRET,
+    { expiresIn: "15m" }
+  );
 }
 
 async function verifyToken(token: string): Promise<TokenUser | null> {
@@ -26,7 +40,7 @@ async function verifyToken(token: string): Promise<TokenUser | null> {
       Config.ACCESS_TOKEN_SECRET
     )) as JwtPayload;
 
-    if (!decoded || !decoded.id) {
+    if (!decoded || !decoded.username) {
       throw new Error("Invalid token format");
     }
 
@@ -47,7 +61,7 @@ async function verifyRefreshToken(token: string) {
       Config.REFRESH_TOKEN_SECRET
     )) as JwtPayload;
 
-    if (!decoded || !decoded.id) {
+    if (!decoded || !decoded.username) {
       throw new Error("Invalid token format");
     }
 
@@ -55,7 +69,7 @@ async function verifyRefreshToken(token: string) {
     const role = decoded.role;
     const isBanned = decoded.isBanned;
 
-    return { username, role, isBanned };
+    return { username, role, isBanned } as Partial<IUser>;
   } catch (err: any) {
     return null;
   }

@@ -1,14 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { IUser } from "../interfaces";
 import { StatusCodes } from "../config";
-import {
-  findUserByUsername,
-  verifyPassword,
-  generateAccessToken,
-  generateRefreshToken,
-  verifyToken,
-  verifyRefreshToken,
-} from "../controllers";
+import { findUserByUsername } from "../controllers";
 import jwt from "jsonwebtoken";
 import { Config } from "../config";
 
@@ -98,7 +91,6 @@ async function authenticateUser(
       res.status(StatusCodes.UNAUTHORIZED).json({ message: "Token expired" });
       return;
     }
-    console.error("Authentication error:", error);
     res.status(StatusCodes.UNAUTHORIZED).json({ message: "Invalid token" });
   }
 }
