@@ -1,200 +1,203 @@
 import { Router, Request, Response } from "express";
-import { Session } from "express-session";
 import {
   generateAccessToken,
   verifyPassword,
   generateRefreshToken,
-  findUserByEmail,
+  verifyRefreshToken,
   findUserByUsername,
 } from "../controllers";
-import { authGuard, authenticateUser, authorizeRoles } from "../middlewares";
+import { authenticateUser } from "../middlewares";
 import { StatusCodes } from "../config";
-import passport from "passport";
 
-interface ILoginRequest {
+type JWTPayload = {
   username: string;
-  password: string;
-}
-
-interface ISessionUser {
-  username: string;
-  role: string;
+  role: "student" | "admin" | "moderator";
   isBanned: boolean;
-}
+};
 
 const authRoutes: Router = Router();
 
-authRoutes.post(
-  "/login",
-  (req: Request<{}, {}, ILoginRequest>, res: Response) => {
-    try {
-      const { username, password } = req.body;
+/**
+ * @swagger
+ * /api/v1/auth/login:
+ *   post:
+ *     summary: Log in a user
+ *     description: Log in a user to get tokens and user details.
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: The user's username.
+ *               password:
+ *                 type: string
+ *                 description: The user's password.
+ *     responses:
+ *       200:
+ *         description: User logged in successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 accessToken:
+ *                   type: string
+ *                   description: JWT access token
+ *                 refreshToken:
+ *                   type: string
+ *                   description: JWT refresh token
+ *                 user:
+ *                   type: object
+ *                   description: User information
+ *                   properties:
+ *                     username:
+ *                       type: string
+ *                       description: The user's username
+ *                     role:
+ *                       type: string
+ *                       description: The user's role
+ *                     isBanned:
+ *                       type: boolean
+ *                       description: Whether the user is banned
+ *       401:
+ *         description: Unauthorized - Invalid credentials
+ *       403:
+ *         description: Forbidden - User is banned
+ *       500:
+ *         description: Internal server error
+ */
+authRoutes.post("/login", async (req: Request, res: Response) => {
+  try {
+    const { username, password } = req.body;
+    const user = await findUserByUsername(username);
 
-      if (!username || !password) {
-        res
-          .status(StatusCodes.BAD_REQUEST)
-          .json({ message: "Username and password are required" });
-        return;
-      }
-
-      passport.authenticate("local", (err: any, user: any, info: any) => {
-        if (err) {
-          res
-            .status(StatusCodes.INTERNAL_SERVER_ERROR)
-            .json({ message: err.message });
-          return;
-        }
-
-        if (!user) {
-          res
-            .status(StatusCodes.UNAUTHORIZED)
-            .json({ message: info?.message || "Authentication failed" });
-          return;
-        }
-
-        if (user.isBanned || user.isDeleted) {
-          res.status(StatusCodes.FORBIDDEN).json({
-            message: user.isBanned ? "User is banned" : "Account Deactivated",
-          });
-          return;
-        }
-
-        req.logIn(user, (err) => {
-          if (err) {
-            res
-              .status(StatusCodes.INTERNAL_SERVER_ERROR)
-              .json({ message: "Failed to establish session" });
-            return;
-          }
-
-          req.session.user = {
-            username: user.username,
-            role: user.role,
-            isBanned: user.isBanned,
-          };
-
-          req.session.save((err) => {
-            if (err) {
-              res
-                .status(StatusCodes.INTERNAL_SERVER_ERROR)
-                .json({ message: "Failed to save session" });
-              return;
-              return;
-            }
-
-            res.status(StatusCodes.OK).json({
-              message: "Success",
-              user: {
-                username: user.username,
-                role: user.role,
-                isBanned: user.isBanned,
-              },
-            });
-          });
-        });
-      })(req, res);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Internal server error";
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message });
-    }
-  }
-);
-
-authRoutes.post("/logout", authenticateUser, (req: Request, res: Response) => {
-  if (!req.session) {
-    res.status(StatusCodes.OK).json({ message: "Already logged out" });
-    return;
-  }
-
-  req.session.regenerate((regenerateErr) => {
-    if (regenerateErr) {
-      res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .json({ message: "Error during logout process" });
-      return;
-    }
-
-    req.session.destroy((destroyErr) => {
-      if (destroyErr) {
-        res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
-          .json({ message: "Failed to complete logout" });
-        return;
-      }
-
-      res.clearCookie("connect.sid", {
-        path: "/",
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-      });
-
-      res.status(StatusCodes.OK).json({
-        message: "Logged out successfully",
-        success: true,
-      });
-    });
-  });
-});
-
-authRoutes.post(
-  "/refresh-session",
-  authenticateUser,
-  (req: Request, res: Response) => {
-    if (!req.session || !req.session.user) {
+    if (!user) {
       res
         .status(StatusCodes.UNAUTHORIZED)
-        .json({ message: "No active session" });
+        .json({ message: "User does not exist" });
       return;
     }
 
-    const currentUser = req.session.user;
+    const isValidPassword = await verifyPassword(password, user.password);
 
-    req.session.regenerate((regenerateErr) => {
-      if (regenerateErr) {
-        res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
-          .json({ message: "Failed to refresh session" });
+    if (!isValidPassword) {
+      res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json({ message: "Invalid password" });
+      return;
+    }
+
+    if (user.isBanned) {
+      res
+        .status(StatusCodes.FORBIDDEN)
+        .json({ message: "Account has been suspended" });
+      return;
+    }
+
+    const payload: JWTPayload = {
+      username: user.username,
+      role: user.role,
+      isBanned: user.isBanned,
+    };
+
+    const accessToken = await generateAccessToken(payload);
+    const refreshToken = await generateRefreshToken(payload);
+
+    res.status(StatusCodes.OK).json({
+      accessToken,
+      refreshToken,
+      user: payload,
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "Login process failed" });
+  }
+});
+
+/**
+ * @swagger
+ * /api/v1/auth/refresh:
+ *   post:
+ *     summary: Refresh access token
+ *     description: Generate a new access token using a valid refresh token
+ *     tags:
+ *       - Auth
+ *     security:
+ *      - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refreshToken
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *                 description: The refresh token
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 accessToken:
+ *                   type: string
+ *                   description: New JWT access token
+ *       400:
+ *         description: No refresh token provided
+ *       401:
+ *         description: Invalid refresh token
+ *       500:
+ *         description: Internal server error
+ */
+
+authRoutes.post(
+  "/refresh",
+  authenticateUser,
+  async (req: Request, res: Response) => {
+    try {
+      const { refreshToken } = req.body;
+
+      if (!refreshToken) {
+        res.status(StatusCodes.BAD_REQUEST).json({
+          message: "Refresh token is required",
+        });
         return;
       }
 
-      req.session.user = currentUser;
+      const decoded = (await verifyRefreshToken(refreshToken)) as JWTPayload;
 
-      req.session.save((saveErr) => {
-        if (saveErr) {
-          res
-            .status(StatusCodes.INTERNAL_SERVER_ERROR)
-            .json({ message: "Failed to save refreshed session" });
-          return;
-        }
-
-        res.status(StatusCodes.OK).json({
-          message: "Session refreshed successfully",
-          success: true,
+      if (!decoded) {
+        res.status(StatusCodes.UNAUTHORIZED).json({
+          message: "Invalid refresh token",
         });
-      });
-    });
-  }
-);
+        return;
+      }
 
-authRoutes.get(
-  "/session-status",
-  authenticateUser,
-  (req: Request, res: Response) => {
-    if (!req.session || !req.session.user) {
+      const accessToken = await generateAccessToken(decoded);
+
       res.status(StatusCodes.OK).json({
-        isAuthenticated: false,
-        message: "No active session",
+        accessToken,
+        message: "Token refreshed successfully",
       });
-      return;
+    } catch (error) {
+      console.error("Token refresh error:", error);
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: "Token refresh failed",
+      });
     }
-
-    res.status(StatusCodes.OK).json({
-      isAuthenticated: true,
-      user: req.session.user,
-      message: "Active session found",
-    });
   }
 );
 

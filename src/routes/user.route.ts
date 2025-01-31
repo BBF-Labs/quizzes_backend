@@ -12,7 +12,7 @@ const userRoutes: Router = Router();
  *     summary: Register a new user
  *     description: Register a new user in the system. Only users with a valid email and a password of at least 8 characters can be registered. If the role is not specified, it defaults to "student".
  *     tags:
- *       - Users
+ *       - User
  *     requestBody:
  *       required: true
  *       content:
@@ -20,15 +20,18 @@ const userRoutes: Router = Router();
  *           schema:
  *             type: object
  *             properties:
+ *               username:
+ *                 type: string
+ *                 description: The user's username.
  *               email:
  *                 type: string
  *                 description: The user's email.
  *               password:
  *                 type: string
  *                 description: The user's password.
- *               role:
+ *               name:
  *                 type: string
- *                 description: The user's role. Default is "student".
+ *                 description: The user's name.
  *     responses:
  *       201:
  *         description: User registered successfully.
@@ -91,46 +94,52 @@ userRoutes.post("/register", async (req: Request, res: Response) => {
  * /api/v1/users/profile:
  *   get:
  *     summary: Get user profile
- *     description: Retrieve the profile of the currently authenticated user.
+ *     description: Retrieve the profile of the authenticated user.
  *     tags:
- *       - Users
+ *       - User
+ *     security:
+ *       - BearerAuth: []
  *     responses:
  *       200:
- *         description: User profile retrieved successfully.
+ *         description: User profile retrieved successfully
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 username:
- *                   type: string
- *                   description: The username of the user.
- *                 role:
- *                   type: string
- *                   description: The role of the user.
- *                 isBanned:
- *                   type: boolean
- *                   description: Whether the user is banned or not.
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     name:
+ *                       type: string
+ *                     username:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                     isBanned:
+ *                       type: boolean
  *       401:
- *         description: Unauthorized user.
+ *         description: Not authenticated
  *       404:
- *         description: User profile not found.
+ *         description: User not found
  *       500:
- *         description: Internal server error.
+ *         description: Internal server error
  */
 userRoutes.get(
   "/profile",
   authenticateUser,
   async (req: Request, res: Response) => {
     try {
-      if (!req.session.user?.username) {
+      if (!req.user?.username) {
         res
           .status(StatusCodes.UNAUTHORIZED)
           .json({ message: "User not found" });
         return;
       }
 
-      const username = req.session.user.username;
+      const username = req.user.username;
       const userDoc = await findUserByUsername(username);
 
       if (!userDoc) {
@@ -156,7 +165,9 @@ userRoutes.get(
  *     summary: Update user profile
  *     description: Update the profile of the currently authenticated user. Only admins can change user roles.
  *     tags:
- *       - Users
+ *       - User
+ *     security:
+ *       - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -193,7 +204,7 @@ userRoutes.put(
   authGuard,
   async (req: Request, res: Response) => {
     try {
-      const user = req.session.user;
+      const user = req.user;
 
       if (!user) {
         res
@@ -226,33 +237,18 @@ userRoutes.put(
 
       const updatedUserDoc = await updateUser(userDoc._id.toString(), updates);
 
-      req.session.regenerate((err) => {
-        if (err) {
-          res
-            .status(StatusCodes.INTERNAL_SERVER_ERROR)
-            .json({ message: "Error regenerating session" });
-          return;
-        }
-
-        req.session.user = {
-          username: updates.username || userDoc.username,
-          isBanned: updates.isBanned ?? userDoc.isBanned,
-          role: updates.role || userDoc.role,
-        };
-
-        req.session.save((err) => {
-          if (err) {
-            res
-              .status(StatusCodes.INTERNAL_SERVER_ERROR)
-              .json({ message: "Error saving session" });
-            return;
-          }
-          res.status(StatusCodes.OK).json({
-            message: "User updated successfully",
-            user: updatedUserDoc,
-          });
+      if (!updatedUserDoc) {
+        res.status(StatusCodes.NOT_FOUND).json({
+          error: "Error",
+          message: "User not found",
         });
-      });
+      }
+
+      req.user = {
+        username: updates.username || userDoc.username,
+        isBanned: updates.isBanned ?? userDoc.isBanned,
+        role: updates.role || userDoc.role,
+      };
     } catch (err: any) {
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)

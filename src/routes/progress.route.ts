@@ -12,10 +12,54 @@ const progressRoutes: Router = Router();
 
 progressRoutes.use(authenticateUser);
 
+/**
+ * @swagger
+ * /api/v1/progress/user/{courseId}:
+ *   get:
+ *     summary: Get user progress by course ID
+ *     description: Retrieve progress details for the authenticated user in a specific course
+ *     tags:
+ *       - Progress
+ *     security:
+ *      - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the course
+ *     responses:
+ *       200:
+ *         description: Course progress retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 progress:
+ *                   type: object
+ *                   properties:
+ *                     courseCode:
+ *                       type: string
+ *                     score:
+ *                       type: array
+ *                       items:
+ *                         type: number
+ *                     completedAt:
+ *                       type: string
+ *                       format: date-time
+ *       401:
+ *         description: Not authenticated
+ *       404:
+ *         description: Progress not found
+ *       500:
+ *         description: Internal server error
+ */
 progressRoutes.get("/user/:courseId", async (req: Request, res: Response) => {
   try {
     const { courseId } = req.params;
-    const user = req.session.user;
+    const user = req.user;
 
     if (!user) {
       res
@@ -42,9 +86,46 @@ progressRoutes.get("/user/:courseId", async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/progress/user:
+ *   get:
+ *     summary: Get user progress
+ *     description: Retrieve all progress records for the authenticated user
+ *     tags:
+ *       - Progress
+ *     security:
+ *      - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Progress retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 progress:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       courseCode:
+ *                         type: string
+ *                       score:
+ *                         type: array
+ *                         items:
+ *                           type: number
+ *                       completedAt:
+ *                         type: string
+ *                         format: date-time
+ *       401:
+ *         description: Not authenticated
+ *       500:
+ *         description: Internal server error
+ */
 progressRoutes.get("/user", async (req: Request, res: Response) => {
   try {
-    const user = req.session.user;
+    const user = req.user;
 
     if (!user) {
       res
@@ -65,9 +146,52 @@ progressRoutes.get("/user", async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/progress/create:
+ *   post:
+ *     summary: Create progress record
+ *     description: Create a new progress record for a user
+ *     tags:
+ *       - Progress
+ *     security:
+ *      - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - score
+ *               - courseCode
+ *               - quizId
+ *             properties:
+ *               score:
+ *                 type: array
+ *                 items:
+ *                   type: number
+ *               courseCode:
+ *                 type: string
+ *               quizId:
+ *                 type: string
+ *               completedAt:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       201:
+ *         description: Progress created successfully
+ *       400:
+ *         description: Invalid input data
+ *       401:
+ *         description: Not authenticated
+ *       500:
+ *         description: Internal server error
+ */
+
 progressRoutes.post("/create", async (req: Request, res: Response) => {
   try {
-    const user = req.session.user;
+    const user = req.user;
 
     if (!user) {
       res
@@ -90,9 +214,55 @@ progressRoutes.post("/create", async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/progress/{progressId}:
+ *   put:
+ *     summary: Update progress
+ *     description: Update a user's progress record
+ *     tags:
+ *       - Progress
+ *     security:
+ *      - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: progressId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               score:
+ *                 type: array
+ *                 items:
+ *                   type: number
+ *               courseCode:
+ *                 type: string
+ *               quizId:
+ *                 type: string
+ *               completedAt:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       200:
+ *         description: Progress updated successfully
+ *       400:
+ *         description: Invalid input data
+ *       401:
+ *         description: Not authenticated
+ *       404:
+ *         description: Progress not found
+ *       500:
+ *         description: Internal server error
+ */
 progressRoutes.put("/:progressId", async (req: Request, res: Response) => {
   try {
-    const user = req.session.user;
+    const user = req.user;
 
     if (!user) {
       res

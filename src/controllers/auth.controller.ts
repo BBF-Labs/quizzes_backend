@@ -4,16 +4,33 @@ import { Config } from "../config";
 import { IUser } from "../interfaces";
 
 interface TokenUser {
-  id: string;
-  email: string;
+  username: string;
+  role: string;
+  isBanned: boolean;
 }
 
-async function generateAccessToken(user: Partial<IUser>) {
-  return await Jwt.sign(user, Config.ACCESS_TOKEN_SECRET, { expiresIn: "15m" });
+async function generateAccessToken(user: TokenUser) {
+  if (!user || Object.keys(user).length === 0) {
+    throw new Error("Invalid user object for access token generation");
+  }
+
+  return Jwt.sign(
+    { username: user.username, role: user.role, isBanned: user.isBanned },
+    Config.ACCESS_TOKEN_SECRET,
+    { expiresIn: "15m" }
+  );
 }
 
 async function generateRefreshToken(user: Partial<IUser>) {
-  return await Jwt.sign(user, Config.REFRESH_TOKEN_SECRET);
+  if (!user || Object.keys(user).length === 0) {
+    throw new Error("Invalid user object for access token generation");
+  }
+
+  return Jwt.sign(
+    { username: user.username, role: user.role, isBanned: user.isBanned },
+    Config.REFRESH_TOKEN_SECRET,
+    { expiresIn: "15m" }
+  );
 }
 
 async function verifyToken(token: string): Promise<TokenUser | null> {
@@ -23,21 +40,39 @@ async function verifyToken(token: string): Promise<TokenUser | null> {
       Config.ACCESS_TOKEN_SECRET
     )) as JwtPayload;
 
-    if (!decoded || !decoded.id) {
+    if (!decoded || !decoded.username) {
       throw new Error("Invalid token format");
     }
 
-    const userId = decoded.id;
-    const email = decoded.email;
+    const username = decoded.username;
+    const role = decoded.role;
+    const isBanned = decoded.isBanned;
 
-    return { id: userId, email: email };
+    return { username, role, isBanned };
   } catch (err: any) {
     return null;
   }
 }
 
 async function verifyRefreshToken(token: string) {
-  return await Jwt.verify(token, Config.REFRESH_TOKEN_SECRET);
+  try {
+    const decoded = (await Jwt.verify(
+      token,
+      Config.REFRESH_TOKEN_SECRET
+    )) as JwtPayload;
+
+    if (!decoded || !decoded.username) {
+      throw new Error("Invalid token format");
+    }
+
+    const username = decoded.username;
+    const role = decoded.role;
+    const isBanned = decoded.isBanned;
+
+    return { username, role, isBanned } as Partial<IUser>;
+  } catch (err: any) {
+    return null;
+  }
 }
 
 async function hashPassword(password: string) {

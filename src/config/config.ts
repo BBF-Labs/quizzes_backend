@@ -2,14 +2,13 @@ import { config } from "dotenv";
 config();
 
 const Config = {
-  PORT: process.env.PORT || 3000,
-  MONGO_URI: process.env.MONGO_URI || "mongodb://localhost:27017/test",
-  ENV: process.env.NODE_ENV || "development",
-  SESSION_SECRET: process.env.SESSION || "someBBFLabsSecret",
+  PORT: process.env.PORT!,
+  MONGO_URI: process.env.MONGO_URI!,
+  ENV: process.env.NODE_ENV,
   ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET!,
   REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET!,
-  SALT_ROUNDS: process.env.SALT_ROUNDS! || 10,
-  LOG_LEVEL: "debug",
+  SALT_ROUNDS: parseInt(process.env.SALT_ROUNDS!),
+  LOG_LEVEL: process.env.LOG_LEVEL!,
 };
 
 const StatusCodes = {

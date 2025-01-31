@@ -12,6 +12,33 @@ import { StatusCodes } from "../config";
 const quizQuestionsRoutes: Router = Router();
 quizQuestionsRoutes.use(authenticateUser);
 
+/**
+ * @swagger
+ * /api/v1/quizzes:
+ *   get:
+ *     summary: Get all quiz questions
+ *     description: Retrieve all available quiz questions
+ *     tags:
+ *       - Quiz Questions
+ *     security:
+ *      - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 quizzes:
+ *                   type: array
+ *       404:
+ *         description: No quizzes available
+ *       500:
+ *         description: Internal server error
+ */
 quizQuestionsRoutes.get("/", async (req: Request, res: Response) => {
   try {
     const questions = await getQuizQuestions();
@@ -31,6 +58,37 @@ quizQuestionsRoutes.get("/", async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/quizzes/create:
+ *   post:
+ *     summary: Create quiz questions
+ *     description: Create new quiz questions (admin only)
+ *     tags:
+ *       - Quiz Questions
+ *     security:
+ *     - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - questionId
+ *             properties:
+ *               questionId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Quizzes created successfully
+ *       400:
+ *         description: Question IDs required
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 quizQuestionsRoutes.post(
   "/create",
   authorizeRoles("admin"),
@@ -58,7 +116,29 @@ quizQuestionsRoutes.post(
   }
 );
 
-// Update quiz questions
+/**
+ * @swagger
+ * /api/v1/quizzes/update:
+ *   put:
+ *     summary: Update quiz questions
+ *     description: Update existing quiz questions
+ *     tags:
+ *       - Quiz Questions
+ *     security:
+ *     - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Quiz updated successfully
+ *       500:
+ *         description: Internal server error
+ *
+ */
 quizQuestionsRoutes.put("/update", async (req: Request, res: Response) => {
   try {
     const quiz = req.body;
@@ -79,6 +159,31 @@ quizQuestionsRoutes.put("/update", async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/quizzes/course/{courseId}:
+ *   get:
+ *     summary: Get course quiz questions
+ *     description: Get all quiz questions for a specific course
+ *     tags:
+ *       - Quiz Questions
+ *     security:
+ *      - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Success
+ *       404:
+ *         description: No quiz questions found
+ *       500:
+ *         description: Internal server error
+ *
+ */
 quizQuestionsRoutes.get(
   "/course/:courseId",
   async (req: Request, res: Response) => {
@@ -110,6 +215,30 @@ quizQuestionsRoutes.get(
   }
 );
 
+/**
+ * @swagger
+ * /api/v1/quizzes/full/{courseId}:
+ *   get:
+ *     summary: Get full quiz information
+ *     description: Get complete quiz information for a specific course
+ *     tags:
+ *       - Quiz Questions
+ *     security:
+ *      - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Success
+ *       404:
+ *         description: No full quiz information found
+ *       500:
+ *         description: Internal server error
+ */
 quizQuestionsRoutes.get(
   "/full/:courseId",
   async (req: Request, res: Response) => {

@@ -1,5 +1,5 @@
 import { IProgress } from "../interfaces";
-import { Progress } from "../models";
+import { Course, Progress, User } from "../models";
 import { findUserByUsername } from "./user.controller";
 
 async function createProgress(
@@ -31,6 +31,16 @@ async function createProgress(
         new: true,
         upsert: true,
       }
+    );
+
+    await Course.updateOne(
+      { courseCode: progressData.courseCode },
+      { $addToSet: { students: user._id } }
+    );
+
+    await User.updateOne(
+      { _id: user._id },
+      { $addToSet: { courses: progressData.courseCode } }
     );
 
     return existingProgress;

@@ -14,6 +14,41 @@ const adminRoutes: Router = Router();
 adminRoutes.use(authenticateUser);
 adminRoutes.use(authorizeRoles("admin"));
 
+/**
+ * @swagger
+ * /api/v1/admin/update:
+ *   put:
+ *     summary: Update user
+ *     description: Update user details (admin only)
+ *     tags:
+ *       - Admin
+ *     security:
+ *      - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               username:
+ *                 type: string
+ *               id:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *       400:
+ *         description: Invalid input data
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
 adminRoutes.put("/update", async (req: Request, res: Response) => {
   try {
     const user = req.body;
@@ -84,6 +119,42 @@ adminRoutes.put("/update", async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/admin/create:
+ *   post:
+ *     summary: Create user
+ *     description: Create a new user (admin only)
+ *     tags:
+ *       - Admin
+ *     security:
+ *      - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *       400:
+ *         description: Invalid input data
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 adminRoutes.post("/create", async (res: Response, req: Request) => {
   try {
     const user = req.body;

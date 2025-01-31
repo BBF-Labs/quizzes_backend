@@ -8,8 +8,9 @@
     "esModuleInterop": true, // Important for compatibility with CommonJS modules
     "skipLibCheck": true, // Skip type checking of declaration files
     "forceConsistentCasingInFileNames": true, // Enforce consistent casing
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "typeRoots": ["./src/@types", " ./node_modules/@types"]
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules/**/*"]
 }

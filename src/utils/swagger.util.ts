@@ -3,9 +3,21 @@ import swaggerJsdoc from "swagger-jsdoc";
 const swaggerDefinition = {
   openapi: "3.0.0",
   info: {
-    title: "Bbf-quizzes-api",
+    title: "BbF Labs Quizzes API",
     version: "1.0.0",
     description: "Interactive API documentation",
+  },
+  components: {
+    securitySchemes: {
+      BearerAuth: {
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+      },
+    },
+  },
+  security: {
+    BearerAuth: [],
   },
 };
 
