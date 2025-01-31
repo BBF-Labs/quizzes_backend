@@ -23,7 +23,7 @@ questionRoutes.use(authenticateUser);
 
 /**
  * @swagger
- * /api/v1/questions/id/c/{courseId}:
+ * /api/v1/question/id/c/{courseId}:
  *   get:
  *     summary: Get all questions for a course
  *     description: Retrieve all questions for a specific course, including moderation count.
@@ -87,7 +87,7 @@ questionRoutes.get("/id/c/:courseId", async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/v1/questions/id/{questionId}:
+ * /api/v1/question/id/{questionId}:
  *   get:
  *     summary: Get a question by ID
  *     description: Retrieve a specific question by its ID.
@@ -132,7 +132,7 @@ questionRoutes.get("/id/:questionId", async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/v1/questions/update:
+ * /api/v1/question/update:
  *   post:
  *     summary: Update a question
  *     description: Modify an existing question.
@@ -184,7 +184,7 @@ questionRoutes.post("/update", async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/v1/questions/unchecked/{courseId}:
+ * /api/v1/question/unchecked/{courseId}:
  *   get:
  *     summary: Get unchecked questions for a course
  *     description: Retrieve all unchecked questions for a specific course.
@@ -232,7 +232,7 @@ questionRoutes.get(
 
 /**
  * @swagger
- * /api/v1/questions/course/{courseCode}:
+ * /api/v1/question/course/{courseCode}:
  *   get:
  *     summary: Get questions by course code
  *     description: Retrieve questions using a course code, along with moderation count.
@@ -496,7 +496,7 @@ questionRoutes.post("/create", async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/v1/questions/moderate/all/{courseId}:
+ * /api/v1/question/moderate/all/{courseId}:
  *   post:
  *     summary: Moderate all course questions
  *     description: Approve all questions belonging to a course
