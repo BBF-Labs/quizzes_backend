@@ -33,7 +33,7 @@ async function createUser(user: Partial<IUser>) {
     const newUser = new User({
       password: hashedPassword,
       ...userDetails,
-      role: userDetails.role || "user",
+      role: userDetails.role || "student",
     });
 
     const savedUser = await newUser.save();

@@ -51,11 +51,11 @@ userRoutes.post("/register", async (req: Request, res: Response) => {
       return;
     }
 
-    // if (!user.role) {
-    //   user.role = "student";
-    // } else {
-    //   user.role = "student";
-    // }
+    if (!user.role) {
+      user.role = "student";
+    } else {
+      user.role = "student";
+    }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(user.email)) {
