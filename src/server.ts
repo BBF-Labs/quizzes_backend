@@ -4,7 +4,6 @@ import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./utils";
 import { Limiter, ErrorHandler, Logger, CorsOption } from "./middlewares";
 import helmet from "helmet";
-import pug from "pug";
 import {
   userRoutes,
   authRoutes,
@@ -25,7 +24,6 @@ async function startServer() {
     // 🛠️ request body parsers
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
-    app.set("view engine", pug);
 
     app.disable("x-powered-by");
     app.set("trust proxy", 1);
