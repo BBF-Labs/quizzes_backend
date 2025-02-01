@@ -62,6 +62,16 @@ import {
   getCourseMaterials,
 } from "./material.controller";
 
+import {
+  paystackWebhook,
+  createPayment,
+  updatePayment,
+  getPaymentByReference,
+  getPaymentByUserId,
+  getAllPayments,
+  getAllInvalidPayments,
+} from "./payment.controller";
+
 export {
   generateAccessToken,
   generateRefreshToken,
@@ -106,4 +116,11 @@ export {
   getMaterials,
   getUserMaterials,
   getCourseMaterials,
+  paystackWebhook,
+  createPayment,
+  updatePayment,
+  getPaymentByReference,
+  getPaymentByUserId,
+  getAllPayments,
+  getAllInvalidPayments,
 };
