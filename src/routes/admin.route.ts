@@ -23,7 +23,7 @@ adminRoutes.use(authorizeRoles("admin"));
  *     tags:
  *       - Admin
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -128,7 +128,7 @@ adminRoutes.put("/update", async (req: Request, res: Response) => {
  *     tags:
  *       - Admin
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -138,6 +138,7 @@ adminRoutes.put("/update", async (req: Request, res: Response) => {
  *             required:
  *               - email
  *               - password
+ *               - username
  *             properties:
  *               email:
  *                 type: string
@@ -145,6 +146,8 @@ adminRoutes.put("/update", async (req: Request, res: Response) => {
  *               password:
  *                 type: string
  *                 minLength: 8
+ *               username:
+ *                 type: string
  *     responses:
  *       201:
  *         description: User created successfully
@@ -155,7 +158,7 @@ adminRoutes.put("/update", async (req: Request, res: Response) => {
  *       500:
  *         description: Internal server error
  */
-adminRoutes.post("/create", async (res: Response, req: Request) => {
+adminRoutes.post("/create", async (req: Request, res: Response) => {
   try {
     const user = req.body;
 

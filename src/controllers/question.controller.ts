@@ -290,7 +290,7 @@ async function approveAllByModerator(courseId: string, moderator: string) {
     }
 
     const unmoderatedQuestions = await Question.find({
-      courseId,
+      courseId: courseId,
       isModerated: { $ne: true },
     });
 

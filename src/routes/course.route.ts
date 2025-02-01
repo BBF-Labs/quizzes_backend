@@ -175,7 +175,7 @@ courseRoutes.get("/id/:courseId", async (req: Request, res: Response) => {
  *     tags:
  *       - Courses
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -246,7 +246,7 @@ courseRoutes.post(
  *     tags:
  *       - Courses
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: courseId
@@ -317,7 +317,7 @@ courseRoutes.put(
  *     tags:
  *       - Courses
  *     security:
- *      - bearerAuth: []
+ *      - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: courseId
