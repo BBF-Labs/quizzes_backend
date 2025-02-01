@@ -4,11 +4,21 @@ interface IPayment extends Document {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
   amount: number;
+  reference: string;
   date: Date;
   endsAt?: Date;
   isValid: boolean;
-  method: "credit" | "momo" | "other" | "promo code";
-  status: "pending" | "completed" | "failed";
+  method: string;
+  accessCode: string;
+  status:
+    | "abandoned"
+    | "failed"
+    | "ongoing"
+    | "pending"
+    | "processing"
+    | "queued"
+    | "success"
+    | "reversed";
   package: Types.ObjectId;
 }
 

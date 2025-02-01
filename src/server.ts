@@ -4,6 +4,7 @@ import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./utils";
 import { Limiter, ErrorHandler, Logger, CorsOption } from "./middlewares";
 import helmet from "helmet";
+import pug from "pug";
 import {
   userRoutes,
   authRoutes,
@@ -13,6 +14,7 @@ import {
   quizQuestionsRoutes,
   progressRoutes,
   materialRoutes,
+  paymentRoutes,
 } from "./routes";
 import cors from "cors";
 
@@ -23,6 +25,7 @@ async function startServer() {
     // 🛠️ request body parsers
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
+    app.set("view engine", pug);
 
     app.disable("x-powered-by");
     app.set("trust proxy", 1);
@@ -36,7 +39,7 @@ async function startServer() {
     app.use("/api/v1/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
     // Routes
-    app.use("/api/v1/users", userRoutes);
+    app.use("/api/v1/user", userRoutes);
     app.use("/api/v1/auth", authRoutes);
     app.use("/api/v1/admin", adminRoutes);
     app.use("/api/v1/courses", courseRoutes);
@@ -44,6 +47,7 @@ async function startServer() {
     app.use("/api/v1/quizzes", quizQuestionsRoutes);
     app.use("/api/v1/progress", progressRoutes);
     app.use("/api/v1/materials", materialRoutes);
+    app.use("/api/v1/payments", paymentRoutes);
 
     // Root Route
     app.get("/", (req: Request, res: Response) => {

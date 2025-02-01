@@ -7,7 +7,7 @@ const userRoutes: Router = Router();
 
 /**
  * @swagger
- * /api/v1/users/register:
+ * /api/v1/user/register:
  *   post:
  *     summary: Register a new user
  *     description: Register a new user in the system. Only users with a valid email and a password of at least 8 characters can be registered. If the role is not specified, it defaults to "student".
@@ -91,7 +91,7 @@ userRoutes.post("/register", async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/v1/users/profile:
+ * /api/v1/user/profile:
  *   get:
  *     summary: Get user profile
  *     description: Retrieve the profile of the authenticated user.
@@ -160,7 +160,7 @@ userRoutes.get(
 
 /**
  * @swagger
- * /api/v1/users/update:
+ * /api/v1/user/update:
  *   put:
  *     summary: Update user profile
  *     description: Update the profile of the currently authenticated user. Only admins can change user roles.
