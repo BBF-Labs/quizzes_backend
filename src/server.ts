@@ -13,6 +13,7 @@ import {
   quizQuestionsRoutes,
   progressRoutes,
   materialRoutes,
+  paymentRoutes,
 } from "./routes";
 import cors from "cors";
 
@@ -36,7 +37,7 @@ async function startServer() {
     app.use("/api/v1/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
     // Routes
-    app.use("/api/v1/users", userRoutes);
+    app.use("/api/v1/user", userRoutes);
     app.use("/api/v1/auth", authRoutes);
     app.use("/api/v1/admin", adminRoutes);
     app.use("/api/v1/courses", courseRoutes);
@@ -44,6 +45,7 @@ async function startServer() {
     app.use("/api/v1/quizzes", quizQuestionsRoutes);
     app.use("/api/v1/progress", progressRoutes);
     app.use("/api/v1/materials", materialRoutes);
+    app.use("/api/v1/payments", paymentRoutes);
 
     // Root Route
     app.get("/", (req: Request, res: Response) => {

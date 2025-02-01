@@ -12,6 +12,11 @@ const PaymentSchema: Schema<IPayment> = new Schema(
       type: Number,
       required: true,
     },
+    reference: {
+      type: String,
+      required: true,
+      unique: true,
+    },
     date: {
       type: Date,
       required: true,
@@ -26,18 +31,29 @@ const PaymentSchema: Schema<IPayment> = new Schema(
     },
     method: {
       type: String,
-      enum: ["credit", "momo", "other", "promo code"],
+      default: "mobile_money",
+    },
+    accessCode: {
+      type: String,
       required: true,
     },
     status: {
       type: String,
-      enum: ["pending", "completed", "failed"],
-      required: true,
+      enum: [
+        "abandoned",
+        "failed",
+        "ongoing",
+        "pending",
+        "processing",
+        "queued",
+        "success",
+        "reversed",
+      ],
+      default: "pending",
     },
     package: {
       type: Schema.Types.ObjectId,
       ref: "Package",
-      required: true,
     },
   },
   {
