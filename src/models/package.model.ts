@@ -16,6 +16,10 @@ const PackageSchema: Schema<IPackage> = new Schema(
       type: Number,
       required: true,
     },
+    isUpgradable: {
+      type: Boolean,
+      default: false,
+    },
     numberOfQuizzes: {
       type: Number,
       default: 0,
