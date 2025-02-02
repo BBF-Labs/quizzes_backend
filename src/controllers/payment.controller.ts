@@ -67,6 +67,7 @@ async function createPayment(data: Partial<IPayment>) {
   try {
     const existingPayment = await Payment.findOne({
       userId: data.userId,
+      package: data.package,
     });
 
     if (existingPayment) {
@@ -164,6 +165,23 @@ async function getAllInvalidPayments() {
   }
 }
 
+async function checkExistingPayment(userId: string, packageId: string) {
+  try {
+    const existingPayment = await Payment.findOne({
+      userId,
+      package: packageId,
+    });
+
+    if (existingPayment) {
+      return true;
+    }
+
+    return false;
+  } catch (err: any) {
+    throw new Error(`Error checking existing payment: ${err.message}`);
+  }
+}
+
 export {
   paystackWebhook,
   createPayment,
@@ -172,4 +190,5 @@ export {
   getPaymentByUserId,
   getAllPayments,
   getAllInvalidPayments,
+  checkExistingPayment,
 };

@@ -9,6 +9,7 @@ import {
   getAllPayments,
   getAllInvalidPayments,
   findUserById,
+  checkExistingPayment,
 } from "../controllers";
 import { StatusCodes } from "../config";
 import { authenticateUser, authorizeRoles } from "../middlewares";
@@ -107,6 +108,19 @@ paymentRoutes.post("/pay", async (req: Request, res: Response) => {
       return;
     }
 
+    if (form.packageId) {
+      const existingPayment = await checkExistingPayment(
+        user._id.toString(),
+        form.packageId
+      );
+      if (existingPayment) {
+        res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: "Payment already exists" });
+        return;
+      }
+    }
+
     form.metadata = { full_name: user.name };
     form.email = user.email;
     form.currency = "GHS";
@@ -134,11 +148,10 @@ paymentRoutes.post("/pay", async (req: Request, res: Response) => {
         date: new Date(),
         isValid: false,
         accessCode: body.access_code,
+        package: form.packageId || null,
       };
 
       await createPayment(paymentData);
-
-      console.log(body);
 
       res.status(StatusCodes.OK).json({
         message: "Success",
