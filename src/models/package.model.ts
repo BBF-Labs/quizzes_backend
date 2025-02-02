@@ -39,6 +39,11 @@ const PackageSchema: Schema<IPackage> = new Schema(
     discountCode: {
       type: String,
       default: null,
+      unique: true,
+    },
+    discountPercentage: {
+      type: Number,
+      default: 0,
     },
   },
   {

@@ -1,4 +1,5 @@
 import axios from "axios";
+import crypto from "crypto";
 import { Config } from "../config";
 import { IPayment } from "../interfaces";
 import { Payment } from "../models";
@@ -182,6 +183,36 @@ async function checkExistingPayment(userId: string, packageId: string) {
   }
 }
 
+async function generateReference() {
+  const maxAttempts = 5;
+  const baseLength = 6;
+  const charset = "0123456789abcdefghijklmnopqrstuvwxyz";
+
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      const timestamp = Date.now().toString(36);
+      const randomPart = Array.from(
+        crypto.getRandomValues(new Uint8Array(baseLength))
+      )
+        .map((byte) => charset[byte % charset.length])
+        .join("");
+
+      const reference = `${randomPart}${timestamp}`.slice(0, baseLength);
+
+      const payment = await Payment.findOne({ reference });
+
+      if (!payment) {
+        return reference;
+      }
+    } catch (error) {
+      console.error("Error generating reference:", error);
+    }
+  }
+  throw new Error(
+    "Failed to generate a unique reference after multiple attempts"
+  );
+}
+
 export {
   paystackWebhook,
   createPayment,
@@ -191,4 +222,5 @@ export {
   getAllPayments,
   getAllInvalidPayments,
   checkExistingPayment,
+  generateReference,
 };
