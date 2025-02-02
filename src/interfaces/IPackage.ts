@@ -11,6 +11,7 @@ interface IPackage extends Document {
   numberOfQuizzes?: number;
   quizzes?: Types.ObjectId[];
   discountCode?: string;
+  discountPercentage?: number;
 }
 
 export default IPackage;
