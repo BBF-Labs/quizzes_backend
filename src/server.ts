@@ -20,6 +20,18 @@ import cors from "cors";
 
 const app: Express = express();
 
+const cspOptions = {
+  directives: {
+    defaultSrc: ["'self'"],
+    scriptSrc: [
+      "'self'",
+      "'sha256-tE/NNv952uo0aoX+Fb3dgVaYwcz+0QLXsW61gwiz0QU='",
+    ],
+    styleSrc: ["'self'", "https://fonts.googleapis.com"],
+    imgSrc: ["'self'", "data:"],
+  },
+};
+
 async function startServer() {
   try {
     // 🛠️ request body parsers
@@ -32,6 +44,7 @@ async function startServer() {
     // 🛠️ security and other middleware
     app.use(cors(CorsOption));
     app.use(helmet());
+    app.use(helmet.contentSecurityPolicy(cspOptions));
     app.use(Limiter);
 
     //static files
