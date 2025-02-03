@@ -1,4 +1,4 @@
-import { User } from "../models";
+import { User, Package, Payment } from "../models";
 import { IUser } from "../interfaces";
 import { hashPassword } from "./auth.controller";
 
@@ -151,6 +151,75 @@ async function findUserById(userId: string) {
   }
 }
 
+async function validateUserPackages(userId: string) {
+  try {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.role === "admin") {
+      return;
+    }
+
+    if (!user.paymentId || user.paymentId.length === 0) {
+      return;
+    }
+
+    const payments = await Payment.find({ _id: { $in: user.paymentId } });
+
+    const currentDate = new Date();
+
+    const validPayments = payments.filter((paymentDoc) => {
+      return (
+        paymentDoc.status === "success" &&
+        paymentDoc.endsAt &&
+        new Date(paymentDoc.endsAt) > currentDate
+      );
+    });
+
+    const expiredPayments = payments.filter((paymentDoc) => {
+      return (
+        paymentDoc.status === "success" &&
+        paymentDoc.endsAt &&
+        new Date(paymentDoc.endsAt) <= currentDate
+      );
+    });
+
+    const validPackageIds = validPayments.map(
+      (paymentDoc) => paymentDoc.package
+    );
+
+    const validPackages = await Package.find({
+      _id: { $in: validPackageIds },
+    });
+
+    const validPackageIdsToKeep = validPackages.map((pkg) => pkg._id);
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          packageId: validPackageIdsToKeep,
+        },
+        $pull: {
+          paymentId: { $in: expiredPayments.map((payment) => payment._id) },
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      throw new Error("Error updating user packages");
+    }
+
+    return updatedUser;
+  } catch (err: any) {
+    throw new Error(`Error validating user packages: ${err.message}`);
+  }
+}
+
 export {
   createUser,
   updateUser,
@@ -159,4 +228,5 @@ export {
   findUserByUsername,
   getUserRole,
   findUserById,
+  validateUserPackages,
 };

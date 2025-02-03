@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BBF Labs Quizzes API</title>
+    <link rel="icon" href="/assets/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-color: #030303;
+        }
+
+        .gradient-bg {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom right, rgba(99, 102, 241, 0.05), transparent, rgba(244, 63, 94, 0.05));
+            filter: blur(24px);
+        }
+
+        .elegant-shape {
+            position: absolute;
+            opacity: 0;
+            transform: translateY(-150px);
+        }
+
+        .elegant-shape-inner {
+            position: relative;
+        }
+
+        .elegant-shape-content {
+            position: absolute;
+            inset: 0;
+            border-radius: 9999px;
+            background: linear-gradient(to right, rgba(255, 255, 255, 0.08), transparent);
+            backdrop-filter: blur(2px);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .elegant-shape-content::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 9999px;
+            background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.2), transparent 70%);
+        }
+
+        .container {
+            position: relative;
+            z-index: 10;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 32px;
+        }
+
+        .badge img {
+            width: 50px;
+            height: 50px;
+        }
+
+        .badge span {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 0.05em;
+        }
+
+        h1 {
+            font-size: 64px;
+            font-weight: bold;
+            margin-bottom: 24px;
+            letter-spacing: -0.025em;
+            line-height: 1.2;
+        }
+
+        .title-1 {
+            background: linear-gradient(to bottom, white, rgba(255, 255, 255, 0.8));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .title-2 {
+            font-family: 'Pacifico', cursive;
+            background: linear-gradient(to right, #8bc34a, #cddc39, #795548);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        p {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 32px;
+            line-height: 1.6;
+            font-weight: 300;
+            letter-spacing: 0.025em;
+            max-width: 36rem;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 0 16px;
+        }
+
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 32px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 9999px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .cta-primary {
+            background-color: #4f46e5;
+            color: white;
+        }
+
+        .cta-secondary {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, #030303, transparent, rgba(3, 3, 3, 0.8));
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 48px;
+            }
+
+            p {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 36px;
+            }
+
+            p {
+                font-size: 14px;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="hero">
+        <div class="gradient-bg"></div>
+
+        <div class="elegant-shape" style="left: -5%; top: 20%;" data-delay="0.3" data-width="600" data-height="140"
+            data-rotate="12" data-gradient="rgba(99, 102, 241, 0.15)"></div>
+        <div class="elegant-shape" style="right: 0%; top: 75%;" data-delay="0.5" data-width="500" data-height="120"
+            data-rotate="-15" data-gradient="rgba(244, 63, 94, 0.15)"></div>
+        <div class="elegant-shape" style="left: 10%; bottom: 10%;" data-delay="0.4" data-width="300" data-height="80"
+            data-rotate="-8" data-gradient="rgba(139, 92, 246, 0.15)"></div>
+        <div class="elegant-shape" style="right: 20%; top: 15%;" data-delay="0.6" data-width="200" data-height="60"
+            data-rotate="20" data-gradient="rgba(251, 191, 36, 0.15)"></div>
+        <div class="elegant-shape" style="left: 25%; top: 10%;" data-delay="0.7" data-width="150" data-height="40"
+            data-rotate="-25" data-gradient="rgba(6, 182, 212, 0.15)"></div>
+
+        <div class="container">
+            <div class="badge">
+                <img src="/assets/bbf-logo.svg" alt="BBF Labs">
+                <span>BBF Labs</span>
+            </div>
+
+            <h1>
+                <span class="title-1">Elevate Your</span>
+                <br>
+                <span class="title-2">Quiz Experience</span>
+            </h1>
+
+            <p>Unlock premium quizzes and challenge yourself with our cutting-edge platform. <br />Engage, learn, and
+                excel
+                with BBF Labs' expertly crafted content.</p>
+
+            <div class="cta-buttons">
+                <a href="/api/v1/docs" class="cta-button cta-primary">View API Docs</a>
+                <a href="/api/v1/packages" class="cta-button cta-secondary">Explore Packages</a>
+            </div>
+        </div>
+
+        <div class="overlay"></div>
+    </div>
+
+    <script>
+        function animateElegantShapes() {
+            const shapes = document.querySelectorAll('.elegant-shape');
+            shapes.forEach(shape => {
+                const delay = parseFloat(shape.dataset.delay);
+                const width = parseFloat(shape.dataset.width);
+                const height = parseFloat(shape.dataset.height);
+                const rotate = parseFloat(shape.dataset.rotate);
+                const gradient = shape.dataset.gradient;
+
+                shape.style.width = `${width}px`;
+                shape.style.height = `${height}px`;
+
+                const inner = document.createElement('div');
+                inner.className = 'elegant-shape-inner';
+                inner.style.width = `${width}px`;
+                inner.style.height = `${height}px`;
+
+                const content = document.createElement('div');
+                content.className = 'elegant-shape-content';
+                content.style.background = `linear-gradient(to right, ${gradient}, transparent)`;
+
+                inner.appendChild(content);
+                shape.appendChild(inner);
+
+                setTimeout(() => {
+                    shape.style.transition = 'opacity 1.2s, transform 2.4s cubic-bezier(0.23, 0.86, 0.39, 0.96)';
+                    shape.style.opacity = '1';
+                    shape.style.transform = `translateY(0) rotate(${rotate}deg)`;
+                }, delay * 1000);
+
+                setInterval(() => {
+                    inner.style.transition = 'transform 12s ease-in-out';
+                    inner.style.transform = 'translateY(15px)';
+                    setTimeout(() => {
+                        inner.style.transform = 'translateY(0)';
+                    }, 6000);
+                }, 12000);
+            });
+        }
+
+        function animateContent() {
+            const elements = [
+                document.querySelector('.badge'),
+                document.querySelector('h1'),
+                document.querySelector('p'),
+                document.querySelector('.cta-buttons')
+            ];
+
+            elements.forEach((el, index) => {
+                setTimeout(() => {
+                    el.style.transition = 'opacity 1s, transform 1s cubic-bezier(0.25, 0.4, 0.25, 1)';
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, 500 + index * 200);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            animateElegantShapes();
+            animateContent();
+        });
+    </script>
+</body>
+
+</html>
