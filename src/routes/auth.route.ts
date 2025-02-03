@@ -5,6 +5,7 @@ import {
   generateRefreshToken,
   verifyRefreshToken,
   findUserByUsername,
+  validateUserPackages,
 } from "../controllers";
 import { authenticateUser } from "../middlewares";
 import { StatusCodes } from "../config";
@@ -108,6 +109,8 @@ authRoutes.post("/login", async (req: Request, res: Response) => {
 
     const accessToken = await generateAccessToken(payload);
     const refreshToken = await generateRefreshToken(payload);
+
+    await validateUserPackages(user._id.toString());
 
     res.status(StatusCodes.OK).json({
       accessToken,
