@@ -2,7 +2,7 @@ import axios from "axios";
 import crypto from "crypto";
 import { Config } from "../config";
 import { IPayment } from "../interfaces";
-import { Payment } from "../models";
+import { Package, Payment, User } from "../models";
 
 function paystackWebhook() {
   const secretKey = Config.PAYSTACK_SECRET_KEY;
@@ -213,6 +213,63 @@ async function generateReference() {
   );
 }
 
+async function updateUserPaymentDetails(userId: string, reference: string) {
+  try {
+    const paymentDoc = await Payment.findOne({ reference: reference }).populate(
+      "package"
+    );
+
+    if (!paymentDoc) {
+      throw new Error("Payment not found");
+    }
+
+    const packageDoc = await Package.findById(paymentDoc.package);
+
+    if (!packageDoc) {
+      throw new Error("Package not found for this payment");
+    }
+
+    const durationInDays = packageDoc.duration;
+    if (typeof durationInDays !== "number" || durationInDays <= 0) {
+      throw new Error("Invalid package duration");
+    }
+
+    const endsAt = new Date();
+    endsAt.setDate(endsAt.getDate() + durationInDays);
+
+    await Payment.findByIdAndUpdate(
+      paymentDoc._id,
+      {
+        endsAt: endsAt,
+      },
+      { new: true }
+    );
+
+    const updatedUser = await User.updateOne(
+      { _id: userId },
+      {
+        $push: {
+          packageId: packageDoc._id,
+          paymentId: paymentDoc._id,
+        },
+        $set: {
+          isSubscribed: true,
+        },
+      }
+    );
+
+    if (updatedUser.modifiedCount === 0) {
+      throw new Error("User not found or no changes made");
+    }
+
+    const user = await User.findById(userId).populate("packageId");
+
+    return user;
+  } catch (err: any) {
+    throw new Error(`Error updating user payment: ${err.message}`);
+  }
+}
+
 export {
   paystackWebhook,
   createPayment,
@@ -223,4 +280,5 @@ export {
   getAllInvalidPayments,
   checkExistingPayment,
   generateReference,
+  updateUserPaymentDetails,
 };

@@ -15,6 +15,7 @@ import {
   findUserByUsername,
   getUserRole,
   findUserById,
+  validateUserPackages,
 } from "./user.controller";
 
 import {
@@ -72,6 +73,7 @@ import {
   getAllInvalidPayments,
   checkExistingPayment,
   generateReference,
+  updateUserPaymentDetails,
 } from "./payment.controller";
 
 import {
@@ -140,4 +142,6 @@ export {
   getPackages,
   getPackageByDiscountCode,
   generateReference,
+  updateUserPaymentDetails,
+  validateUserPackages,
 };
