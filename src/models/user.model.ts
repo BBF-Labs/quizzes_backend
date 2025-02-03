@@ -43,8 +43,12 @@ const UserSchema = new Schema<IUser>(
       default: false,
     },
     paymentId: {
-      type: Schema.Types.ObjectId,
+      type: [Schema.Types.ObjectId],
       ref: "Payment",
+    },
+    packageId: {
+      type: [Schema.Types.ObjectId],
+      ref: "Package",
     },
     lastLogin: {
       type: Date,

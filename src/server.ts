@@ -1,4 +1,5 @@
 import express, { Express, Request, Response } from "express";
+import path from "path";
 import { Config } from "./config";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./utils";
@@ -33,6 +34,9 @@ async function startServer() {
     app.use(helmet());
     app.use(Limiter);
 
+    //static files
+    app.use(express.static(path.join(__dirname, "..", "public")));
+
     // Swagger Docs
     app.use("/api/v1/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
@@ -49,7 +53,7 @@ async function startServer() {
 
     // Root Route
     app.get("/", (req: Request, res: Response) => {
-      res.send("Hello World");
+      res.sendFile(path.join(__dirname, "..", "public", "index.html"));
     });
 
     // Error Handling & Logging Middleware

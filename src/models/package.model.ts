@@ -16,6 +16,10 @@ const PackageSchema: Schema<IPackage> = new Schema(
       type: Number,
       required: true,
     },
+    isUpgradable: {
+      type: Boolean,
+      default: false,
+    },
     numberOfQuizzes: {
       type: Number,
       default: 0,
@@ -35,6 +39,11 @@ const PackageSchema: Schema<IPackage> = new Schema(
     discountCode: {
       type: String,
       default: null,
+      unique: true,
+    },
+    discountPercentage: {
+      type: Number,
+      default: 0,
     },
   },
   {

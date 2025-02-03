@@ -15,6 +15,7 @@ import {
   findUserByUsername,
   getUserRole,
   findUserById,
+  validateUserPackages,
 } from "./user.controller";
 
 import {
@@ -70,7 +71,18 @@ import {
   getPaymentByUserId,
   getAllPayments,
   getAllInvalidPayments,
+  checkExistingPayment,
+  generateReference,
+  updateUserPaymentDetails,
 } from "./payment.controller";
+
+import {
+  createPackage,
+  updatePackage,
+  getPackageDetails,
+  getPackages,
+  getPackageByDiscountCode,
+} from "./package.controller";
 
 export {
   generateAccessToken,
@@ -123,4 +135,13 @@ export {
   getPaymentByUserId,
   getAllPayments,
   getAllInvalidPayments,
+  checkExistingPayment,
+  createPackage,
+  updatePackage,
+  getPackageDetails,
+  getPackages,
+  getPackageByDiscountCode,
+  generateReference,
+  updateUserPaymentDetails,
+  validateUserPackages,
 };

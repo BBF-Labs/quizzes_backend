@@ -13,7 +13,8 @@ env.txt
 # Ignore REST API files
 *.REST
 *.rest
-*.html
+try.html
+pay.html
 
 # Build output
 dist/               
