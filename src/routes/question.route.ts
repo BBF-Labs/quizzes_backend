@@ -164,23 +164,27 @@ questionRoutes.get("/id/:questionId", async (req: Request, res: Response) => {
  *       500:
  *         description: Internal server error
  */
-questionRoutes.post("/update", async (req: Request, res: Response) => {
-  try {
-    const { questionId, question } = req.body;
+questionRoutes.post(
+  "/update",
+  authorizeRoles("admin", "moderator"),
+  async (req: Request, res: Response) => {
+    try {
+      const { questionId, question } = req.body;
 
-    if (!questionId || !question) {
-      throw new Error("Question details are required");
+      if (!questionId || !question) {
+        throw new Error("Question details are required");
+      }
+
+      const questionDoc = await updateQuestion(questionId, question);
+
+      res
+        .status(StatusCodes.OK)
+        .json({ message: "Success", question: questionDoc });
+    } catch (err: any) {
+      res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
     }
-
-    const questionDoc = await updateQuestion(questionId, question);
-
-    res
-      .status(StatusCodes.OK)
-      .json({ message: "Success", question: questionDoc });
-  } catch (err: any) {
-    res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
   }
-});
+);
 
 /**
  * @swagger
@@ -452,47 +456,51 @@ questionRoutes.post("/moderate", async (req: Request, res: Response) => {
  *       500:
  *         description: Internal server error
  */
-questionRoutes.post("/create", async (req: Request, res: Response) => {
-  try {
-    const { question } = req.body;
+questionRoutes.post(
+  "/create",
+  authorizeRoles("admin", "moderator", "student"),
+  async (req: Request, res: Response) => {
+    try {
+      const { question } = req.body;
 
-    if (!question) {
-      throw new Error("Question fields are required");
-    }
+      if (!question) {
+        throw new Error("Question fields are required");
+      }
 
-    const courseId = question.courseId;
+      const courseId = question.courseId;
 
-    const author = req.user?.username;
+      const author = req.user?.username;
 
-    if (!author) {
-      res
-        .status(StatusCodes.UNAUTHORIZED)
-        .json({ message: "You are not authorized to make this request" });
-      return;
-    }
+      if (!author) {
+        res
+          .status(StatusCodes.UNAUTHORIZED)
+          .json({ message: "You are not authorized to make this request" });
+        return;
+      }
 
-    if (Array.isArray(req.body.question)) {
-      const questionDoc = await batchCreateQuestions(
-        question,
-        author,
-        courseId
-      );
+      if (Array.isArray(req.body.question)) {
+        const questionDoc = await batchCreateQuestions(
+          question,
+          author,
+          courseId
+        );
+
+        res
+          .status(StatusCodes.OK)
+          .json({ message: "Success", question: questionDoc });
+        return;
+      }
+
+      const newQuestion = await createQuestion(question, author, courseId);
 
       res
         .status(StatusCodes.OK)
-        .json({ message: "Success", question: questionDoc });
-      return;
+        .json({ message: "Success", question: newQuestion });
+    } catch (err: any) {
+      res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
     }
-
-    const newQuestion = await createQuestion(question, author, courseId);
-
-    res
-      .status(StatusCodes.OK)
-      .json({ message: "Success", question: newQuestion });
-  } catch (err: any) {
-    res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
   }
-});
+);
 
 /**
  * @swagger

@@ -7,6 +7,7 @@ import quizQuestionsRoutes from "./quizquestions.route";
 import progressRoutes from "./progress.route";
 import materialRoutes from "./material.route";
 import paymentRoutes from "./payment.route";
+import packageRoutes from "./package.route";
 
 export {
   userRoutes,
@@ -18,4 +19,5 @@ export {
   progressRoutes,
   materialRoutes,
   paymentRoutes,
+  packageRoutes,
 };
