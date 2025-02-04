@@ -22,7 +22,7 @@ const PaymentSchema: Schema<IPayment> = new Schema(
       required: true,
     },
     endsAt: {
-      type: Date,
+      type: Schema.Types.Mixed,
       default: null,
     },
     isValid: {

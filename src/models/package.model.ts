@@ -13,7 +13,7 @@ const PackageSchema: Schema<IPackage> = new Schema(
       required: true,
     },
     duration: {
-      type: Number,
+      type: Schema.Types.Mixed,
       required: true,
     },
     isUpgradable: {
