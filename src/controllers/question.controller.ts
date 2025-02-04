@@ -1,4 +1,4 @@
-import { Course, Question } from "../models";
+import { Course, Question, User } from "../models";
 import { isValidObjectId } from "mongoose";
 import { IQuestion } from "../interfaces";
 import {
@@ -276,6 +276,31 @@ async function batchModerateQuestions(
       { $inc: { approvedQuestionsCount: 1 } }
     );
 
+    const userModeratedQuestions = await Question.find({
+      moderatedBy: user._id,
+    });
+
+    const moderatedCount = userModeratedQuestions.length;
+
+    if (user.role !== "admin" && moderatedCount > 5) {
+      const moddedCount = moderatedCount % 5;
+
+      if (moddedCount === 0) {
+        const freeAccessBonus = 1;
+
+        if (user.role !== "moderator") {
+          await User.findByIdAndUpdate(user._id, {
+            $set: { role: "moderator" },
+          });
+        }
+
+        await User.findByIdAndUpdate(user._id, {
+          $set: { hasFreeAccess: true },
+          $inc: { freeAccessCount: freeAccessBonus },
+        });
+      }
+    }
+
     return updateResult;
   } catch (err: any) {
     throw new Error(err.message);
@@ -313,6 +338,31 @@ async function approveAllByModerator(courseId: string, moderator: string) {
     await Course.findByIdAndUpdate(courseId, {
       $inc: { approvedQuestionsCount: updateResult.modifiedCount },
     });
+
+    const userModeratedQuestions = await Question.find({
+      moderatedBy: user._id,
+    });
+
+    const moderatedCount = userModeratedQuestions.length;
+
+    if (user.role !== "admin" && moderatedCount > 5) {
+      const moddedCount = moderatedCount % 5;
+
+      if (moddedCount === 0) {
+        const freeAccessBonus = 1;
+
+        if (user.role !== "moderator") {
+          await User.findByIdAndUpdate(user._id, {
+            $set: { role: "moderator" },
+          });
+        }
+
+        await User.findByIdAndUpdate(user._id, {
+          $set: { hasFreeAccess: true },
+          $inc: { freeAccessCount: freeAccessBonus },
+        });
+      }
+    }
 
     return updateResult;
   } catch (err: any) {

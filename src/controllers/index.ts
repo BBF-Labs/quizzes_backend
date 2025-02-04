@@ -16,6 +16,7 @@ import {
   getUserRole,
   findUserById,
   validateUserPackages,
+  validateUserQuizAccess,
 } from "./user.controller";
 
 import {
@@ -144,4 +145,5 @@ export {
   generateReference,
   updateUserPaymentDetails,
   validateUserPackages,
+  validateUserQuizAccess,
 };

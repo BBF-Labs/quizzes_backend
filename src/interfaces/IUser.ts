@@ -11,6 +11,8 @@ interface IUser extends Document {
   role: "student" | "admin" | "moderator";
   isBanned: boolean;
   isSubscribed: boolean;
+  hasFreeAccess?: boolean;
+  freeAccessCount?: number;
   paymentId?: Types.ObjectId[];
   packageId?: Types.ObjectId[];
   lastLogin?: Date;

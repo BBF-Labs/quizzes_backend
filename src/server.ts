@@ -1,4 +1,4 @@
-import express, { Express, Request, Response } from "express";
+import express, { Express, Request, Response, NextFunction } from "express";
 import path from "path";
 import { Config } from "./config";
 import swaggerUi from "swagger-ui-express";
@@ -15,23 +15,90 @@ import {
   progressRoutes,
   materialRoutes,
   paymentRoutes,
+  packageRoutes,
 } from "./routes";
+import crypto from "crypto";
+
 import cors from "cors";
 
 const app: Express = express();
+
+interface CustomResponse extends Response {
+  locals: {
+    nonce?: string;
+  };
+}
+
+const nonceMiddleware = (
+  req: Request,
+  res: CustomResponse,
+  next: NextFunction
+) => {
+  // Generate a unique nonce for each request
+  const nonce = crypto.randomBytes(16).toString("base64");
+
+  // Attach nonce to the request for use in rendering
+  res.locals.nonce = nonce;
+
+  // Set up CSP middleware with the generated nonce
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "'strict-dynamic'",
+        `'nonce-${nonce}'`,
+        "https://apis.google.com",
+      ],
+      styleSrc: ["'self'", `'nonce-${nonce}'`, "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:"],
+      connectSrc: ["'self'"],
+      frameSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  })(req, res, next);
+};
 
 async function startServer() {
   try {
     // 🛠️ request body parsers
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
+    app.use((req: Request, res: CustomResponse, next: NextFunction) => {
+      res.locals.nonce = crypto.randomBytes(16).toString("base64");
+      next();
+    });
 
+    // 🛠️ security headers
     app.disable("x-powered-by");
     app.set("trust proxy", 1);
 
     // 🛠️ security and other middleware
     app.use(cors(CorsOption));
     app.use(helmet());
+    app.use(
+      helmet({
+        contentSecurityPolicy: {
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-eval'", "https://apis.google.com"],
+            styleSrc: [
+              "'self'",
+              "'unsafe-inline'",
+              "https://fonts.googleapis.com",
+            ],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            imgSrc: ["'self'", "data:"],
+            connectSrc: ["'self'"],
+            frameSrc: ["'self'"],
+            objectSrc: ["'none'"],
+          },
+        },
+      })
+    );
+
     app.use(Limiter);
 
     //static files
@@ -50,15 +117,20 @@ async function startServer() {
     app.use("/api/v1/progress", progressRoutes);
     app.use("/api/v1/materials", materialRoutes);
     app.use("/api/v1/payments", paymentRoutes);
-
-    // Root Route
-    app.get("/", (req: Request, res: Response) => {
-      res.sendFile(path.join(__dirname, "..", "public", "index.html"));
-    });
+    app.use("/api/v1/packages", packageRoutes);
 
     // Error Handling & Logging Middleware
     app.use(ErrorHandler);
     app.use(Logger);
+
+    // Root Route
+    app.get("/", (req: Request, res: CustomResponse) => {
+      const html = path.join(__dirname, "..", "public", "index.html");
+
+      res.setHeader("Content-Security-Policy", "script-src self");
+
+      res.send(html);
+    });
 
     // Start Server
     const server = app.listen(Config.PORT, () => {
