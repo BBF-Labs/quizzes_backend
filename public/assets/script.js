@@ -1,10 +1,10 @@
 function animateElegantShapes() {
   const shapes = document.querySelectorAll(".elegant-shape");
   shapes.forEach((shape) => {
-    const delay = Number.parseFloat(shape.dataset.delay);
-    const width = Number.parseFloat(shape.dataset.width);
-    const height = Number.parseFloat(shape.dataset.height);
-    const rotate = Number.parseFloat(shape.dataset.rotate);
+    const delay = parseFloat(shape.dataset.delay);
+    const width = parseFloat(shape.dataset.width);
+    const height = parseFloat(shape.dataset.height);
+    const rotate = parseFloat(shape.dataset.rotate);
     const gradient = shape.dataset.gradient;
 
     shape.style.width = `${width}px`;
