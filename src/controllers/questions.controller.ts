@@ -137,6 +137,7 @@ async function updateQuizQuestion(quiz: Partial<IQuizQuestion>) {
   }
 }
 interface IFullQuizInfo {
+  id: string;
   courseCode: string;
   isApproved: boolean;
   quizQuestions: Array<{
@@ -179,6 +180,7 @@ async function getFullQuizInformation(
   );
 
   return {
+    id: quizDocument._id.toString(),
     courseCode: course.code,
     isApproved: quizDocument.isApproved,
     quizQuestions: fullQuizQuestions,
