@@ -4,7 +4,7 @@ interface IPackage extends Document {
   _id: Types.ObjectId;
   price: number;
   name: string;
-  duration: number;
+  duration: number | "lifetime";
   isUpgradable?: boolean;
   numberOfCourses?: number;
   courses?: Types.ObjectId[];
