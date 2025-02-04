@@ -6,7 +6,7 @@ interface IPayment extends Document {
   amount: number;
   reference: string;
   date: Date;
-  endsAt?: Date;
+  endsAt?: Date | "lifetime";
   isValid: boolean;
   method: string;
   accessCode: string;

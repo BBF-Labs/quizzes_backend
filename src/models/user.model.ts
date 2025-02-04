@@ -42,6 +42,14 @@ const UserSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    hasFreeAccess: {
+      type: Boolean,
+      default: true,
+    },
+    freeAccessCount: {
+      type: Number,
+      default: 2,
+    },
     paymentId: {
       type: [Schema.Types.ObjectId],
       ref: "Payment",

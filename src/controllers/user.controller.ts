@@ -1,4 +1,4 @@
-import { User, Package, Payment } from "../models";
+import { User, Package, Payment, Question, QuizQuestion } from "../models";
 import { IUser } from "../interfaces";
 import { hashPassword } from "./auth.controller";
 
@@ -167,24 +167,18 @@ async function validateUserPackages(userId: string) {
       return;
     }
 
-    const payments = await Payment.find({ _id: { $in: user.paymentId } });
-
     const currentDate = new Date();
 
-    const validPayments = payments.filter((paymentDoc) => {
-      return (
-        paymentDoc.status === "success" &&
-        paymentDoc.endsAt &&
-        new Date(paymentDoc.endsAt) > currentDate
-      );
+    const validPayments = await Payment.find({
+      _id: { $in: user.paymentId },
+      status: "success",
+      $or: [{ endsAt: "lifetime" }, { endsAt: { $gt: currentDate } }],
     });
 
-    const expiredPayments = payments.filter((paymentDoc) => {
-      return (
-        paymentDoc.status === "success" &&
-        paymentDoc.endsAt &&
-        new Date(paymentDoc.endsAt) <= currentDate
-      );
+    const expiredPayments = await Payment.find({
+      _id: { $in: user.paymentId },
+      status: "success",
+      endsAt: { $ne: "lifetime", $lte: currentDate },
     });
 
     const validPackageIds = validPayments.map(
@@ -220,6 +214,95 @@ async function validateUserPackages(userId: string) {
   }
 }
 
+async function validateUserQuizAccess(username: string, quizId: string) {
+  try {
+    const user = await User.findOne({ username });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.role === "admin") {
+      return;
+    }
+
+    if (
+      user.hasFreeAccess &&
+      user.freeAccessCount != null &&
+      user.freeAccessCount > 0
+    ) {
+      await User.findOneAndUpdate(
+        { username },
+        { $set: { freeAccessCount: user.freeAccessCount - 1 } }
+      );
+      return;
+    }
+
+    if (user.hasFreeAccess && user.freeAccessCount === 0) {
+      await User.findOneAndUpdate(
+        { username },
+        { $set: { hasFreeAccess: false } }
+      );
+    }
+
+    const validateUserPackageStat = await validateUserPackages(
+      user._id.toString()
+    );
+
+    if (!validateUserPackageStat) {
+      throw new Error("Error validating user packages");
+    }
+
+    const userPackages = await Package.find({ _id: { $in: user.packageId } });
+
+    if (userPackages.length === 0) {
+      throw new Error("User package not found");
+    }
+
+    const quizDoc = await QuizQuestion.findById(quizId);
+
+    if (!quizDoc) {
+      throw new Error("Quiz not found");
+    }
+
+    const questionIds = quizDoc.quizQuestions.flatMap(
+      (filteredQuestion) => filteredQuestion.questions
+    );
+
+    const moderatedQuestionsCount = await Question.countDocuments({
+      _id: { $in: questionIds },
+      moderatedBy: user._id,
+    });
+
+    if (moderatedQuestionsCount >= 5) {
+      return;
+    }
+
+    const quizPackages = await Package.find({
+      courses: { $in: quizDoc.courseId },
+    });
+
+    if (!quizPackages || quizPackages.length === 0) {
+      throw new Error("No packages found for the quiz");
+    }
+
+    const hasAccess = quizPackages.some((quizPackage) =>
+      userPackages.some(
+        (userPackage) =>
+          userPackage._id.toString() === quizPackage._id.toString()
+      )
+    );
+
+    if (!hasAccess) {
+      throw new Error("User does not have access to this quiz");
+    }
+
+    return;
+  } catch (err: any) {
+    throw new Error(`Error validating user quiz access: ${err.message}`);
+  }
+}
+
 export {
   createUser,
   updateUser,
@@ -229,4 +312,5 @@ export {
   getUserRole,
   findUserById,
   validateUserPackages,
+  validateUserQuizAccess,
 };

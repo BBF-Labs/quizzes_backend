@@ -5,6 +5,8 @@ import {
   getCourseQuizQuestions,
   updateQuizQuestion,
   getFullQuizInformation,
+  validateUserPackages,
+  validateUserQuizAccess,
 } from "../controllers";
 import { authenticateUser, authorizeRoles } from "../middlewares";
 import { StatusCodes } from "../config";
@@ -245,6 +247,12 @@ quizQuestionsRoutes.get(
     try {
       const { courseId } = req.params;
 
+      const user = req.user;
+
+      if (!user) {
+        throw new Error("User not found");
+      }
+
       if (!courseId) {
         throw new Error("Course ID is required");
       }
@@ -257,6 +265,8 @@ quizQuestionsRoutes.get(
         });
         return;
       }
+
+      await validateUserQuizAccess(user.username, fullQuizQuestions.id);
 
       res.status(StatusCodes.OK).json({
         message: "Success",
