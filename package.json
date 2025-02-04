@@ -9,6 +9,10 @@
     "dev": "concurrently --kill-others nodemon --exec",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "engines": {
+    "node": "20.x",
+    "npm": "10.x"
+  },
   "keywords": [],
   "author": "BBF Labs",
   "license": "ISC",
