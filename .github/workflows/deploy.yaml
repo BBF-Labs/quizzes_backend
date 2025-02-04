@@ -28,12 +28,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
-      - name: Deploy to Render
-        uses: JorgeLNJunior/render-deploy@v1.4.4
+      - name: Install Heroku CLI
+        run: |
+          curl https://cli-assets.heroku.com/install.sh | sh
+          heroku --version
+
+      - name: Deploy to Heroku
+        uses: akhileshns/heroku-deploy@v3.13.15
         with:
-          service_id: ${{ secrets.RENDER_SERVICE_ID }}
-          api_key: ${{ secrets.RENDER_API_KEY }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          wait_deploy: true
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
+          heroku_email: ${{ secrets.HEROKU_EMAIL }}
+          procfile: "web: node dist/index.js"
