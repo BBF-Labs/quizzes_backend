@@ -76,6 +76,8 @@ const processFreePayment = async (user: any, packageDoc: any) => {
  *                 type: string
  *               packageId:
  *                 type: string
+ *               type:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Payment initialized successfully
@@ -90,7 +92,7 @@ const processFreePayment = async (user: any, packageDoc: any) => {
  */
 paymentRoutes.post("/pay", async (req: Request, res: Response) => {
   try {
-    const { packageId, discountCode, amount } = req.body;
+    const { packageId, discountCode, amount, type } = req.body;
 
     if (!amount && !packageId) {
       res.status(StatusCodes.BAD_REQUEST).json({
@@ -149,7 +151,8 @@ paymentRoutes.post("/pay", async (req: Request, res: Response) => {
       metadata: { full_name: user.name },
       email: user.email,
       currency: "GHS",
-      amount: finalAmount * 100, // Convert to minor currency unit
+      amount: finalAmount * 100,
+      type: type || "default",
     };
 
     try {
@@ -168,6 +171,7 @@ paymentRoutes.post("/pay", async (req: Request, res: Response) => {
         reference: paystackResponse.reference,
         date: new Date(),
         isValid: false,
+        type: paymentForm.type,
         accessCode: paystackResponse.access_code,
         package: packageId || null,
       });
