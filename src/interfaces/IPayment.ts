@@ -19,6 +19,7 @@ interface IPayment extends Document {
     | "queued"
     | "success"
     | "reversed";
+  type: "course" | "quiz" | "course" | "default";
   package: Types.ObjectId;
 }
 

@@ -154,59 +154,79 @@ async function findUserById(userId: string) {
 async function validateUserPackages(userId: string) {
   try {
     const user = await User.findById(userId);
+    if (!user) throw new Error("User not found");
 
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    if (user.role === "admin") {
-      return;
-    }
-
-    if (!user.paymentId || user.paymentId.length === 0) {
-      return;
-    }
+    if (user.role === "admin") return;
 
     const currentDate = new Date();
 
-    const validPayments = await Payment.find({
+    const payments = await Payment.find({
       _id: { $in: user.paymentId },
       status: "success",
-      $or: [{ endsAt: "lifetime" }, { endsAt: { $gt: currentDate } }],
     });
 
-    const expiredPayments = await Payment.find({
-      _id: { $in: user.paymentId },
-      status: "success",
-      endsAt: { $ne: "lifetime", $lte: currentDate },
-    });
+    const validPayments = [];
+    const expiredPayments = [];
 
-    const validPackageIds = validPayments.map(
-      (paymentDoc) => paymentDoc.package
-    );
+    for (const payment of payments) {
+      if (payment.endsAt! > currentDate) {
+        validPayments.push(payment);
+      } else {
+        expiredPayments.push(payment);
+      }
+    }
 
-    const validPackages = await Package.find({
-      _id: { $in: validPackageIds },
-    });
+    const validPackageIds = validPayments.map((p) => p.package);
+    const packages = await Package.find({ _id: { $in: validPackageIds } });
 
-    const validPackageIdsToKeep = validPackages.map((pkg) => pkg._id);
+    const validPackageIdsToKeep = new Set<string>();
+
+    let coursesToAdd: any = [];
+
+    if (user.courses) {
+      const userCourses = user.courses.map((c) => c.toString());
+      coursesToAdd = [...new Set([...userCourses])];
+    }
+
+    for (const pkg of packages) {
+      const userPayment = validPayments.find(
+        (p) => p.package.toString() === pkg._id.toString()
+      );
+
+      if (!userPayment) continue;
+
+      if (pkg.access === "duration" && pkg.duration) {
+        const paymentStartDate = new Date(userPayment.date);
+        const packageExpiryDate = new Date(paymentStartDate);
+        packageExpiryDate.setDate(packageExpiryDate.getDate() + pkg.duration);
+
+        if (packageExpiryDate > currentDate) {
+          validPackageIdsToKeep.add(pkg._id.toString());
+        }
+      } else {
+        validPackageIdsToKeep.add(pkg._id.toString());
+      }
+
+      if (pkg.access !== "quiz" && pkg.courses) {
+        for (const courseId of pkg.courses) {
+          coursesToAdd.add(courseId.toString());
+        }
+      }
+    }
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
         $set: {
-          packageId: validPackageIdsToKeep,
+          packageId: Array.from(validPackageIdsToKeep),
+          courses: Array.from(coursesToAdd),
         },
-        $pull: {
-          paymentId: { $in: expiredPayments.map((payment) => payment._id) },
-        },
+        $pull: { paymentId: { $in: expiredPayments.map((p) => p._id) } },
       },
       { new: true }
     );
 
-    if (!updatedUser) {
-      throw new Error("Error updating user packages");
-    }
+    if (!updatedUser) throw new Error("Error updating user packages");
 
     return updatedUser;
   } catch (err: any) {
@@ -214,9 +234,28 @@ async function validateUserPackages(userId: string) {
   }
 }
 
+function creditHoursToQuizCredits(creditHours: number): number {
+  if (creditHours === 1) {
+    return 1.25 * 100;
+  } else if (creditHours === 2) {
+    return 2 * 100;
+  } else if (creditHours === 3) {
+    return 3 * 100;
+  } else {
+    return 300;
+  }
+}
+
 async function validateUserQuizAccess(username: string, quizId: string) {
   try {
-    const user = await User.findOne({ username });
+    const [quizDoc, user] = await Promise.all([
+      QuizQuestion.findById(quizId),
+      User.findOne({ username }),
+    ]);
+
+    if (!quizDoc) {
+      throw new Error("Quiz not found");
+    }
 
     if (!user) {
       throw new Error("User not found");
@@ -226,49 +265,39 @@ async function validateUserQuizAccess(username: string, quizId: string) {
       return;
     }
 
-    if (
-      user.hasFreeAccess &&
-      user.freeAccessCount != null &&
-      user.freeAccessCount > 0
-    ) {
-      await User.findOneAndUpdate(
-        { username },
-        { $set: { freeAccessCount: user.freeAccessCount - 1 } }
-      );
-      return;
-    }
-
-    if (user.hasFreeAccess && user.freeAccessCount === 0) {
-      await User.findOneAndUpdate(
-        { username },
-        { $set: { hasFreeAccess: false } }
-      );
+    if (user.hasFreeAccess) {
+      if (user.freeAccessCount != null && user.freeAccessCount > 0) {
+        if (user.freeAccessCount === 1) {
+          await User.findOneAndUpdate(
+            { username },
+            { $set: { freeAccessCount: 0, hasFreeAccess: false } }
+          );
+        } else {
+          await User.findOneAndUpdate(
+            { username },
+            { $set: { freeAccessCount: user.freeAccessCount - 1 } }
+          );
+        }
+        return;
+      } else {
+        throw new Error("User has no free access left to take the quiz");
+      }
     }
 
     const validateUserPackageStat = await validateUserPackages(
       user._id.toString()
     );
-
     if (!validateUserPackageStat) {
       throw new Error("Error validating user packages");
     }
 
-    const userPackages = await Package.find({ _id: { $in: user.packageId } });
-
-    if (userPackages.length === 0) {
-      throw new Error("User package not found");
-    }
-
-    const quizDoc = await QuizQuestion.findById(quizId);
-
-    if (!quizDoc) {
-      throw new Error("Quiz not found");
+    if (user.courses && !user.courses.includes(quizDoc.courseId)) {
+      throw new Error("User does not have access to this quiz");
     }
 
     const questionIds = quizDoc.quizQuestions.flatMap(
       (filteredQuestion) => filteredQuestion.questions
     );
-
     const moderatedQuestionsCount = await Question.countDocuments({
       _id: { $in: questionIds },
       moderatedBy: user._id,
@@ -278,26 +307,22 @@ async function validateUserQuizAccess(username: string, quizId: string) {
       return;
     }
 
-    const quizPackages = await Package.find({
-      courses: { $in: quizDoc.courseId },
-    });
+    if (user.quizCredits && user.quizCredits > 0) {
+      const { creditHours } = quizDoc;
+      const quizCredits = creditHoursToQuizCredits(creditHours);
 
-    if (!quizPackages || quizPackages.length === 0) {
-      throw new Error("No packages found for the quiz");
+      if (user.quizCredits >= quizCredits) {
+        await User.findOneAndUpdate(
+          { username },
+          { $set: { quizCredits: user.quizCredits - quizCredits } }
+        );
+        return;
+      } else {
+        throw new Error("Insufficient quiz credits");
+      }
     }
 
-    const hasAccess = quizPackages.some((quizPackage) =>
-      userPackages.some(
-        (userPackage) =>
-          userPackage._id.toString() === quizPackage._id.toString()
-      )
-    );
-
-    if (!hasAccess) {
-      throw new Error("User does not have access to this quiz");
-    }
-
-    return;
+    throw new Error("User does not have sufficient access or quiz credits");
   } catch (err: any) {
     throw new Error(`Error validating user quiz access: ${err.message}`);
   }

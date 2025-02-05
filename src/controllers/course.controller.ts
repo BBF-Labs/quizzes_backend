@@ -23,18 +23,23 @@ async function createCourse(userId: string, course: Partial<ICourse>) {
     const existingCourse = await Course.findOne({ code: course.code });
     if (existingCourse) throw new Error("Course already exists");
 
-    const { code, ...courseDetails } = course;
+    if (!course.code) throw new Error("Course code is required");
 
-    const courseCode = code?.toUpperCase();
+    const match = course.code.match(/^([a-zA-Z]+)\s?(\d+)$/);
+    if (!match) throw new Error("Invalid course code format");
+
+    const [, codeStr, codeNum] = match;
+    const courseCode = `${codeStr.toUpperCase()} ${codeNum}`;
+    const semester = parseInt(codeNum, 10) % 2 === 0 ? 2 : 1;
 
     const newCourse = new Course({
       code: courseCode,
+      semester: semester,
       createdBy: userId,
-      ...courseDetails,
+      ...course,
     });
 
     await newCourse.save();
-
     return newCourse;
   } catch (err: any) {
     throw new Error(`Error creating course: ${err.message}`);
@@ -101,15 +106,19 @@ async function deleteCourse(courseId: string) {
 
 async function findCourseByCode(courseCode: string) {
   try {
-    const course = await Course.findOne({ code: courseCode.toUpperCase() });
+    if (!courseCode) throw new Error("Course code is required");
 
-    if (!course) {
-      return null;
-    }
+    const match = courseCode.match(/^([a-zA-Z]+)\s?(\d+)$/);
+    if (!match) throw new Error("Invalid course code format");
 
-    return course;
+    const [, codeStr, codeNum] = match;
+    const formattedCode = `${codeStr.toUpperCase()} ${codeNum}`;
+
+    const course = await Course.findOne({ code: formattedCode });
+
+    return course || null;
   } catch (err: any) {
-    throw err.message;
+    throw new Error(`Error finding course: ${err.message}`);
   }
 }
 

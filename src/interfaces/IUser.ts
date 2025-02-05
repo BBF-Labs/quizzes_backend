@@ -14,6 +14,7 @@ interface IUser extends Document {
   isSubscribed: boolean;
   hasFreeAccess?: boolean;
   freeAccessCount?: number;
+  quizCredits?: number;
   paymentId?: Types.ObjectId[];
   packageId?: Types.ObjectId[];
   lastLogin?: Date;
