@@ -24,6 +24,10 @@ const CourseSchema = new Schema<ICourse>(
       required: true,
       default: 0,
     },
+    semester: {
+      type: Number,
+      required: true,
+    },
     isDeleted: {
       type: Boolean,
       default: false,

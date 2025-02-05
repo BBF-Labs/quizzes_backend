@@ -51,6 +51,11 @@ const PaymentSchema: Schema<IPayment> = new Schema(
       ],
       default: "pending",
     },
+    type: {
+      type: String,
+      enum: ["course", "quiz", "course", "default"],
+      default: "default",
+    },
     package: {
       type: Schema.Types.ObjectId,
       ref: "Package",

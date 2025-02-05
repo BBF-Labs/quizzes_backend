@@ -55,6 +55,10 @@ const UserSchema = new Schema<IUser>(
       type: Number,
       default: 2,
     },
+    quizCredits: {
+      type: Number,
+      default: 0,
+    },
     paymentId: {
       type: [Schema.Types.ObjectId],
       ref: "Payment",
