@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import {
   findUserByUsername,
-  paystackWebhook,
+  paystackAPI,
   createPayment,
   updatePayment,
   getPaymentByReference,
@@ -18,15 +18,45 @@ import {
 import { StatusCodes } from "../config";
 import { authenticateUser, authorizeRoles } from "../middlewares";
 
-const { initializePayment, verifyPayment } = paystackWebhook();
+const { initializePayment, verifyPayment } = paystackAPI();
 
 const paymentRoutes: Router = Router();
 
 paymentRoutes.use(authenticateUser);
 
+const calculateDiscountedAmount = (
+  packageDoc: any,
+  discountCode?: string
+): number | null => {
+  if (!packageDoc.discountCode || !packageDoc.discountPercentage) {
+    return packageDoc.price;
+  }
+
+  if (discountCode !== packageDoc.discountCode) {
+    return null;
+  }
+
+  const discountAmount =
+    (packageDoc.price * packageDoc.discountPercentage) / 100;
+  return packageDoc.price - discountAmount;
+};
+
+const processFreePayment = async (user: any, packageDoc: any) => {
+  const ref = await generateReference();
+  await createPayment({
+    userId: user._id,
+    amount: 0,
+    reference: ref,
+    date: new Date(),
+    isValid: true,
+    accessCode: "FREE",
+    package: packageDoc ? packageDoc.id : null,
+  });
+};
+
 /**
  * @swagger
- * /payments/pay:
+ * /api/v1/payments/pay:
  *   post:
  *     summary: Initialize a new payment, handling both paid and free packages
  *     tags:
@@ -60,128 +90,110 @@ paymentRoutes.use(authenticateUser);
  */
 paymentRoutes.post("/pay", async (req: Request, res: Response) => {
   try {
-    const form = req.body;
+    const { packageId, discountCode, amount } = req.body;
 
-    if (!form) {
+    if (!amount && !packageId) {
       res.status(StatusCodes.BAD_REQUEST).json({
-        message: "Invalid request: username and amount are required",
+        message: "Invalid request: amount or packageId is required",
       });
       return;
     }
 
     const currentUser = req.user;
-
     if (!currentUser) {
       res.status(StatusCodes.UNAUTHORIZED).json({ message: "Unauthorized" });
       return;
     }
 
-    const username = currentUser.username;
-    const user = await findUserByUsername(username);
-
+    const user = await findUserByUsername(currentUser.username);
     if (!user) {
       res.status(StatusCodes.NOT_FOUND).json({ message: "User not found" });
       return;
     }
 
     let packageDoc = null;
-    if (form.discountCode) {
-      packageDoc = await getPackageByDiscountCode(form.discountCode);
-    } else if (form.packageId) {
-      packageDoc = await getPackageDetails(form.packageId);
-    }
+    let finalAmount = amount;
 
-    if (!packageDoc) {
-      res.status(StatusCodes.NOT_FOUND).json({
-        message: "Package not found. Cannot create payment session",
-      });
-      return;
-    }
+    if (packageId || discountCode) {
+      packageDoc = discountCode
+        ? await getPackageByDiscountCode(discountCode)
+        : await getPackageDetails(packageId);
 
-    const isDiscountable =
-      packageDoc.discountCode && packageDoc.discountPercentage ? true : false;
+      if (!packageDoc) {
+        res.status(StatusCodes.NOT_FOUND).json({
+          message: "Package not found. Cannot create payment session",
+        });
+        return;
+      }
 
-    if (isDiscountable) {
-      if (form.discountCode !== packageDoc.discountCode) {
+      finalAmount = calculateDiscountedAmount(packageDoc, discountCode);
+      if (finalAmount === null) {
         res.status(StatusCodes.BAD_REQUEST).json({
           message: "Invalid discount code",
         });
         return;
       }
-
-      const discountAmount =
-        (packageDoc.price * packageDoc.discountPercentage!) / 100;
-      form.amount = packageDoc.price - discountAmount;
     }
 
-    if (packageDoc.discountPercentage === 100 || form.amount === 0) {
-      const ref = await generateReference();
-      const paymentData = {
-        userId: user._id,
-        amount: 0,
-        reference: ref,
-        date: new Date(),
-        isValid: true,
-        accessCode: "FREE",
-        package: packageDoc.id || null,
-      };
-
-      await createPayment(paymentData);
-
+    // Handle free payment
+    if (finalAmount === 0) {
+      await processFreePayment(user, packageDoc);
       res.status(StatusCodes.OK).json({
         message: "Payment processed successfully as free",
       });
       return;
     }
 
-    form.metadata = { full_name: user.name };
-    form.email = user.email;
-    form.currency = "GHS";
-    form.amount *= 100;
+    // Initialize Paystack payment
+    const paymentForm = {
+      metadata: { full_name: user.name },
+      email: user.email,
+      currency: "GHS",
+      amount: finalAmount * 100, // Convert to minor currency unit
+    };
 
-    initializePayment(form, async (error: any, body: any) => {
-      if (error) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-          message: error.message,
-        });
-        return;
-      }
+    try {
+      const paystackResponse = await initializePayment(paymentForm);
 
-      if (!body || !body.authorization_url) {
+      if (!paystackResponse || !paystackResponse.authorization_url) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
           message: "Invalid response from Paystack",
         });
         return;
       }
 
-      const paymentData = {
+      await createPayment({
         userId: user._id,
-        amount: form.amount,
-        reference: body.reference,
+        amount: paymentForm.amount,
+        reference: paystackResponse.reference,
         date: new Date(),
         isValid: false,
-        accessCode: body.access_code,
-        package: form.packageId || null,
-      };
-
-      await createPayment(paymentData);
+        accessCode: paystackResponse.access_code,
+        package: packageId || null,
+      });
 
       res.status(StatusCodes.OK).json({
         message: "Success",
-        authorization_url: body.authorization_url,
-        reference: body.reference,
+        authorization_url: paystackResponse.authorization_url,
+        reference: paystackResponse.reference,
       });
-    });
+      return;
+    } catch (paymentError: any) {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: paymentError.message || "Payment initialization failed",
+      });
+      return;
+    }
   } catch (err: any) {
-    res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ message: err.message });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      message: err.message || "Internal Server Error",
+    });
   }
 });
 
 /**
  * @swagger
- * /payments/{reference}/verify:
+ * /api/v1/payments/{reference}/verify:
  *   get:
  *     summary: Verify the payment using the payment reference
  *     tags:
@@ -236,73 +248,86 @@ paymentRoutes.post("/pay", async (req: Request, res: Response) => {
 paymentRoutes.get("/:reference/verify", async (req: Request, res: Response) => {
   try {
     const { reference } = req.params;
-
     const user = req.user;
 
     if (!user) {
-      res
-        .status(StatusCodes.UNAUTHORIZED)
-        .json({ message: "Login to Access this route" });
+      res.status(StatusCodes.UNAUTHORIZED).json({
+        message: "Login to access this route",
+      });
       return;
     }
 
     const userDoc = await findUserByUsername(user.username);
-
     if (!userDoc) {
-      res
-        .status(StatusCodes.BAD_REQUEST)
-        .json({ message: "User Does not exists" });
+      res.status(StatusCodes.BAD_REQUEST).json({
+        message: "User does not exist",
+      });
       return;
     }
 
     const referenceDoc = await getPaymentByReference(reference);
-
     if (!referenceDoc) {
-      res
-        .status(StatusCodes.NOT_FOUND)
-        .json({ message: "Transaction Not Found", isValid: false });
+      res.status(StatusCodes.NOT_FOUND).json({
+        message: "Transaction not found",
+        isValid: false,
+      });
       return;
     }
 
     if (referenceDoc.isValid) {
+      // If already valid, no need to verify again
       await updateUserPaymentDetails(userDoc._id.toString(), reference);
-      res
-        .status(StatusCodes.OK)
-        .json({ message: "Transaction is Valid", isValid: true });
+      res.status(StatusCodes.OK).json({
+        message: "Transaction is already valid",
+        isValid: true,
+      });
       return;
     }
 
-    verifyPayment(reference, async (error: any, data: any) => {
-      if (error || !data || !data.status) {
-        return res
-          .status(StatusCodes.BAD_REQUEST)
-          .json({ message: "Payment verification failed" });
+    // Verify the payment with Paystack
+    try {
+      const data = await verifyPayment(reference);
+
+      if (!data || !data.status) {
+        res.status(StatusCodes.BAD_REQUEST).json({
+          message: "Payment verification failed",
+        });
+        return;
       }
 
+      // Update payment record
+      const isValid = data.status === "success";
       await updatePayment(reference, {
         status: data.status,
-        isValid: data.status === "success",
+        isValid,
         method: data.channel,
       });
 
-      await updateUserPaymentDetails(userDoc._id.toString(), reference);
+      if (isValid) {
+        await updateUserPaymentDetails(userDoc._id.toString(), reference);
+      }
 
       res.status(StatusCodes.OK).json({
         message: "Payment verified",
         transaction: data,
-        isValid: true,
+        isValid,
       });
-    });
+    } catch (paymentError: any) {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: `Payment verification error: ${paymentError.message}`,
+      });
+      return;
+    }
   } catch (err: any) {
-    res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ message: err.message });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      message: err.message || "Internal Server Error",
+    });
   }
 });
 
 /**
  * @swagger
- * /payments/{reference}:
+ * /api/v1/payments/{reference}:
  *   get:
  *     summary: Get payment details by reference
  *     tags:
@@ -375,7 +400,7 @@ paymentRoutes.get("/:reference", async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /payments/user:
+ * /api/v1/payments/i/user:
  *   get:
  *     summary: Get payments of the authenticated user
  *     tags:
@@ -392,7 +417,7 @@ paymentRoutes.get("/:reference", async (req: Request, res: Response) => {
  *       500:
  *         description: Internal server error
  */
-paymentRoutes.get("/user", async (req: Request, res: Response) => {
+paymentRoutes.get("/i/user", async (req: Request, res: Response) => {
   try {
     const user = req.user;
 
@@ -429,11 +454,13 @@ paymentRoutes.get("/user", async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /payments/user/{userId}:
+ * /api/v1/payments/user/{userId}:
  *   get:
  *     summary: Get payments of a specific user (Admin only)
  *     tags:
  *       - Payments
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: userId
@@ -482,7 +509,7 @@ paymentRoutes.get(
 
 /**
  * @swagger
- * /payments/invalid:
+ * /api/v1/payments/invalid:
  *   get:
  *     summary: Get all invalid payments (Admin only)
  *     tags:
@@ -507,6 +534,45 @@ paymentRoutes.get(
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: err.message });
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /api/v1/payments/:
+ *   get:
+ *     summary: Get all payments (Admin only)
+ *     tags:
+ *       - Payments
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of payments
+ *       500:
+ *         description: Internal server error
+ */
+paymentRoutes.get(
+  "/",
+  authorizeRoles("admin"),
+  async (req: Request, res: Response) => {
+    try {
+      const payments = await getAllPayments();
+
+      if (!payments) {
+        res
+          .status(StatusCodes.NOT_FOUND)
+          .json({ message: "No payments found", payment: payments });
+      }
+
+      res
+        .status(StatusCodes.OK)
+        .json({ message: "Success", payment: payments });
+    } catch (err: any) {
+      res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ message: `Error: ${err.message}` });
     }
   }
 );

@@ -4,83 +4,69 @@ import { Config } from "../config";
 import { IPayment } from "../interfaces";
 import { Package, Payment, User } from "../models";
 
-function paystackWebhook() {
+function paystackAPI() {
   const secretKey = Config.PAYSTACK_SECRET_KEY;
 
-  const initializePayment = (
-    form: any,
-    callback: (error: any, data: any) => void
-  ) => {
-    const options = {
-      url: "https://api.paystack.co/transaction/initialize",
-      headers: {
-        Authorization: `Bearer ${secretKey}`,
-        "Content-Type": "application/json",
-        "Cache-Control": "no-cache",
-      },
-      data: form,
-    };
-
-    axios
-      .post(options.url, options.data, { headers: options.headers })
-      .then((response) => {
-        if (response.data && response.data.data) {
-          callback(null, response.data.data);
-        } else {
-          callback(new Error("Invalid response from Paystack"), null);
+  // Initialize payment with Paystack
+  const initializePayment = async (form: any) => {
+    try {
+      const response = await axios.post(
+        "https://api.paystack.co/transaction/initialize",
+        form,
+        {
+          headers: {
+            Authorization: `Bearer ${secretKey}`,
+            "Content-Type": "application/json",
+          },
         }
-      })
-      .catch((error) => {
-        callback(error, null);
-      });
+      );
+
+      if (!response.data || !response.data.data) {
+        throw new Error("Invalid response from Paystack");
+      }
+
+      return response.data.data; // Return the response properly
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Paystack initialization failed"
+      );
+    }
   };
 
-  const verifyPayment = (
-    ref: any,
-    callback: (error: any, data: any) => void
-  ) => {
-    const options = {
-      url: `https://api.paystack.co/transaction/verify/${ref}`,
-      headers: {
-        Authorization: `Bearer ${secretKey}`,
-        "Content-Type": "application/json",
-      },
-    };
-
-    axios
-      .get(options.url, { headers: options.headers })
-      .then((response) => {
-        if (response.data && response.data.data) {
-          callback(null, response.data.data);
-        } else {
-          callback(new Error("Invalid response from Paystack"), null);
+  // Verify payment status
+  const verifyPayment = async (ref: string) => {
+    try {
+      const response = await axios.get(
+        `https://api.paystack.co/transaction/verify/${ref}`,
+        {
+          headers: {
+            Authorization: `Bearer ${secretKey}`,
+            "Content-Type": "application/json",
+          },
         }
-      })
-      .catch((error) => {
-        callback(error, null);
-      });
+      );
+
+      if (!response.data || !response.data.data) {
+        throw new Error("Invalid response from Paystack");
+      }
+
+      return response.data.data;
+    } catch (error: any) {
+      throw new Error(`Paystack Verification Error: ${error.message}`);
+    }
   };
 
   return { initializePayment, verifyPayment };
 }
 
+// Create a new payment record
 async function createPayment(data: Partial<IPayment>) {
   try {
-    const existingPayment = await Payment.findOne({
-      userId: data.userId,
-      package: data.package,
-    });
-
-    if (existingPayment) {
-      throw new Error("Payment already exists");
-    }
-
     const payment = new Payment(data);
-
     await payment.save();
     return payment;
-  } catch (err: any) {
-    throw new Error(`Error creating payment: ${err.message}`);
+  } catch (error: any) {
+    throw new Error(`Error creating payment: ${error.message}`);
   }
 }
 
@@ -271,7 +257,7 @@ async function updateUserPaymentDetails(userId: string, reference: string) {
 }
 
 export {
-  paystackWebhook,
+  paystackAPI,
   createPayment,
   updatePayment,
   getPaymentByReference,
