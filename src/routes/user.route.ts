@@ -1,6 +1,11 @@
 import { Router, Request, Response } from "express";
-import { createUser, findUserByUsername, updateUser } from "../controllers";
-import { authGuard, authenticateUser } from "../middlewares";
+import {
+  createUser,
+  findUserByUsername,
+  updateUser,
+  getUsers,
+} from "../controllers";
+import { authGuard, authenticateUser, authorizeRoles } from "../middlewares";
 import { StatusCodes } from "../config";
 
 const userRoutes: Router = Router();
@@ -249,6 +254,50 @@ userRoutes.put(
         isBanned: updates.isBanned ?? userDoc.isBanned,
         role: updates.role || userDoc.role,
       };
+    } catch (err: any) {
+      res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ message: "Error", error: err.message });
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /api/v1/user/:
+ *   get:
+ *     summary: Get all users
+ *     description: Retrieve all users in the system. Only admins can access this route.
+ *     tags:
+ *       - User
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Users retrieved successfully.
+ *       401:
+ *         description: Unauthorized request.
+ *       403:
+ *         description: Forbidden, non-admins cannot access this route.
+ *       404:
+ *         description: No users found.
+ *       500:
+ *         description: Internal server error.
+ */
+userRoutes.get(
+  "/",
+  authenticateUser,
+  authorizeRoles("admin"),
+  async (req: Request, res: Response) => {
+    try {
+      const users = await getUsers();
+
+      if (!users) {
+        res.status(StatusCodes.NOT_FOUND).json({ message: "No users found" });
+        return;
+      }
+
+      res.status(StatusCodes.OK).json({ message: "Success", users: users });
     } catch (err: any) {
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)

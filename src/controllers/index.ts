@@ -17,6 +17,7 @@ import {
   findUserById,
   validateUserPackages,
   validateUserQuizAccess,
+  getUsers,
 } from "./user.controller";
 
 import {
@@ -65,7 +66,7 @@ import {
 } from "./material.controller";
 
 import {
-  paystackWebhook,
+  paystackAPI,
   createPayment,
   updatePayment,
   getPaymentByReference,
@@ -129,7 +130,7 @@ export {
   getMaterials,
   getUserMaterials,
   getCourseMaterials,
-  paystackWebhook,
+  paystackAPI,
   createPayment,
   updatePayment,
   getPaymentByReference,
@@ -146,4 +147,5 @@ export {
   updateUserPaymentDetails,
   validateUserPackages,
   validateUserQuizAccess,
+  getUsers,
 };

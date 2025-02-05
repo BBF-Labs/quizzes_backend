@@ -303,6 +303,20 @@ async function validateUserQuizAccess(username: string, quizId: string) {
   }
 }
 
+async function getUsers() {
+  try {
+    const users = await User.find();
+
+    if (!users) {
+      throw new Error("No users found");
+    }
+
+    return users;
+  } catch (err: any) {
+    throw new Error(`Error getting users: ${err.message}`);
+  }
+}
+
 export {
   createUser,
   updateUser,
@@ -313,4 +327,5 @@ export {
   findUserById,
   validateUserPackages,
   validateUserQuizAccess,
+  getUsers,
 };
