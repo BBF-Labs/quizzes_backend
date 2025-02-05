@@ -38,6 +38,11 @@ const UserSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    accessType: {
+      type: String,
+      enum: ["quiz", "course", "duration", "default"],
+      default: "default",
+    },
     isSubscribed: {
       type: Boolean,
       default: false,
