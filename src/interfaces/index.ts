@@ -7,6 +7,7 @@ import IProgress from "./IProgress";
 import IPayment from "./IPayment";
 import IPackage from "./IPackage";
 import IQuizQuestion from "./IQuizQuestion";
+import IToken from "./IToken";
 
 export {
   ICourse,
@@ -18,4 +19,5 @@ export {
   IPayment,
   IPackage,
   IQuizQuestion,
+  IToken,
 };

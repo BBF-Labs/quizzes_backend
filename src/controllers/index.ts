@@ -87,6 +87,12 @@ import {
   getPackageByDiscountCode,
 } from "./package.controller";
 
+import {
+  saveToken,
+  invalidateMultipleSessions,
+  updateToken,
+} from "./token.controller";
+
 export {
   generateAccessToken,
   generateRefreshToken,
@@ -150,4 +156,7 @@ export {
   validateUserQuizAccess,
   getUsers,
   createLinkMaterial,
+  saveToken,
+  invalidateMultipleSessions,
+  updateToken,
 };

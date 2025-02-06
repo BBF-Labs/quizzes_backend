@@ -7,3 +7,4 @@ export { default as Material } from "./material.model";
 export { default as Progress } from "./progress.model";
 export { default as Payment } from "./payment.model";
 export { default as Package } from "./package.model";
+export { default as Token } from "./token.model";

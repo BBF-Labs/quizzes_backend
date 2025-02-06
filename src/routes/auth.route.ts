@@ -6,6 +6,7 @@ import {
   verifyRefreshToken,
   findUserByUsername,
   validateUserPackages,
+  updateToken,
 } from "../controllers";
 import { authenticateUser } from "../middlewares";
 import { StatusCodes } from "../config";
@@ -110,6 +111,8 @@ authRoutes.post("/login", async (req: Request, res: Response) => {
     const accessToken = await generateAccessToken(payload);
     const refreshToken = await generateRefreshToken(payload);
 
+    await updateToken(user.username, { accessToken, refreshToken });
+
     await validateUserPackages(user._id.toString());
 
     res.status(StatusCodes.OK).json({
@@ -190,6 +193,8 @@ authRoutes.post(
       }
 
       const accessToken = await generateAccessToken(decoded);
+
+      await updateToken(decoded.username, { accessToken, refreshToken });
 
       res.status(StatusCodes.OK).json({
         accessToken,

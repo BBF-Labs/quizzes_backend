@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { IUser } from "../interfaces";
 import { StatusCodes } from "../config";
-import { findUserByUsername } from "../controllers";
+import { findUserByUsername, invalidateMultipleSessions } from "../controllers";
 import jwt from "jsonwebtoken";
 import { Config } from "../config";
 
@@ -79,6 +79,8 @@ async function authenticateUser(
       return;
     }
 
+    await invalidateMultipleSessions(token);
+
     req.user = {
       username: userDoc.username,
       role: userDoc.role,
@@ -86,12 +88,14 @@ async function authenticateUser(
     };
 
     next();
-  } catch (error) {
+  } catch (error: any) {
     if (error instanceof jwt.TokenExpiredError) {
       res.status(StatusCodes.UNAUTHORIZED).json({ message: "Token expired" });
       return;
     }
-    res.status(StatusCodes.UNAUTHORIZED).json({ message: "Invalid token" });
+    res
+      .status(StatusCodes.UNAUTHORIZED)
+      .json({ message: error.message || "Invalid token" });
   }
 }
 
