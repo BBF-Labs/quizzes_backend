@@ -209,43 +209,53 @@ async function updateUserPaymentDetails(userId: string, reference: string) {
       throw new Error("Payment not found");
     }
 
+    if (paymentDoc.type === "quiz") {
+      await User.updateOne(
+        { _id: userId },
+        {
+          accessType: "quiz",
+          quizCredits: paymentDoc.amount * 100,
+          isSubscribed: true,
+        }
+      );
+    }
+
     const packageDoc = await Package.findById(paymentDoc.package);
 
-    if (!packageDoc) {
-      throw new Error("Package not found for this payment");
-    }
-
-    const durationInDays = packageDoc.duration;
-    if (typeof durationInDays !== "number" || durationInDays <= 0) {
-      throw new Error("Invalid package duration");
-    }
-
-    const endsAt = new Date();
-    endsAt.setDate(endsAt.getDate() + durationInDays);
-
-    await Payment.findByIdAndUpdate(
-      paymentDoc._id,
-      {
-        endsAt: endsAt,
-      },
-      { new: true }
-    );
-
-    const updatedUser = await User.updateOne(
-      { _id: userId },
-      {
-        $push: {
-          packageId: packageDoc._id,
-          paymentId: paymentDoc._id,
-        },
-        $set: {
-          isSubscribed: true,
-        },
+    if (packageDoc) {
+      const durationInDays = packageDoc.duration;
+      if (typeof durationInDays !== "number" || durationInDays <= 0) {
+        throw new Error("Invalid package duration");
       }
-    );
 
-    if (updatedUser.modifiedCount === 0) {
-      throw new Error("User not found or no changes made");
+      const endsAt = new Date();
+      endsAt.setDate(endsAt.getDate() + durationInDays);
+
+      await Payment.findByIdAndUpdate(
+        paymentDoc._id,
+        {
+          endsAt: endsAt,
+        },
+        { new: true }
+      );
+
+      const updatedUser = await User.updateOne(
+        { _id: userId },
+        {
+          $push: {
+            packageId: packageDoc._id,
+            paymentId: paymentDoc._id,
+          },
+          $set: {
+            isSubscribed: true,
+          },
+          accessType: packageDoc.access,
+        }
+      );
+
+      if (updatedUser.modifiedCount === 0) {
+        throw new Error("User not found or no changes made");
+      }
     }
 
     const user = await User.findById(userId).populate("packageId");

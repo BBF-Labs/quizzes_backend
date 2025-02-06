@@ -10,9 +10,11 @@ interface IUser extends Document {
   courses?: Types.ObjectId[];
   role: "student" | "admin" | "moderator";
   isBanned: boolean;
+  accessType?: "quiz" | "course" | "duration" | "default";
   isSubscribed: boolean;
   hasFreeAccess?: boolean;
   freeAccessCount?: number;
+  quizCredits?: number;
   paymentId?: Types.ObjectId[];
   packageId?: Types.ObjectId[];
   lastLogin?: Date;

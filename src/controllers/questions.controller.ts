@@ -59,6 +59,7 @@ async function batchCreateQuizQuestions(questionIds: string | string[]) {
                 questions,
               })
             ),
+            creditHours: await Course.findById(courseId).select("creditHours"),
           });
         } else {
           // Update existing quiz document

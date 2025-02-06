@@ -22,7 +22,7 @@ const PaymentSchema: Schema<IPayment> = new Schema(
       required: true,
     },
     endsAt: {
-      type: Schema.Types.Mixed,
+      type: Schema.Types.Date,
       default: null,
     },
     isValid: {
@@ -50,6 +50,11 @@ const PaymentSchema: Schema<IPayment> = new Schema(
         "reversed",
       ],
       default: "pending",
+    },
+    type: {
+      type: String,
+      enum: ["course", "quiz", "course", "default"],
+      default: "default",
     },
     package: {
       type: Schema.Types.ObjectId,

@@ -14,7 +14,7 @@ const MaterialSchema: Schema<IMaterial> = new Schema(
     },
     type: {
       type: String,
-      enum: ["pdf", "doc", "slides", "text", "img"],
+      enum: ["pdf", "doc", "slides", "text", "img", "link"],
       required: true,
     },
     uploadedBy: {
