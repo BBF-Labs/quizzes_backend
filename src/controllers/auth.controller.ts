@@ -7,6 +7,7 @@ interface TokenUser {
   username: string;
   role: string;
   isBanned: boolean;
+  exp?: number | undefined;
 }
 
 async function generateAccessToken(user: TokenUser) {
@@ -47,8 +48,9 @@ async function verifyToken(token: string): Promise<TokenUser | null> {
     const username = decoded.username;
     const role = decoded.role;
     const isBanned = decoded.isBanned;
+    const exp = decoded.exp;
 
-    return { username, role, isBanned };
+    return { username, role, isBanned, exp };
   } catch (err: any) {
     return null;
   }
