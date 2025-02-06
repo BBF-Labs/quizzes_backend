@@ -17,7 +17,7 @@ async function generateAccessToken(user: TokenUser) {
   return Jwt.sign(
     { username: user.username, role: user.role, isBanned: user.isBanned },
     Config.ACCESS_TOKEN_SECRET,
-    { expiresIn: "15m" }
+    { expiresIn: "60m" }
   );
 }
 
