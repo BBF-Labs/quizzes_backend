@@ -20,22 +20,39 @@ async function findCourseById(courseId: string) {
 
 async function createCourse(userId: string, course: Partial<ICourse>) {
   try {
-    const existingCourse = await Course.findOne({ code: course.code });
-    if (existingCourse) throw new Error("Course already exists");
+    if (!course.code) {
+      throw new Error("Course code is required");
+    }
 
-    const { code, ...courseDetails } = course;
+    const codeRegex = /^([A-Za-z]+)\s*(\d+)$/;
+    const match = course.code.trim().match(codeRegex);
 
-    const courseCode = code?.toUpperCase();
+    if (!match) {
+      throw new Error("Invalid course code format. Expected format: DCIT 101");
+    }
+
+    const [_, codeStr, codeNum] = match;
+    const courseCode = `${codeStr.toUpperCase()} ${codeNum}`;
+
+    const existingCourse = await Course.findOne({ code: courseCode });
+    if (existingCourse) {
+      throw new Error("Course already exists");
+    }
+
+    const semester = parseInt(codeNum) % 2 === 0 ? 2 : 1;
+
+    console.log("Course Code:", courseCode, "Semester:", semester);
 
     const newCourse = new Course({
-      code: courseCode,
+      semester,
       createdBy: userId,
-      ...courseDetails,
+      ...course,
+      code: courseCode,
     });
 
     await newCourse.save();
 
-    return newCourse;
+    return { message: "Course created", course: newCourse };
   } catch (err: any) {
     throw new Error(`Error creating course: ${err.message}`);
   }
@@ -45,6 +62,22 @@ async function updateCourse(courseId: string, updatedCourse: Partial<ICourse>) {
   try {
     const course = await Course.findOne({ _id: courseId });
     if (!course) throw new Error("Course not found");
+
+    if (updatedCourse.code) {
+      const codeRegex = /^([A-Za-z]+)\s*(\d+)$/;
+      const match = updatedCourse.code.match(codeRegex);
+
+      if (!match) {
+        throw new Error(
+          "Invalid course code format. Expected format: DCIT 101"
+        );
+      }
+
+      const [_, codeStr, codeNum] = match;
+      const formattedCode = `${codeStr.toUpperCase()} ${codeNum}`;
+
+      updatedCourse.code = formattedCode;
+    }
 
     const updatedCourseData = await Course.findOneAndUpdate(
       { _id: courseId },
@@ -101,15 +134,22 @@ async function deleteCourse(courseId: string) {
 
 async function findCourseByCode(courseCode: string) {
   try {
-    const course = await Course.findOne({ code: courseCode.toUpperCase() });
+    if (!courseCode) throw new Error("Course code is required");
+    const codeRegex = /^([A-Za-z]+)\s*(\d+)$/;
+    const match = courseCode.trim().match(codeRegex);
 
-    if (!course) {
-      return null;
+    if (!match) {
+      throw new Error("Invalid course code format. Expected format: DCIT 101");
     }
 
-    return course;
+    const [_, codeStr, codeNum] = match;
+    const formattedCode = `${codeStr.toUpperCase()} ${codeNum}`;
+
+    const course = await Course.findOne({ code: formattedCode });
+
+    return course || null;
   } catch (err: any) {
-    throw err.message;
+    throw new Error(`Error finding course: ${err.message}`);
   }
 }
 

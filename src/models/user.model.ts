@@ -38,6 +38,11 @@ const UserSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    accessType: {
+      type: String,
+      enum: ["quiz", "course", "duration", "default"],
+      default: "default",
+    },
     isSubscribed: {
       type: Boolean,
       default: false,
@@ -49,6 +54,10 @@ const UserSchema = new Schema<IUser>(
     freeAccessCount: {
       type: Number,
       default: 2,
+    },
+    quizCredits: {
+      type: Number,
+      default: 0,
     },
     paymentId: {
       type: [Schema.Types.ObjectId],

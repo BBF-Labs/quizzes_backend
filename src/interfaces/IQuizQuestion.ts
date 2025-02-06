@@ -11,6 +11,7 @@ interface IQuizQuestion extends Document {
   courseId: Types.ObjectId;
   isApproved: boolean;
   quizQuestions: FilteredQuestions[];
+  creditHours: number;
 }
 
 export default IQuizQuestion;

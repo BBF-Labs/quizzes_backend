@@ -4,7 +4,7 @@ interface IMaterial extends Document {
   _id: Types.ObjectId;
   title: string;
   url: string;
-  type: "pdf" | "doc" | "slides" | "text" | "img";
+  type: "pdf" | "doc" | "slides" | "text" | "img" | "link";
   uploadedBy: Types.ObjectId;
   courseId: Types.ObjectId;
 }

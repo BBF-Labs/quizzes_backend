@@ -13,8 +13,13 @@ const PackageSchema: Schema<IPackage> = new Schema(
       required: true,
     },
     duration: {
-      type: Schema.Types.Mixed,
+      type: Number,
       required: true,
+    },
+    access: {
+      type: String,
+      enum: ["quiz", "course", "duration", "default"],
+      default: "default",
     },
     isUpgradable: {
       type: Boolean,

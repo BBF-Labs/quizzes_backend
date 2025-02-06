@@ -38,10 +38,12 @@ async function createProgress(
       { $addToSet: { students: user._id } }
     );
 
-    await User.updateOne(
-      { _id: user._id },
-      { $addToSet: { courses: progressData.courseCode } }
-    );
+    if (user.accessType !== "quiz") {
+      await User.updateOne(
+        { _id: user._id },
+        { $addToSet: { courses: progressData.courseCode } }
+      );
+    }
 
     return existingProgress;
   } catch (error) {

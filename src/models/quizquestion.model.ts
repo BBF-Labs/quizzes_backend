@@ -28,6 +28,10 @@ const QuizQuestionSchema = new Schema<IQuizQuestion>(
         ],
       },
     ],
+    creditHours: {
+      type: Number,
+      required: true,
+    },
   },
   {
     timestamps: true,
