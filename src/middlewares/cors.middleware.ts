@@ -7,6 +7,7 @@ const CorsOption: CorsOptions = {
       ? [
           /^(https?:\/\/.*\.theniitettey\.live)$/i,
           "https://theminiscripts.vercel.app",
+          "https://www.theminiscripts.vercel.app",
         ]
       : [
           "http://localhost:5500",
