@@ -5,7 +5,7 @@ const CorsOption: CorsOptions = {
   origin:
     Config.ENV === "production"
       ? [
-          "https://bbflabs.theniitettey.com",
+          /^(https?:\/\/.*\.theniitettey\.live)$/i,
           "https://theminiscripts.vercel.app",
         ]
       : [
@@ -20,4 +20,4 @@ const CorsOption: CorsOptions = {
   credentials: true,
 };
 
-export { CorsOption };
+export default CorsOption;
