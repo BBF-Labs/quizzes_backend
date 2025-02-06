@@ -63,6 +63,7 @@ import {
   getMaterials,
   getUserMaterials,
   getCourseMaterials,
+  createLinkMaterial,
 } from "./material.controller";
 
 import {
@@ -148,4 +149,5 @@ export {
   validateUserPackages,
   validateUserQuizAccess,
   getUsers,
+  createLinkMaterial,
 };

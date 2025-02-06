@@ -3,6 +3,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { FirebaseConfig } from "../config";
 import { initializeApp } from "firebase/app";
 import { findUserByUsername } from "./user.controller";
+import { IMaterial } from "../interfaces";
 
 interface FileUpload {
   buffer: Buffer;
@@ -71,6 +72,34 @@ async function uploadMaterial(
   }
 }
 
+async function createLinkMaterial(
+  username: string,
+  courseId: string,
+  data: Partial<IMaterial | any>
+) {
+  try {
+    const user = await findUserByUsername(username);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const material = new Material({
+      title: data.title,
+      url: data.link,
+      type: "link",
+      uploadedBy: user._id,
+      courseId: courseId,
+    });
+
+    await material.save();
+
+    return material;
+  } catch (err: any) {
+    throw new Error(err.message);
+  }
+}
+
 async function getMaterials() {
   try {
     const materials = await Material.find();
@@ -109,4 +138,10 @@ async function getCourseMaterials(courseId: string) {
   }
 }
 
-export { uploadMaterial, getMaterials, getUserMaterials, getCourseMaterials };
+export {
+  uploadMaterial,
+  getMaterials,
+  getUserMaterials,
+  getCourseMaterials,
+  createLinkMaterial,
+};
