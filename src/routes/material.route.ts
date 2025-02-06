@@ -5,6 +5,7 @@ import {
   getMaterials,
   getUserMaterials,
   getCourseMaterials,
+  createLinkMaterial,
 } from "../controllers";
 import { StatusCodes } from "../config";
 import { authenticateUser } from "../middlewares";
@@ -123,6 +124,76 @@ materialRoutes.post(
     }
   }
 );
+
+/**
+ * @swagger
+ * /api/v1/materials/li/upload:
+ *   post:
+ *     summary: Upload course material
+ *     description: Upload a new course material file
+ *     tags:
+ *       - Materials
+ *     security:
+ *      - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - link
+ *               - courseId
+ *             properties:
+ *               link:
+ *                 type: string
+ *                 description: Link to resource
+ *               courseId:
+ *                 type: string
+ *                 description: ID of the course
+ *     responses:
+ *       201:
+ *         description: Material uploaded successfully
+ *       400:
+ *         description: Invalid Link or missing course ID
+ *       401:
+ *         description: Not authenticated
+ *       500:
+ *         description: Internal server error
+ */
+materialRoutes.post("/li/upload", async (req: Request, res: Response) => {
+  try {
+    const user = req.user;
+
+    if (!user) {
+      res.status(StatusCodes.UNAUTHORIZED).json({
+        message: "User not found",
+      });
+      return;
+    }
+    const { courseId, ...data } = req.body;
+
+    if (!courseId) {
+      res.status(StatusCodes.BAD_REQUEST).json({
+        message: "Course ID is required",
+      });
+      return;
+    }
+
+    const material = await createLinkMaterial(user.username, courseId, data);
+
+    res.status(StatusCodes.CREATED).json({
+      message: "Material uploaded successfully",
+      material,
+    });
+  } catch (error: any) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      message:
+        error instanceof Error ? error.message : "Error uploading material",
+    });
+  }
+});
 
 /**
  * @swagger
