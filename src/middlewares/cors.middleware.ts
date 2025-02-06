@@ -20,4 +20,4 @@ const CorsOption: CorsOptions = {
   credentials: true,
 };
 
-export default CorsOption;
+export { CorsOption };
