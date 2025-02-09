@@ -41,8 +41,6 @@ async function createCourse(userId: string, course: Partial<ICourse>) {
 
     const semester = parseInt(codeNum) % 2 === 0 ? 2 : 1;
 
-    console.log("Course Code:", courseCode, "Semester:", semester);
-
     const newCourse = new Course({
       semester,
       createdBy: userId,
