@@ -29,7 +29,7 @@ const QuestionSchema = new Schema<IQuestion>(
       type: String,
     },
     lectureNumber: {
-      type: Number,
+      type: String,
     },
     author: {
       type: Schema.Types.ObjectId,

@@ -52,6 +52,7 @@ async function batchCreateQuizQuestions(questionIds: string | string[]) {
 
         if (!quizDocument) {
           quizDocument = new QuizQuestion({
+            name: `${(await Course.findById(courseId))?.code || courseId} Quiz`,
             courseId: new mongoose.Types.ObjectId(courseId),
             quizQuestions: Object.entries(lectureGroupings).map(
               ([name, questions]) => ({
@@ -59,7 +60,7 @@ async function batchCreateQuizQuestions(questionIds: string | string[]) {
                 questions,
               })
             ),
-            creditHours: await Course.findById(courseId).select("creditHours"),
+            creditHours: 3,
           });
         } else {
           // Update existing quiz document
@@ -149,9 +150,10 @@ interface IFullQuizInfo {
       answer: string;
       type: "mcq" | "fill-in" | "true-false";
       explanation?: string;
-      lectureNumber?: number;
+      lectureNumber?: string;
     }>;
   }>;
+  creditHours?: number;
 }
 
 async function getFullQuizInformation(
@@ -185,6 +187,7 @@ async function getFullQuizInformation(
     courseCode: course.code,
     isApproved: quizDocument.isApproved,
     quizQuestions: fullQuizQuestions,
+    creditHours: quizDocument.creditHours,
   };
 }
 

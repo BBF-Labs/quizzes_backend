@@ -86,7 +86,7 @@ userRoutes.post("/register", async (req: Request, res: Response) => {
       return;
     }
 
-    res.status(StatusCodes.CREATED).json({ message: "Success", user: user });
+    res.status(StatusCodes.CREATED).json({ message: "Success", user: newUser });
   } catch (err: any) {
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)

@@ -265,6 +265,18 @@ async function validateUserQuizAccess(username: string, quizId: string) {
       return;
     }
 
+    if (user.isBanned) {
+      throw new Error("User is banned");
+    }
+
+    if (user.isDeleted) {
+      throw new Error("No user found");
+    }
+
+    if (user.accessType === "default" && !user.hasFreeAccess) {
+      throw new Error("User does not have access to this quiz");
+    }
+
     if (user.hasFreeAccess) {
       if (user.freeAccessCount != null && user.freeAccessCount > 0) {
         if (user.freeAccessCount === 1) {

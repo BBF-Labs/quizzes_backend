@@ -8,6 +8,7 @@ interface ICourse extends Document {
   numberOfLectures?: number;
   approvedQuestionsCount: number;
   semester: number;
+  creditHours?: number;
   isDeleted?: boolean;
   students?: Types.ObjectId[];
   createdBy: Types.ObjectId;

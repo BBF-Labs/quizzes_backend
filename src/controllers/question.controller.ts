@@ -271,10 +271,23 @@ async function batchModerateQuestions(
       (question) => question.courseId
     );
 
-    await Course.updateMany(
-      { _id: { $in: uniqueCourseIds } },
-      { $inc: { approvedQuestionsCount: 1 } }
-    );
+    const courses = await Course.find({ _id: { $in: uniqueCourseIds } });
+
+    for (const course of courses) {
+      const uniqueLectures = new Set(
+        (await Question.find({ courseId: course._id })).map(
+          (q) => q.lectureNumber
+        )
+      ).size;
+
+      await Course.updateOne(
+        { _id: course._id },
+        {
+          $inc: { approvedQuestionsCount: 1 },
+          $set: { numberOfLectures: uniqueLectures },
+        }
+      );
+    }
 
     const userModeratedQuestions = await Question.find({
       moderatedBy: user._id,
@@ -335,8 +348,13 @@ async function approveAllByModerator(courseId: string, moderator: string) {
       }
     );
 
+    const numberOfLectures = new Set(
+      (await Question.find({ courseId })).map((q) => q.lectureNumber)
+    ).size;
+
     await Course.findByIdAndUpdate(courseId, {
       $inc: { approvedQuestionsCount: updateResult.modifiedCount },
+      $set: { numberOfLectures: numberOfLectures },
     });
 
     const userModeratedQuestions = await Question.find({

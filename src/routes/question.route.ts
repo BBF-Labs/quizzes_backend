@@ -467,6 +467,18 @@ questionRoutes.post(
         throw new Error("Question fields are required");
       }
 
+      if (!question.courseId) {
+        res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: "Course ID is required" });
+      }
+
+      if (!question.lectureNumber) {
+        res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: "Lecture number or type is required is required" });
+      }
+
       const courseId = question.courseId;
 
       const author = req.user?.username;
