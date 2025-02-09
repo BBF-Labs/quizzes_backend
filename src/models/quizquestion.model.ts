@@ -9,6 +9,10 @@ const QuizQuestionSchema = new Schema<IQuizQuestion>(
       ref: "Course",
       unique: true,
     },
+    name: {
+      type: String,
+      required: true,
+    },
     isApproved: {
       type: Boolean,
       default: false,
