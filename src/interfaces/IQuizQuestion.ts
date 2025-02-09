@@ -8,6 +8,7 @@ interface FilteredQuestions {
 
 interface IQuizQuestion extends Document {
   _id: Types.ObjectId;
+  name: string;
   courseId: Types.ObjectId;
   isApproved: boolean;
   quizQuestions: FilteredQuestions[];
