@@ -10,6 +10,33 @@ const aiRoutes: Router = Router();
 aiRoutes.use(authenticateUser);
 aiRoutes.use(authorizeRoles("admin"));
 
+/**
+ * @swagger
+ * /api/v1/ai/generate:
+ *   post:
+ *     summary: Generate questions from a course material
+ *     description: Generate questions from a course material using AI. Only admins can access this route.
+ *     tags:
+ *       - AI
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               url:
+ *                 type: string
+ *                 description: The URL of the course material.
+ *     responses:
+ *       201:
+ *         description: Questions generated successfully.
+ *       404:
+ *         description: Material not found.
+ *       500:
+ *         description: Internal server error.
+ */
+
 aiRoutes.post("/generate", async (req: Request, res: Response) => {
   try {
     const user = req.user;
