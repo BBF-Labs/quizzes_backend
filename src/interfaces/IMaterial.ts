@@ -5,7 +5,9 @@ interface IMaterial extends Document {
   title: string;
   url: string;
   type: "pdf" | "doc" | "slides" | "text" | "img" | "link";
+  questionRefType: string;
   uploadedBy: Types.ObjectId;
+  isProcessed: boolean;
   courseId: Types.ObjectId;
 }
 
