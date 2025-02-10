@@ -61,6 +61,7 @@ materialRoutes.use(authenticateUser);
  *             required:
  *               - file
  *               - courseId
+ *               - questionRefType
  *             properties:
  *               file:
  *                 type: string
@@ -69,6 +70,9 @@ materialRoutes.use(authenticateUser);
  *               courseId:
  *                 type: string
  *                 description: ID of the course
+ *               questionRefType:
+ *                 type: string
+ *                 description: Type of material [lecture Number, IA, or Quiz]
  *     responses:
  *       201:
  *         description: Material uploaded successfully
@@ -92,7 +96,7 @@ materialRoutes.post(
         });
         return;
       }
-      const { courseId } = req.body;
+      const { courseId, questionRefType } = req.body;
 
       const file = req.file;
 
@@ -110,7 +114,19 @@ materialRoutes.post(
         return;
       }
 
-      const material = await uploadMaterial(file, courseId, user.username);
+      if (!questionRefType) {
+        res.status(StatusCodes.BAD_REQUEST).json({
+          message: "Type of material is required [lecture Number, IA, or Quiz]",
+        });
+        return;
+      }
+
+      const material = await uploadMaterial(
+        file,
+        courseId,
+        user.username,
+        questionRefType
+      );
 
       res.status(StatusCodes.CREATED).json({
         message: "Material uploaded successfully",
@@ -144,6 +160,7 @@ materialRoutes.post(
  *             required:
  *               - title
  *               - link
+ *               - questionRefType
  *               - courseId
  *             properties:
  *               link:
@@ -152,6 +169,9 @@ materialRoutes.post(
  *               courseId:
  *                 type: string
  *                 description: ID of the course
+ *               questionRefType:
+ *                 type: string
+ *                 description: Type of material [lecture Number, IA, or Quiz]
  *     responses:
  *       201:
  *         description: Material uploaded successfully
@@ -173,6 +193,13 @@ materialRoutes.post("/li/upload", async (req: Request, res: Response) => {
       return;
     }
     const { courseId, ...data } = req.body;
+
+    if (!data.questionRefType) {
+      res.status(StatusCodes.BAD_REQUEST).json({
+        message: "Type of material is required [lecture Number, IA, or Quiz]",
+      });
+      return;
+    }
 
     if (!courseId) {
       res.status(StatusCodes.BAD_REQUEST).json({
