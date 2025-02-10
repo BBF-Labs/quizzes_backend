@@ -9,7 +9,8 @@ const Config = {
   REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET!,
   SALT_ROUNDS: parseInt(process.env.SALT_ROUNDS!),
   LOG_LEVEL: process.env.LOG_LEVEL!,
-  PAYSTACK_SECRET_KEY: process.env.PAYSTACK_SECRET_KEY!,
+  PAYSTACK_SECRET_KEY_TEST: process.env.PAYSTACK_SECRET_KEY_TEST!,
+  PAYSTACK_SECRET_KEY_LIVE: process.env.PAYSTACK_SECRET_KEY_LIVE!,
 };
 
 const StatusCodes = {
