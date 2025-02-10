@@ -8,6 +8,7 @@ import progressRoutes from "./progress.route";
 import materialRoutes from "./material.route";
 import paymentRoutes from "./payment.route";
 import packageRoutes from "./package.route";
+import aiRoutes from "./ai.route";
 
 export {
   userRoutes,
@@ -20,4 +21,5 @@ export {
   materialRoutes,
   paymentRoutes,
   packageRoutes,
+  aiRoutes,
 };

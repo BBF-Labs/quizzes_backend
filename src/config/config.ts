@@ -11,6 +11,7 @@ const Config = {
   LOG_LEVEL: process.env.LOG_LEVEL!,
   PAYSTACK_SECRET_KEY_TEST: process.env.PAYSTACK_SECRET_KEY_TEST!,
   PAYSTACK_SECRET_KEY_LIVE: process.env.PAYSTACK_SECRET_KEY_LIVE!,
+  GOOGLE_GENAI_API_KEY: process.env.GOOGLE_GENAI_API_KEY!,
 };
 
 const StatusCodes = {

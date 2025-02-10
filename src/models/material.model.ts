@@ -17,6 +17,14 @@ const MaterialSchema: Schema<IMaterial> = new Schema(
       enum: ["pdf", "doc", "slides", "text", "img", "link"],
       required: true,
     },
+    questionRefType: {
+      type: String,
+      required: true,
+    },
+    isProcessed: {
+      type: Boolean,
+      default: false,
+    },
     uploadedBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
