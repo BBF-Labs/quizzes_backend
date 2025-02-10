@@ -388,6 +388,72 @@ async function approveAllByModerator(courseId: string, moderator: string) {
   }
 }
 
+async function batchCreateQuestionsAI(
+  questions: Partial<IQuestion> | Partial<IQuestion>[],
+  courseId?: string
+) {
+  try {
+    if (courseId && !isValidObjectId(courseId)) {
+      throw new Error(`Invalid course ID format: ${courseId}`);
+    }
+
+    if (courseId) {
+      const isValidCourse = await findCourseById(courseId);
+      if (!isValidCourse) {
+        throw new Error("Course does not exist");
+      }
+    }
+
+    const questionArray = Array.isArray(questions) ? questions : [questions];
+
+    const courseIds = questionArray
+      .map((q) => q.courseId)
+      .filter((id) => id !== undefined);
+
+    const invalidIds = courseIds.filter((id) => !isValidObjectId(id));
+
+    if (invalidIds.length > 0) {
+      throw new Error(`Invalid course ID format(s): ${invalidIds.join(", ")}`);
+    }
+
+    const validCourses = await Course.find({ _id: { $in: courseIds } });
+    const validCourseIds = new Set(
+      validCourses.map((course) => course._id.toString())
+    );
+
+    const nonexistentIds = courseIds.filter(
+      (id) => !validCourseIds.has(id.toString())
+    );
+
+    if (nonexistentIds.length > 0) {
+      throw new Error(`Course IDs do not exist: ${nonexistentIds.join(", ")}`);
+    }
+
+    const preparedQuestions = [];
+    for (const question of questionArray) {
+      const existingQuestion = await Question.findOne({
+        courseId: question.courseId || courseId,
+        question: question.question,
+        type: question.type,
+      });
+
+      if (!existingQuestion) {
+        preparedQuestions.push({
+          ...question,
+          courseId: question.courseId || courseId,
+          author: question.author,
+        });
+      }
+    }
+
+    const insertedQuestions = await Question.insertMany(preparedQuestions);
+
+    return insertedQuestions;
+  } catch (err: any) {
+    throw new Error(err.message);
+  }
+}
+
 export {
   createQuestion,
   getQuestions,
@@ -399,4 +465,5 @@ export {
   batchCreateQuestions,
   batchModerateQuestions,
   approveAllByModerator,
+  batchCreateQuestionsAI,
 };

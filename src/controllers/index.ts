@@ -41,6 +41,7 @@ import {
   batchCreateQuestions,
   batchModerateQuestions,
   approveAllByModerator,
+  batchCreateQuestionsAI,
 } from "./question.controller";
 
 import {
@@ -92,6 +93,8 @@ import {
   invalidateMultipleSessions,
   updateToken,
 } from "./token.controller";
+
+import { generateQuestions, outputSchema } from "./ai.controller";
 
 export {
   generateAccessToken,
@@ -159,4 +162,7 @@ export {
   saveToken,
   invalidateMultipleSessions,
   updateToken,
+  generateQuestions,
+  batchCreateQuestionsAI,
+  outputSchema,
 };

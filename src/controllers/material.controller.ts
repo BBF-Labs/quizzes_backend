@@ -25,7 +25,8 @@ const getFileType = (mimeType: string, filename: string) => {
 async function uploadMaterial(
   file: FileUpload,
   courseId: string,
-  username: string
+  username: string,
+  questionRefType: string
 ) {
   try {
     if (!file || !file.originalname || !file.buffer) {
@@ -57,6 +58,7 @@ async function uploadMaterial(
       type: fileType,
       uploadedBy: user._id,
       courseId: courseId,
+      questionRefType: questionRefType,
     });
 
     const validationError = material.validateSync();
@@ -90,6 +92,7 @@ async function createLinkMaterial(
       type: "link",
       uploadedBy: user._id,
       courseId: courseId,
+      questionRefType: data.questionRefType,
     });
 
     await material.save();
