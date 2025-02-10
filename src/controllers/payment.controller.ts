@@ -5,7 +5,10 @@ import { IPayment } from "../interfaces";
 import { Package, Payment, User } from "../models";
 
 function paystackAPI() {
-  const secretKey = Config.PAYSTACK_SECRET_KEY;
+  const secretKey =
+    Config.ENV === "production"
+      ? Config.PAYSTACK_SECRET_KEY_LIVE
+      : Config.PAYSTACK_SECRET_KEY_TEST;
 
   // Initialize payment with Paystack
   const initializePayment = async (form: any) => {
