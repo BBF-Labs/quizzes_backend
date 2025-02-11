@@ -18,6 +18,8 @@ aiRoutes.use(authorizeRoles("admin"));
  *     description: Generate questions from a course material using AI. Only admins can access this route.
  *     tags:
  *       - AI
+ *     security:
+ *       - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
