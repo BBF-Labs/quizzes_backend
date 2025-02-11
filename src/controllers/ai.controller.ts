@@ -131,6 +131,10 @@ const createPrompt = (
   extractedText: string,
   materialRecord: Partial<IMaterial>
 ): string => {
+  const isAssessmentMaterial = ["quiz", "IA"].includes(
+    materialRecord.questionRefType?.toLowerCase() || ""
+  );
+
   return `Using the following interface:
 interface IQuestion { 
   courseId: ${materialRecord.courseId}; 
@@ -143,152 +147,84 @@ interface IQuestion {
   author: ${QUESTION_CONFIG.authorId}; 
 }
 
-Content Analysis Rules:
-1. First determine if content is:
-   - Lecture material (contains multiple lectures or lecture content)
-   - Question type material (contains existing questions)
+Content Processing Instructions:
+1. First determine if this is an assessment material (quiz/IA) or lecture material
+   Assessment material indicators:
+   - Contains formatted questions
+   - Has question numbering
+   - Includes answer options or answer keys
+   - Has quiz/exam/assessment structure
 
+Processing Rules:
+
+${
+  isAssessmentMaterial
+    ? `
+For Assessment Materials (Quiz/IA):
+1. Parse and structure existing questions only
+2. Maintain original question format and content
+3. Do not generate additional questions
+4. Extract and format:
+   - Question text
+   - Answer options (if MCQ)
+   - Correct answers
+   - Any provided explanations, provide one if there aren't any
+`
+    : `
 For Lecture Materials:
-- Generate exactly 15 questions per lecture
-- Ensure comprehensive coverage across all lectures
-- Distribute questions evenly across lecture topics
-- Set lectureNumber field appropriately:
-  * If lecture numbers are numeric (1, 2, 3, etc.): Use the actual lecture number
-  * If non-numeric (Week1, Module2, etc.): Keep the original format exactly
-  * If no clear lecture numbers: Use the provided value: ${
-    materialRecord.questionRefType
-  }
+1. Generate 15-20 questions per lecture/section
+2. Questions must focus exclusively on:
+   - Core concepts and theories
+   - Key definitions
+   - Important processes and methods
+   - Real-world applications
+   - Critical relationships between concepts
+3. Strictly exclude:
+   - Course/department names
+   - Credit hours or administrative details
+   - Lecturer information
+   - Formatting or presentation details
+4. Set lectureNumber field based on:
+   - Use numeric values if lectures/weeks/session are numbered (1, 2, 3)
+   - Use ${materialRecord.questionRefType} if no clear lecture structure
+`
+}
 
-For Question Type Materials:
-1. Count existing questions
-2. If count < 20: Generate additional questions to reach exactly 20 total
-3. If count >= 20: Generate exactly 10 more questions
-4. Maintain existing lecture number format if present
-
-Question Types and Distribution:
+Question Types Distribution:
 - ${QUESTION_CONFIG.typeDistribution.mcq * 100}% Multiple Choice (MCQ)
 - ${QUESTION_CONFIG.typeDistribution.fillIn * 100}% Fill-in-the-Blank
 - ${QUESTION_CONFIG.typeDistribution.trueFalse * 100}% True/False
 
-Difficulty Distribution:
+Difficulty Level Distribution:
 - ${QUESTION_CONFIG.difficultyDistribution.basic * 100}% Basic comprehension
 - ${
     QUESTION_CONFIG.difficultyDistribution.intermediate * 100
   }% Intermediate analysis
 - ${QUESTION_CONFIG.difficultyDistribution.advanced * 100}% Advanced application
-- ${
-    QUESTION_CONFIG.difficultyDistribution.critical * 100
-  }% Critical thinking/synthesis
+- ${QUESTION_CONFIG.difficultyDistribution.critical * 100}% Critical thinking
 
 Format Requirements:
-- MCQ options must start with "A.", "B.", "C.", "D."
-- Fill-in answers should be precise and unambiguous
-- True/False answers must be exactly "true" or "false"
-- Each question must include a detailed explanation
+1. MCQ requirements:
+   - Options must start with "A.", "B.", "C.", "D."
+   - Answer must match one of the options exactly
+2. Fill-in requirements:
+   - Answers must be precise and unambiguous
+   - No partial credit options
+3. True/False requirements:
+   - Answers must be exactly "true" or "false"
+4. All questions must include:
+   - Clear, concise question text
+   - Detailed explanation of the correct answer
+   - Appropriate difficulty level
+   - Relevant lecture/section reference
+
+Required Metadata:
 - Author ID: ${QUESTION_CONFIG.authorId}
 - Course ID: ${materialRecord.courseId}
 
-Question Quality Guidelines for Lecture Materials:
-1. Focus on key concepts from each lecture
-2. Include questions that connect concepts across lectures
-3. Cover both theoretical understanding and practical applications
-4. Ensure progressive difficulty across questions
-5. Include questions about:
-   - Main theories and principles
-   - Key definitions and concepts
-   - Practical applications
-   - Case studies or examples
-   - Relationships between different lecture topics
-
-Important Instructions:
-1. First analyze if content is lecture material or question type
-2. For lecture materials: Generate 15 comprehensive questions
-3. For question type: Process existing questions and generate additional as needed
-4. Preserve any existing lecture number formats
-5. Report content type and approach at start of response
-6. Output all questions in the required interface format
-
 Process this content following the above guidelines:
-${extractedText}
-
-${createGuidelinesSection()}
-
-${createSpecificationsSection(materialRecord, extractedText)}`;
+${extractedText}`;
 };
-
-/**
- * Creates the guidelines section of the prompt
- */
-const createGuidelinesSection = (): string => `
-Guidelines for Question Generation:
-1. Focus on conceptual understanding, avoiding superficial details
-2. Ensure questions test:
-   - Core concepts
-   - Theoretical principles
-   - Practical applications
-   - Critical thinking
-   - Analytical reasoning
-
-Question Generation Rules:
-- Generate minimum ${QUESTION_CONFIG.minQuestions} questions per material
-- Cover breadth and depth of content
-- Exclude trivial information like:
-  * Course/department names
-  * Credit hours
-  * Lecturer details
-  * Slide formatting
-  * Administrative information
-
-Question Types:
-- ${QUESTION_CONFIG.typeDistribution.mcq * 100}% Multiple Choice (MCQ)
-- ${QUESTION_CONFIG.typeDistribution.fillIn * 100}% Fill-in-the-Blank
-- ${QUESTION_CONFIG.typeDistribution.trueFalse * 100}% True/False
-
-Question Difficulty Distribution:
-- ${QUESTION_CONFIG.difficultyDistribution.basic * 100}% Basic comprehension
-- ${
-  QUESTION_CONFIG.difficultyDistribution.intermediate * 100
-}% Intermediate analysis
-- ${QUESTION_CONFIG.difficultyDistribution.advanced * 100}% Advanced application
-- ${
-  QUESTION_CONFIG.difficultyDistribution.critical * 100
-}% Critical thinking/synthesis`;
-
-/**
- * Creates the specifications section of the prompt
- */
-const createSpecificationsSection = (
-  materialRecord: Partial<IMaterial>,
-  extractedText: string
-): string => `
-Additional Specifications:
-- Options formatted: ["A. option", "B. option", "C. option", "D. option"]
-- MCQ answer must be one of the options
-- Fill-in answers should be precise
-- True/False answers strictly "true" or "false"
-- Include lecture number if multiple lectures
-- Evaluate numerical answers
-- Provide comprehensive explanations
-
-Prompt:
-Generate structured JSON questions from the following text: ${extractedText}
-- If text contains multiple lectures, weeks or sessions or type include lecture number,
-- Aim for ${QUESTION_CONFIG.targetQuestions.min}-${QUESTION_CONFIG.targetQuestions.max} total questions
-- Generate your own questions to meet total question count
-- Update explanation field with detailed rationales
-- Evaluate and update numerical answers
-- Author ID: ${QUESTION_CONFIG.authorId}
-- Lecture number: ${materialRecord.questionRefType} or associated lecture/week/session number
-- Maintain courseId from input: ${materialRecord.courseId}
-
-Important:
-- Focus on core concepts and understanding
-- Include practical applications
-- Encourage critical thinking
-- Generate comprehensive questions
-- Follow specified distributions
-- Maintain data consistency
-- Ensure non-repetitive questions`;
 
 /**
  * Generates quiz questions from educational material
