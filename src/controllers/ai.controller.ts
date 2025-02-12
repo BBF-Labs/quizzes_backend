@@ -161,7 +161,7 @@ ${
   isAssessmentMaterial
     ? `
 For Assessment Materials (Quiz/IA):
-1. Parse and structure existing questions only
+1. Parse and structure existing questions only, parse all questions and create, don't send less than the questions available in the document
 2. Maintain original question format and content
 3. Do not generate additional questions
 4. Extract and format:
@@ -169,6 +169,7 @@ For Assessment Materials (Quiz/IA):
    - Answer options (if MCQ)
    - Correct answers
    - Any provided explanations, provide one if there aren't any
+IMPORTANT: Your returned question count should match the count of the text questions
 `
     : `
 For Lecture Materials:
