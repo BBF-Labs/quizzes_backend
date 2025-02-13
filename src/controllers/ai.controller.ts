@@ -3,9 +3,9 @@ import { genkit } from "genkit";
 import axios from "axios";
 import { parseOfficeAsync, OfficeParserConfig } from "officeparser";
 import { z } from "zod";
-import { IMaterial } from "../interfaces";
+import { IMaterial, IQuestion } from "../interfaces";
 import { Config } from "../config";
-import { Material } from "../models";
+import { Material, Question } from "../models";
 import Tesseract from "tesseract.js";
 
 // Initialize AI client
@@ -62,15 +62,21 @@ const inputSchema = z.object({
 
 const outputSchema = z.array(
   z.object({
-    courseId: z.string(),
-    question: z.string(),
-    options: z.array(z.string()),
-    answer: z.string(),
-    type: QuestionTypeEnum,
-    explanation: z.string(),
-    lectureNumber: z.string(),
-    hint: z.string(),
-    author: z.string(),
+    courseId: z.string().describe("The unique identifier for the course."),
+    question: z.string().describe("The text of the question."),
+    options: z.array(z.string()).describe("The possible answer options."),
+    answer: z.string().describe("The correct answer to the question."),
+    type: QuestionTypeEnum.describe(
+      "The type of question (mcq, fill-in, true-false)."
+    ),
+    explanation: z
+      .string()
+      .describe("A detailed explanation of the correct answer."),
+    lectureNumber: z
+      .string()
+      .describe("The lecture or section number the question relates to."),
+    hint: z.string().describe("A short hint to help answer the question."),
+    author: z.string().describe("The author ID."),
   })
 );
 
@@ -130,7 +136,8 @@ const extractText = async (
  */
 const createPrompt = (
   extractedText: string,
-  materialRecord: Partial<IMaterial>
+  materialRecord: Partial<IMaterial>,
+  existingQuestions: Partial<IQuestion[] | null>
 ): string => {
   const isAssessmentMaterial = ["quiz", "IA"].includes(
     materialRecord.questionRefType?.toLowerCase() || ""
@@ -140,100 +147,108 @@ const createPrompt = (
     ? "the exact number of questions available in the document"
     : "15-20 questions per lecture/section";
 
-  return `Using the following interface:
-interface IQuestion { 
-  courseId: ${materialRecord.courseId}; 
-  question: string; 
-  options: string[]; 
-  answer: string; 
-  type: "mcq" | "fill-in" | "true-false"; 
-  explanation: string; 
-  lectureNumber: ${materialRecord.questionRefType}; 
-  hint: string;
-  author: ${QUESTION_CONFIG.authorId}; 
-}
+  return `You are an AI that generates quiz questions from educational materials. Your primary goal is to produce high-quality, diverse, and relevant questions that accurately assess understanding of the provided content.
 
-Content Processing Instructions:
-1. First determine if this is an assessment material (quiz/IA) or lecture material
-   Assessment material indicators:
-   - Contains formatted questions
-   - Has question numbering
-   - Includes answer options or answer keys
-   - Has quiz/exam/assessment structure
+Content:
+${extractedText}
 
-Processing Rules:
+Context and Instructions:
+- Course ID: ${materialRecord.courseId}
+- Author ID: ${QUESTION_CONFIG.authorId}
+- Material Type: ${materialRecord.questionRefType} (e.g., lecture notes, quiz)
+- Is Assessment Material: ${isAssessmentMaterial}
 
+Instructions for Handling Existing Questions:
+- Existing Questions: ${
+    existingQuestions ? JSON.stringify(existingQuestions) : "None"
+  }.  Use these as a guide to avoid duplication and understand the existing question style.  If existing questions are present, prioritize generating new questions that cover different aspects of the content.
+
+Question Generation Rules:
+- Number of Questions: Generate ${questionCount}. If you think the questions available is not as many as stated, generate as many as possible to get close.
+- Focus:
+  - Core concepts
+  - Key definitions
+  - Important processes and methods
+  - Real-world applications
+  - Critical relationships between concepts
+- Avoid:
+  - Course/department names
+  - Credit hours or administrative details
+  - Lecturer information
+  - Formatting or presentation details
+- Difficulty:  Adhere to the following difficulty distribution:
+    - Basic: ${QUESTION_CONFIG.difficultyDistribution.basic * 100}%
+    - Intermediate: ${
+      QUESTION_CONFIG.difficultyDistribution.intermediate * 100
+    }%
+    - Advanced: ${QUESTION_CONFIG.difficultyDistribution.advanced * 100}%
+    - Critical Thinking: ${
+      QUESTION_CONFIG.difficultyDistribution.critical * 100
+    }%
+- Question Types:  Adhere to the following type distribution:
+    - MCQ: ${QUESTION_CONFIG.typeDistribution.mcq * 100}%
+    - Fill-in-the-Blank: ${QUESTION_CONFIG.typeDistribution.fillIn * 100}%
+    - True/False: ${QUESTION_CONFIG.typeDistribution.trueFalse * 100}%
+
+Specific Instructions Based on Material Type:
 ${
   isAssessmentMaterial
-    ? `
-For Assessment Materials (Quiz/IA):
-1. Parse and structure existing questions only, parse all questions and create, don't send less than the questions available in the document
-2. Maintain original question format and content
-3. Do not generate additional questions
-4. Extract and format:
-   - Question text
-   - Answer options (if MCQ)
-   - Correct answers
-   - Add hints to help answer
-   - Any provided explanations, provide one if there aren't any
-IMPORTANT: Your returned question count should match the count of the text questions
-`
-    : `
-For Lecture Materials:
-1. Generate ${questionCount}
-2. Questions must focus exclusively on:
+    ? `- Assessment materials (quiz/IA):  Parse and structure existing questions *only*.  Do not generate *additional* questions.  Extract question text, answer options (if MCQ), and correct answers. Your returned question count should match the count of the text questions.  Prioritize accuracy and preservation of the original questions.
+       - Maintain original question format and content.
+       - Add short hints to help answer.
+       - Provide a short explanation even if there aren't any in the material.
+       - Extract question text (do not include any prefixes like "Question X.")
+       - Answer options (if MCQ)
+       - Correct answers`
+    : `- Lecture Materials:  Generate new questions from the material. Base the lectureNumber field on the most appropriate value from materialRecord.questionRefType. Questions must focus exclusively on:
    - Core concepts and theories
    - Key definitions
    - Important processes and methods
    - Real-world applications
    - Critical relationships between concepts
-   - Add hints to aid with answering
-3. Strictly exclude:
+   - Add short hints to aid with answering
+Strictly exclude:
    - Course/department names
    - Credit hours or administrative details
    - Lecturer information
    - Formatting or presentation details
 4. Set lectureNumber field based on:
    - Use numeric values if lectures/weeks/session are numbered (1, 2, 3)
-   - Use ${materialRecord.questionRefType} if no clear lecture structure
-`
+   - Use ${materialRecord.questionRefType} if no clear lecture structure`
 }
 
-Question Types Distribution:
-- ${QUESTION_CONFIG.typeDistribution.mcq * 100}% Multiple Choice (MCQ)
-- ${QUESTION_CONFIG.typeDistribution.fillIn * 100}% Fill-in-the-Blank
-- ${QUESTION_CONFIG.typeDistribution.trueFalse * 100}% True/False
+Format Requirements for Questions:
+- MCQ: Options must start with "A.", "B.", "C.", "D.". Answer must match one of the options *exactly*.
+- Fill-in: Answers must be precise and unambiguous. No partial credit options.
+- True/False: Answers must be exactly "true" or "false".
+- Explanations: Provide detailed explanations of *why* the correct answer is correct.
+- Hints: Always include helpful hints for each question.
+- Lecture References:  Include relevant lecture/section references.
+- All questions must include clear, concise question text (do not include any prefixes like "Question X.")
+- Since questions would be rendered in html tags, use proper tags to handle necessary items, code, subscript, superscript, etc.
 
-Difficulty Level Distribution:
-- ${QUESTION_CONFIG.difficultyDistribution.basic * 100}% Basic comprehension
-- ${
-    QUESTION_CONFIG.difficultyDistribution.intermediate * 100
-  }% Intermediate analysis
-- ${QUESTION_CONFIG.difficultyDistribution.advanced * 100}% Advanced application
-- ${QUESTION_CONFIG.difficultyDistribution.critical * 100}% Critical thinking
+Response Format:
+- Return your output as a JSON array of IQuestion objects.  Ensure the JSON is valid and follows the schema exactly.
 
-Format Requirements:
-1. MCQ requirements:
-   - Options must start with "A.", "B.", "C.", "D."
-   - Answer must match one of the options exactly
-2. Fill-in requirements:
-   - Answers must be precise and unambiguous
-   - No partial credit options
-3. True/False requirements:
-   - Answers must be exactly "true" or "false"
-4. All questions must include:
-   - Clear, concise question text
-   - Detailed explanation of the correct answer
-   - Appropriate difficulty level
-   - Must have hints
-   - Relevant lecture/section reference
+Example Response:
+\`\`\`json
+[
+  {
+    "courseId": "${materialRecord.courseId}",
+    "question": "What is the capital of France?",
+    "options": ["A. London", "B. Paris", "C. Rome", "D. Berlin"],
+    "answer": "B. Paris",
+    "type": "mcq",
+    "explanation": "Paris is the capital and most populous city of France.",
+    "lectureNumber": "${materialRecord.questionRefType}",
+    "hint": "Think about famous landmarks in France.",
+    "author": "${QUESTION_CONFIG.authorId}"
+  }
+]
+\`\`\`
 
-Required Metadata:
-- Author ID: ${QUESTION_CONFIG.authorId}
-- Course ID: ${materialRecord.courseId}
-
-Process this content following the above guidelines:
-${extractedText}`;
+Now, generate the questions:
+`;
 };
 
 /**
@@ -257,6 +272,10 @@ const generateQuestions = async (
       throw new Error("Material already processed");
     }
 
+    const questionsDoc = await Question.find({
+      courseId: materialRecord.courseId,
+    }).lean(); // Use lean() for better performance when only reading
+
     const extractedText = await extractText(fileUrl, materialRecord.type);
     if (!extractedText || extractedText.trim().length === 0) {
       throw new Error("Failed to extract text or extracted text is empty");
@@ -267,44 +286,62 @@ const generateQuestions = async (
 
     // Loop to request questions until we reach the desired count
     while (totalQuestionsRequested < QUESTION_CONFIG.targetQuestions.min) {
+      const prompt = createPrompt(extractedText, materialRecord, questionsDoc);
       const { output } = await ai.generate({
-        prompt: createPrompt(extractedText, materialRecord),
+        prompt: prompt,
         output: { schema: outputSchema },
       });
 
       if (!output || output.length === 0) {
-        throw new Error("Failed to generate questions");
+        console.warn("AI failed to generate questions in this iteration."); // Log warning instead of error
+        continue; // Skip to the next iteration
       }
 
-      const validatedQuestions = outputSchema.parse(output);
-      // Filter out duplicates
-      const uniqueQuestions = validatedQuestions.filter((question) => {
-        return !allQuestions.some(
-          (existingQuestion) => existingQuestion.question === question.question
+      try {
+        const validatedQuestions = outputSchema.parse(output);
+
+        // Filter out duplicates (more efficient approach)
+        const uniqueQuestions = validatedQuestions.filter((question) => {
+          return !allQuestions.some(
+            (existingQuestion) =>
+              existingQuestion.question.trim() === question.question.trim()
+          );
+        });
+
+        allQuestions = [...allQuestions, ...uniqueQuestions];
+        totalQuestionsRequested = allQuestions.length;
+
+        console.log(
+          `Generated ${uniqueQuestions.length} unique questions in this iteration.`
         );
-      });
-
-      allQuestions = [...allQuestions, ...uniqueQuestions];
-      totalQuestionsRequested = allQuestions.length;
-
-      console.log(
-        `Generated ${uniqueQuestions.length} unique questions in this iteration.`
-      );
+      } catch (validationError) {
+        console.error(
+          "Validation error in generated questions:",
+          validationError
+        );
+        continue; // Skip to next iteration if validation fails
+      }
 
       // Optional: Limit the number of iterations to prevent infinite loops
-      if (allQuestions.length >= QUESTION_CONFIG.targetQuestions.max) {
+      if (totalQuestionsRequested >= QUESTION_CONFIG.targetQuestions.max) {
         break;
       }
     }
 
+    // Update material record (move outside the loop)
     await Material.findOneAndUpdate(
       { url: fileUrl },
       { isProcessed: true },
       { new: true, runValidators: true }
     );
 
+    //Save questions to DB
+    await Question.insertMany(allQuestions);
+    console.log("Successfully added questions to DB");
+
     return allQuestions.slice(0, QUESTION_CONFIG.targetQuestions.max); // Return only up to the max limit
   } catch (error) {
+    console.error("Error during question generation:", error); // Log the full error
     if (error instanceof z.ZodError) {
       throw new Error(`Validation error: ${error.message}`);
     }

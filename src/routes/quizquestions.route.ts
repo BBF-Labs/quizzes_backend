@@ -12,7 +12,6 @@ import { authenticateUser, authorizeRoles } from "../middlewares";
 import { StatusCodes } from "../config";
 
 const quizQuestionsRoutes: Router = Router();
-quizQuestionsRoutes.use(authenticateUser);
 
 /**
  * @swagger
@@ -22,8 +21,6 @@ quizQuestionsRoutes.use(authenticateUser);
  *     description: Retrieve all available quiz questions
  *     tags:
  *       - Quiz Questions
- *     security:
- *      - BearerAuth: []
  *     responses:
  *       200:
  *         description: Success
@@ -93,6 +90,7 @@ quizQuestionsRoutes.get("/", async (req: Request, res: Response) => {
  */
 quizQuestionsRoutes.post(
   "/create",
+  authenticateUser,
   authorizeRoles("admin"),
   async (req: Request, res: Response) => {
     try {
@@ -141,25 +139,30 @@ quizQuestionsRoutes.post(
  *         description: Internal server error
  *
  */
-quizQuestionsRoutes.put("/update", async (req: Request, res: Response) => {
-  try {
-    const quiz = req.body;
+quizQuestionsRoutes.put(
+  "/update",
+  authenticateUser,
+  authorizeRoles("admin"),
+  async (req: Request, res: Response) => {
+    try {
+      const quiz = req.body;
 
-    if (!quiz) {
-      throw new Error("Quiz fields are required to update");
+      if (!quiz) {
+        throw new Error("Quiz fields are required to update");
+      }
+
+      const updateQuizDoc = await updateQuizQuestion(quiz);
+
+      res
+        .status(StatusCodes.OK)
+        .json({ message: "Success", quiz: updateQuizDoc });
+    } catch (err: any) {
+      res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ message: err.message });
     }
-
-    const updateQuizDoc = await updateQuizQuestion(quiz);
-
-    res
-      .status(StatusCodes.OK)
-      .json({ message: "Success", quiz: updateQuizDoc });
-  } catch (err: any) {
-    res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ message: err.message });
   }
-});
+);
 
 /**
  * @swagger
@@ -188,6 +191,7 @@ quizQuestionsRoutes.put("/update", async (req: Request, res: Response) => {
  */
 quizQuestionsRoutes.get(
   "/course/:courseId",
+  authenticateUser,
   async (req: Request, res: Response) => {
     try {
       const { courseId } = req.params;
@@ -243,6 +247,7 @@ quizQuestionsRoutes.get(
  */
 quizQuestionsRoutes.get(
   "/full/:courseId",
+  authenticateUser,
   async (req: Request, res: Response) => {
     try {
       const { courseId } = req.params;

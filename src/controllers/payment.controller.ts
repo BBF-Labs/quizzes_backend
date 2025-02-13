@@ -212,7 +212,7 @@ async function updateUserPaymentDetails(userId: string, reference: string) {
       throw new Error("Payment not found");
     }
 
-    if (paymentDoc.type === "quiz") {
+    if (paymentDoc.type === "quiz" || paymentDoc.type === "default") {
       await User.updateOne(
         { _id: userId },
         {
