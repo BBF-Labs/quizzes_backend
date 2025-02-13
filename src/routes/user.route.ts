@@ -254,6 +254,10 @@ userRoutes.put(
         isBanned: updates.isBanned ?? userDoc.isBanned,
         role: updates.role || userDoc.role,
       };
+
+      res
+        .status(StatusCodes.OK)
+        .json({ message: "Success", user: updatedUserDoc });
     } catch (err: any) {
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
