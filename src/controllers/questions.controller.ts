@@ -178,7 +178,7 @@ async function getFullQuizInformation(
         _id: { $in: lectureQuiz.questions },
       })
         .lean()
-        .select("question options answer type explanation lectureNumber"),
+        .select("question options answer type explanation lectureNumber hint"),
     }))
   );
 

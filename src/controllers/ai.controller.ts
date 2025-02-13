@@ -69,6 +69,7 @@ const outputSchema = z.array(
     type: QuestionTypeEnum,
     explanation: z.string(),
     lectureNumber: z.string(),
+    hint: z.string(),
     author: z.string(),
   })
 );
@@ -135,6 +136,10 @@ const createPrompt = (
     materialRecord.questionRefType?.toLowerCase() || ""
   );
 
+  const questionCount = isAssessmentMaterial
+    ? "the exact number of questions available in the document"
+    : "15-20 questions per lecture/section";
+
   return `Using the following interface:
 interface IQuestion { 
   courseId: ${materialRecord.courseId}; 
@@ -142,8 +147,9 @@ interface IQuestion {
   options: string[]; 
   answer: string; 
   type: "mcq" | "fill-in" | "true-false"; 
-  explanation?: string; 
-  lectureNumber?: ${materialRecord.questionRefType}; 
+  explanation: string; 
+  lectureNumber: ${materialRecord.questionRefType}; 
+  hint: string;
   author: ${QUESTION_CONFIG.authorId}; 
 }
 
@@ -168,18 +174,20 @@ For Assessment Materials (Quiz/IA):
    - Question text
    - Answer options (if MCQ)
    - Correct answers
+   - Add hints to help answer
    - Any provided explanations, provide one if there aren't any
 IMPORTANT: Your returned question count should match the count of the text questions
 `
     : `
 For Lecture Materials:
-1. Generate 15-20 questions per lecture/section
+1. Generate ${questionCount}
 2. Questions must focus exclusively on:
    - Core concepts and theories
    - Key definitions
    - Important processes and methods
    - Real-world applications
    - Critical relationships between concepts
+   - Add hints to aid with answering
 3. Strictly exclude:
    - Course/department names
    - Credit hours or administrative details
@@ -217,6 +225,7 @@ Format Requirements:
    - Clear, concise question text
    - Detailed explanation of the correct answer
    - Appropriate difficulty level
+   - Must have hints
    - Relevant lecture/section reference
 
 Required Metadata:
@@ -253,16 +262,33 @@ const generateQuestions = async (
       throw new Error("Failed to extract text or extracted text is empty");
     }
 
-    const { output } = await ai.generate({
-      prompt: createPrompt(extractedText, materialRecord),
-      output: { schema: outputSchema },
-    });
+    let allQuestions: OutputQuestion[] = [];
+    let totalQuestionsRequested = 0;
 
-    if (!output || output.length === 0) {
-      throw new Error("Failed to generate questions");
+    // Loop to request questions until we reach the desired count
+    while (totalQuestionsRequested < QUESTION_CONFIG.targetQuestions.min) {
+      const { output } = await ai.generate({
+        prompt: createPrompt(extractedText, materialRecord),
+        output: { schema: outputSchema },
+      });
+
+      if (!output || output.length === 0) {
+        throw new Error("Failed to generate questions");
+      }
+
+      const validatedQuestions = outputSchema.parse(output);
+      allQuestions = [...allQuestions, ...validatedQuestions];
+      totalQuestionsRequested = allQuestions.length;
+
+      console.log(
+        `Generated ${validatedQuestions.length} questions in this iteration.`
+      );
+
+      // Optional: Limit the number of iterations to prevent infinite loops
+      if (allQuestions.length >= QUESTION_CONFIG.targetQuestions.max) {
+        break;
+      }
     }
-
-    const validatedQuestions = outputSchema.parse(output);
 
     await Material.findOneAndUpdate(
       { url: fileUrl },
@@ -270,7 +296,7 @@ const generateQuestions = async (
       { new: true, runValidators: true }
     );
 
-    return validatedQuestions;
+    return allQuestions.slice(0, QUESTION_CONFIG.targetQuestions.max); // Return only up to the max limit
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new Error(`Validation error: ${error.message}`);
