@@ -20,12 +20,11 @@ async function createProgress(
     const existingProgress = await Progress.findOneAndUpdate(
       {
         userId: user._id,
-        courseCode: progressData.courseCode,
+        courseId: progressData.courseId,
         quizId: progressData.quizId,
       },
       {
-        ...progressData,
-        completedAt: new Date(),
+        $addToSet: { ...progressData },
       },
       {
         new: true,
@@ -34,14 +33,14 @@ async function createProgress(
     );
 
     await Course.updateOne(
-      { courseCode: progressData.courseCode },
+      { courseId: progressData.courseId },
       { $addToSet: { students: user._id } }
     );
 
     if (user.accessType !== "quiz") {
       await User.updateOne(
         { _id: user._id },
-        { $addToSet: { courses: progressData.courseCode } }
+        { $addToSet: { courses: progressData.courseId } }
       );
     }
 
@@ -97,9 +96,16 @@ async function updateUserProgress(
 ) {
   try {
     const updatedProgress = await Progress.findByIdAndUpdate(
-      progressId,
-      updateData,
-      { new: true }
+      {
+        progressId,
+      },
+      {
+        $addToSet: { ...updateData },
+      },
+      {
+        new: true,
+        upsert: true,
+      }
     );
 
     return updatedProgress;
