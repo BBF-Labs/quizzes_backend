@@ -277,11 +277,18 @@ const generateQuestions = async (
       }
 
       const validatedQuestions = outputSchema.parse(output);
-      allQuestions = [...allQuestions, ...validatedQuestions];
+      // Filter out duplicates
+      const uniqueQuestions = validatedQuestions.filter((question) => {
+        return !allQuestions.some(
+          (existingQuestion) => existingQuestion.question === question.question
+        );
+      });
+
+      allQuestions = [...allQuestions, ...uniqueQuestions];
       totalQuestionsRequested = allQuestions.length;
 
       console.log(
-        `Generated ${validatedQuestions.length} questions in this iteration.`
+        `Generated ${uniqueQuestions.length} unique questions in this iteration.`
       );
 
       // Optional: Limit the number of iterations to prevent infinite loops
