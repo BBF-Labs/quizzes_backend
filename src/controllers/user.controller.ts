@@ -154,7 +154,7 @@ async function findUserById(userId: string) {
 async function validateUserPackages(userId: string) {
   try {
     const user = await User.findById(userId);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new Error("User  not found");
 
     if (user.role === "admin") return;
 
@@ -165,28 +165,20 @@ async function validateUserPackages(userId: string) {
       status: "success",
     });
 
-    const validPayments = [];
-    const expiredPayments = [];
-
-    for (const payment of payments) {
-      if (payment.endsAt! > currentDate) {
-        validPayments.push(payment);
-      } else {
-        expiredPayments.push(payment);
-      }
-    }
+    const validPayments = payments.filter(
+      (payment) => payment.endsAt! > currentDate
+    );
+    const expiredPayments = payments.filter(
+      (payment) => payment.endsAt! <= currentDate
+    );
 
     const validPackageIds = validPayments.map((p) => p.package);
     const packages = await Package.find({ _id: { $in: validPackageIds } });
 
     const validPackageIdsToKeep = new Set<string>();
-
-    let coursesToAdd: any = [];
-
-    if (user.courses) {
-      const userCourses = user.courses.map((c) => c.toString());
-      coursesToAdd = [...new Set([...userCourses])];
-    }
+    const coursesToAdd = new Set<string>(
+      user.courses?.map((c) => c.toString()) || []
+    );
 
     for (const pkg of packages) {
       const userPayment = validPayments.find(
@@ -208,9 +200,9 @@ async function validateUserPackages(userId: string) {
       }
 
       if (pkg.access !== "quiz" && pkg.courses) {
-        for (const courseId of pkg.courses) {
-          coursesToAdd.add(courseId.toString());
-        }
+        pkg.courses.forEach((courseId) =>
+          coursesToAdd.add(courseId.toString())
+        );
       }
     }
 
@@ -258,7 +250,7 @@ async function validateUserQuizAccess(username: string, quizId: string) {
     }
 
     if (!user) {
-      throw new Error("User not found");
+      throw new Error("User  not found");
     }
 
     if (user.role === "admin") {
@@ -266,33 +258,34 @@ async function validateUserQuizAccess(username: string, quizId: string) {
     }
 
     if (user.isBanned) {
-      throw new Error("User is banned");
+      throw new Error("User  is banned");
     }
 
     if (user.isDeleted) {
       throw new Error("No user found");
     }
 
-    if (user.accessType === "default" && !user.hasFreeAccess) {
-      throw new Error("User does not have access to this quiz");
+    if (
+      user.accessType === "default" &&
+      !user.hasFreeAccess &&
+      (user.quizCredits ?? 0) === 0
+    ) {
+      throw new Error("User  does not have access to this quiz");
     }
 
     if (user.hasFreeAccess) {
-      if (user.freeAccessCount != null && user.freeAccessCount > 0) {
-        if (user.freeAccessCount === 1) {
-          await User.findOneAndUpdate(
-            { username },
-            { $set: { freeAccessCount: 0, hasFreeAccess: false } }
-          );
-        } else {
-          await User.findOneAndUpdate(
-            { username },
-            { $set: { freeAccessCount: user.freeAccessCount - 1 } }
-          );
-        }
+      if (user.freeAccessCount! > 0) {
+        const newFreeAccessCount =
+          user.freeAccessCount === 1 ? 0 : user.freeAccessCount! - 1;
+        const hasFreeAccess = newFreeAccessCount > 0;
+
+        await User.updateOne(
+          { username: user.username },
+          { freeAccessCount: newFreeAccessCount, hasFreeAccess }
+        );
         return;
       } else {
-        throw new Error("User has no free access left to take the quiz");
+        throw new Error("User  has no free access left to take the quiz");
       }
     }
 
@@ -303,8 +296,17 @@ async function validateUserQuizAccess(username: string, quizId: string) {
       throw new Error("Error validating user packages");
     }
 
-    if (user.courses && !user.courses.includes(quizDoc.courseId)) {
-      throw new Error("User does not have access to this quiz");
+    if (user.accessType === "duration") {
+      if (!user.isSubscribed) {
+        throw new Error("Renew subscription");
+      }
+      return;
+    }
+
+    if (user.accessType === "course") {
+      if (!user.courses || !user.courses.includes(quizDoc.courseId)) {
+        throw new Error("User  does not have access to this quiz");
+      }
     }
 
     const questionIds = quizDoc.quizQuestions.flatMap(
@@ -319,22 +321,18 @@ async function validateUserQuizAccess(username: string, quizId: string) {
       return;
     }
 
-    if (user.quizCredits && user.quizCredits > 0) {
-      const { creditHours } = quizDoc;
-      const quizCredits = creditHoursToQuizCredits(creditHours);
+    const quizCredits = creditHoursToQuizCredits(quizDoc.creditHours);
+    const currentQuizCredits = user.quizCredits ?? 0;
 
-      if (user.quizCredits >= quizCredits) {
-        await User.findOneAndUpdate(
-          { username },
-          { $set: { quizCredits: user.quizCredits - quizCredits } }
-        );
-        return;
-      } else {
-        throw new Error("Insufficient quiz credits");
-      }
+    if (currentQuizCredits >= quizCredits) {
+      await User.updateOne(
+        { username },
+        { quizCredits: currentQuizCredits - quizCredits }
+      );
+      return;
+    } else {
+      throw new Error("Insufficient quiz credits");
     }
-
-    throw new Error("User does not have sufficient access or quiz credits");
   } catch (err: any) {
     throw new Error(`Error validating user quiz access: ${err.message}`);
   }
