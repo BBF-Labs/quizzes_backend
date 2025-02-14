@@ -280,7 +280,7 @@ paymentRoutes.get("/:reference/verify", async (req: Request, res: Response) => {
 
     if (referenceDoc.isValid) {
       // If already valid, no need to verify again
-      await updateUserPaymentDetails(userDoc._id.toString(), reference);
+      await updateUserPaymentDetails(reference);
       res.status(StatusCodes.OK).json({
         message: "Transaction is already valid",
         isValid: true,
@@ -308,7 +308,7 @@ paymentRoutes.get("/:reference/verify", async (req: Request, res: Response) => {
       });
 
       if (isValid) {
-        await updateUserPaymentDetails(userDoc._id.toString(), reference);
+        await updateUserPaymentDetails(reference);
       }
 
       res.status(StatusCodes.OK).json({

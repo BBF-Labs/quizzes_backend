@@ -202,19 +202,18 @@ async function generateReference() {
   );
 }
 
-async function updateUserPaymentDetails(userId: string, reference: string) {
+async function updateUserPaymentDetails(reference: string) {
   try {
-    const paymentDoc = await Payment.findOne({ reference: reference }).populate(
-      "package"
-    );
-
+    const paymentDoc = await Payment.findOne({ reference: reference });
     if (!paymentDoc) {
       throw new Error("Payment not found");
     }
 
+    const packageDoc = await Package.findById(paymentDoc.package);
+
     if (paymentDoc.type === "quiz" || paymentDoc.type === "default") {
       await User.updateOne(
-        { _id: userId },
+        { _id: paymentDoc.userId },
         {
           accessType: "quiz",
           quizCredits: paymentDoc.amount * 100,
@@ -222,8 +221,6 @@ async function updateUserPaymentDetails(userId: string, reference: string) {
         }
       );
     }
-
-    const packageDoc = await Package.findById(paymentDoc.package);
 
     if (packageDoc) {
       const durationInDays = packageDoc.duration;
@@ -243,7 +240,7 @@ async function updateUserPaymentDetails(userId: string, reference: string) {
       );
 
       const updatedUser = await User.updateOne(
-        { _id: userId },
+        { _id: paymentDoc.userId },
         {
           $push: {
             packageId: packageDoc._id,
@@ -261,7 +258,7 @@ async function updateUserPaymentDetails(userId: string, reference: string) {
       }
     }
 
-    const user = await User.findById(userId).populate("packageId");
+    const user = await User.findById(paymentDoc.userId).populate("packageId");
 
     return user;
   } catch (err: any) {
