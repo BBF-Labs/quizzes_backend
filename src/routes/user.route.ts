@@ -312,7 +312,7 @@ userRoutes.get(
 );
 
 userRoutes.get(
-  "/restore-free-acess",
+  "/restore-free-access",
   authenticateUser,
   authorizeRoles("admin"),
   async (req: Request, res: Response) => {

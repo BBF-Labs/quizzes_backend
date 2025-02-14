@@ -7,6 +7,7 @@ import {
   getFullQuizInformation,
   validateUserPackages,
   validateUserQuizAccess,
+  findUserByUsername,
 } from "../controllers";
 import { authenticateUser, authorizeRoles } from "../middlewares";
 import { StatusCodes } from "../config";
@@ -272,10 +273,12 @@ quizQuestionsRoutes.get(
       }
 
       await validateUserQuizAccess(user.username, fullQuizQuestions.id);
+      const userDoc = await findUserByUsername(user.username);
 
       res.status(StatusCodes.OK).json({
         message: "Success",
         fullQuizQuestions,
+        user: userDoc,
       });
     } catch (err: any) {
       res
