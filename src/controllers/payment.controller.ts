@@ -204,70 +204,93 @@ async function generateReference() {
 
 async function updateUserPaymentDetails(reference: string) {
   try {
-    const paymentDoc = await Payment.findOne({ reference: reference });
+    // Find payment document
+    const paymentDoc = await Payment.findOne({ reference });
     if (!paymentDoc) {
       throw new Error("Payment not found");
     }
 
+    if (!paymentDoc.package) {
+      await handleCreditBasedAccess(paymentDoc);
+      const updatedUser = await User.findById(paymentDoc.userId)
+        .populate("packageId")
+        .lean();
+      return updatedUser;
+    }
     const packageDoc = await Package.findById(paymentDoc.package);
-
-    if (paymentDoc.type === "quiz" || paymentDoc.type === "default") {
-      await User.updateOne(
-        { _id: paymentDoc.userId },
-        {
-          $set: {
-            accessType: "quiz",
-            isSubscribed: true,
-          },
-          $inc: {
-            quizCredits: paymentDoc.amount * 100,
-          },
-        }
-      );
+    if (!packageDoc) {
+      await handleCreditBasedAccess(paymentDoc);
+      const updatedUser = await User.findById(paymentDoc.userId)
+        .populate("packageId")
+        .lean();
+      return updatedUser;
     }
 
-    if (packageDoc) {
-      const durationInDays = packageDoc.duration;
-      if (typeof durationInDays !== "number" || durationInDays <= 0) {
-        throw new Error("Invalid package duration");
-      }
+    const DURATION_BASED_ACCESS = ["duration", "course"];
+    const CREDIT_BASED_ACCESS = ["quiz", "default"];
 
-      const endsAt = new Date();
-      endsAt.setDate(endsAt.getDate() + durationInDays);
-
-      await Payment.findByIdAndUpdate(
-        paymentDoc._id,
-        {
-          endsAt: endsAt,
-        },
-        { new: true }
-      );
-
-      const updatedUser = await User.updateOne(
-        { _id: paymentDoc.userId },
-        {
-          $push: {
-            packageId: packageDoc._id,
-            paymentId: paymentDoc._id,
-          },
-          $set: {
-            isSubscribed: true,
-          },
-          accessType: packageDoc.access,
-        }
-      );
-
-      if (updatedUser.modifiedCount === 0) {
-        throw new Error("User not found or no changes made");
-      }
+    if (DURATION_BASED_ACCESS.includes(packageDoc.access)) {
+      await handleDurationBasedAccess(paymentDoc, packageDoc);
+    } else if (CREDIT_BASED_ACCESS.includes(packageDoc.access)) {
+      await handleCreditBasedAccess(paymentDoc);
+    } else {
+      await handleCreditBasedAccess(paymentDoc);
     }
-
-    const user = await User.findById(paymentDoc.userId).populate("packageId");
-
-    return user;
-  } catch (err: any) {
-    throw new Error(`Error updating user payment: ${err.message}`);
+    const updatedUser = await User.findById(paymentDoc.userId)
+      .populate("packageId")
+      .lean();
+    return updatedUser;
+  } catch (error: any) {
+    throw new Error(`Error updating user payment: ${error.message}`);
   }
+}
+
+async function handleDurationBasedAccess(
+  paymentDoc: any,
+  packageDoc: any
+): Promise<void> {
+  const durationInDays = packageDoc.duration;
+  if (typeof durationInDays !== "number" || durationInDays <= 0) {
+    throw new Error("Invalid package duration");
+  }
+
+  const endsAt = new Date();
+  endsAt.setDate(endsAt.getDate() + durationInDays);
+
+  await Payment.findByIdAndUpdate(paymentDoc._id, { endsAt }, { new: true });
+
+  const updatedUser = await User.updateOne(
+    { _id: paymentDoc.userId },
+    {
+      $push: {
+        packageId: packageDoc._id,
+        paymentId: paymentDoc._id,
+      },
+      $set: {
+        isSubscribed: true,
+        accessType: packageDoc.access,
+      },
+    }
+  );
+
+  if (updatedUser.modifiedCount === 0) {
+    throw new Error("User not found or no changes made");
+  }
+}
+
+async function handleCreditBasedAccess(paymentDoc: any): Promise<void> {
+  await User.updateOne(
+    { _id: paymentDoc.userId },
+    {
+      $set: {
+        accessType: "quiz",
+        isSubscribed: true,
+      },
+      $inc: {
+        quizCredits: paymentDoc.amount * 100,
+      },
+    }
+  );
 }
 
 export {
