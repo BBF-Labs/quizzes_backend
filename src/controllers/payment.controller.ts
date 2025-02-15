@@ -215,9 +215,13 @@ async function updateUserPaymentDetails(reference: string) {
       await User.updateOne(
         { _id: paymentDoc.userId },
         {
-          accessType: "quiz",
-          quizCredits: paymentDoc.amount * 100,
-          isSubscribed: true,
+          $set: {
+            accessType: "quiz",
+            isSubscribed: true,
+          },
+          $inc: {
+            quizCredits: paymentDoc.amount * 100,
+          },
         }
       );
     }

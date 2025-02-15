@@ -220,6 +220,21 @@ async function validateUserPackages(userId: string) {
 
     if (!updatedUser) throw new Error("Error updating user packages");
 
+    const hasValidPayments = validPayments.length > 0;
+    const hasQuizCredits = updatedUser.quizCredits ?? 0;
+
+    if (!hasValidPayments && !hasQuizCredits) {
+      await User.updateOne(
+        { _id: userId },
+        {
+          $set: {
+            isSubscribed: false,
+            accessType: "default",
+          },
+        }
+      );
+    }
+
     return updatedUser;
   } catch (err: any) {
     throw new Error(`Error validating user packages: ${err.message}`);
