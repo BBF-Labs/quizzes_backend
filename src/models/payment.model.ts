@@ -53,7 +53,7 @@ const PaymentSchema: Schema<IPayment> = new Schema(
     },
     type: {
       type: String,
-      enum: ["course", "quiz", "course", "default"],
+      enum: ["course", "quiz", "duration", "default"],
       default: "default",
     },
     package: {
