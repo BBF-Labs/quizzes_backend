@@ -111,8 +111,8 @@ async function getPaymentByReference(reference: string) {
 
 async function getPaymentByUserId(userId: string) {
   try {
-    const payment = await Payment.findOne({
-      userId,
+    const payment = await Payment.find({
+      userId: userId,
     });
 
     if (!payment) {
