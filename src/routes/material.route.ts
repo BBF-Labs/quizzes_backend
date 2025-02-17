@@ -22,6 +22,7 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     const allowedTypes = [
       "application/pdf",
+      "application/json",
       "application/msword",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "application/vnd.ms-powerpoint",

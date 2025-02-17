@@ -22,6 +22,7 @@ const MaterialTypeEnum = z.enum([
   "text",
   "img",
   "link",
+  "data",
 ]);
 type MaterialType = z.infer<typeof MaterialTypeEnum>;
 
@@ -115,6 +116,9 @@ const extractText = async (
           throw new Error("Failed to extract text from image");
         }
         return result.data.text;
+
+      case "data":
+        return await JSON.parse(buffer.toString());
 
       case "link":
         throw new Error("Link type not supported for direct text extraction");
