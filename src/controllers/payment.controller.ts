@@ -287,7 +287,7 @@ async function handleCreditBasedAccess(paymentDoc: any): Promise<void> {
         isSubscribed: true,
       },
       $inc: {
-        quizCredits: paymentDoc.amount * 100,
+        quizCredits: paymentDoc.amount,
       },
     }
   );
