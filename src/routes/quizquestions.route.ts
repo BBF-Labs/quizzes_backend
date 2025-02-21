@@ -5,7 +5,6 @@ import {
   getCourseQuizQuestions,
   updateQuizQuestion,
   getFullQuizInformation,
-  validateUserPackages,
   validateUserQuizAccess,
   findUserByUsername,
 } from "../controllers";

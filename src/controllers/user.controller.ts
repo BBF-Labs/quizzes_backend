@@ -223,6 +223,7 @@ async function validateUserPackages(userId: string) {
     const hasValidPayments = validPayments.length > 0;
     const hasQuizCredits = (updatedUser.quizCredits ?? 0) > 0;
     const hasValidPackages = validPackageIdsToKeep.size > 0;
+    const hasPaymentIds = (updatedUser.paymentId?.length ?? 0) > 0;
 
     if (hasValidPayments && hasValidPackages) {
       const latestPayment = validPayments[validPayments.length - 1];
@@ -239,13 +240,29 @@ async function validateUserPackages(userId: string) {
           },
         }
       );
-    } else if (hasValidPayments) {
+    } else if (hasPaymentIds) {
+      // If user has any payment IDs, find the latest payment type
+      const latestPayment = await Payment.findOne(
+        { _id: { $in: updatedUser.paymentId } },
+        { type: 1 }
+      ).sort({ createdAt: -1 });
+
       await User.updateOne(
         { _id: userId },
         {
           $set: {
             isSubscribed: true,
-            accessType: "default",
+            accessType: latestPayment?.type || "default",
+          },
+        }
+      );
+    } else if (hasQuizCredits) {
+      await User.updateOne(
+        { _id: userId },
+        {
+          $set: {
+            isSubscribed: false,
+            accessType: "quiz",
           },
         }
       );
@@ -256,6 +273,11 @@ async function validateUserPackages(userId: string) {
           $set: {
             isSubscribed: false,
             accessType: "default",
+            hasFreeAccess: false,
+            freeAccessCount: 0,
+            quizCredits: 0,
+            packageId: [],
+            paymentId: [],
           },
         }
       );
@@ -291,7 +313,7 @@ async function validateUserQuizAccess(username: string, quizId: string) {
     }
 
     if (!user) {
-      throw new Error("User  not found");
+      throw new Error("User not found");
     }
 
     if (user.role === "admin") {
@@ -299,37 +321,26 @@ async function validateUserQuizAccess(username: string, quizId: string) {
     }
 
     if (user.isBanned) {
-      throw new Error("User  is banned");
+      throw new Error("User is banned");
     }
 
     if (user.isDeleted) {
       throw new Error("No user found");
     }
 
-    if (
-      user.accessType === "default" &&
-      !user.hasFreeAccess &&
-      (user.quizCredits ?? 0) === 0
-    ) {
-      throw new Error("User  does not have access to this quiz");
+    if (user.hasFreeAccess && user.freeAccessCount! > 0) {
+      const newFreeAccessCount =
+        user.freeAccessCount === 1 ? 0 : user.freeAccessCount! - 1;
+      const hasFreeAccess = newFreeAccessCount > 0;
+
+      await User.updateOne(
+        { username: user.username },
+        { freeAccessCount: newFreeAccessCount, hasFreeAccess }
+      );
+      return;
     }
 
-    if (user.hasFreeAccess) {
-      if (user.freeAccessCount! > 0) {
-        const newFreeAccessCount =
-          user.freeAccessCount === 1 ? 0 : user.freeAccessCount! - 1;
-        const hasFreeAccess = newFreeAccessCount > 0;
-
-        await User.updateOne(
-          { username: user.username },
-          { freeAccessCount: newFreeAccessCount, hasFreeAccess }
-        );
-        return;
-      } else {
-        throw new Error("User  has no free access left to take the quiz");
-      }
-    }
-
+    // Validate user packages and get updated status
     const validateUserPackageStat = await validateUserPackages(
       user._id.toString()
     );
@@ -337,19 +348,7 @@ async function validateUserQuizAccess(username: string, quizId: string) {
       throw new Error("Error validating user packages");
     }
 
-    if (user.accessType === "duration") {
-      if (!user.isSubscribed) {
-        throw new Error("Renew Subscription");
-      }
-      return;
-    }
-
-    if (user.accessType === "course") {
-      if (!user.courses || !user.courses.includes(quizDoc.courseId)) {
-        throw new Error("User  does not have access to this quiz");
-      }
-    }
-
+    // Check if user has moderated enough questions to get free access
     const questionIds = quizDoc.quizQuestions.flatMap(
       (filteredQuestion) => filteredQuestion.questions
     );
@@ -362,17 +361,57 @@ async function validateUserQuizAccess(username: string, quizId: string) {
       return;
     }
 
-    const quizCredits = creditHoursToQuizCredits(quizDoc.creditHours);
     const currentQuizCredits = user.quizCredits ?? 0;
+    const requiredQuizCredits = creditHoursToQuizCredits(quizDoc.creditHours);
 
-    if (currentQuizCredits >= quizCredits) {
-      await User.updateOne(
-        { username },
-        { quizCredits: currentQuizCredits - quizCredits }
-      );
-      return;
-    } else {
-      throw new Error("Insufficient quiz credits");
+    // Handle different access types
+    switch (user.accessType) {
+      case "duration":
+        if (!user.isSubscribed) {
+          throw new Error("Renew Subscription");
+        }
+        return;
+
+      case "course":
+        if (user.courses?.includes(quizDoc.courseId)) {
+          return;
+        }
+        // If no direct course access, check quiz credits
+        if (currentQuizCredits >= requiredQuizCredits) {
+          await User.updateOne(
+            { username },
+            { quizCredits: currentQuizCredits - requiredQuizCredits }
+          );
+          return;
+        }
+        throw new Error("Insufficient quiz credits");
+
+      case "quiz":
+        if (currentQuizCredits >= requiredQuizCredits) {
+          await User.updateOne(
+            { username },
+            { quizCredits: currentQuizCredits - requiredQuizCredits }
+          );
+          return;
+        }
+        throw new Error("Insufficient quiz credits");
+
+      case "default":
+        if (user.isSubscribed) {
+          return;
+        }
+
+        if (currentQuizCredits >= requiredQuizCredits) {
+          await User.updateOne(
+            { username },
+            { quizCredits: currentQuizCredits - requiredQuizCredits }
+          );
+          return;
+        }
+        throw new Error("User does not have access to this quiz");
+
+      default:
+        throw new Error("Invalid access type");
     }
   } catch (err: any) {
     throw new Error(`Error validating user quiz access: ${err.message}`);
