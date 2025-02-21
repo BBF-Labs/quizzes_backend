@@ -222,8 +222,9 @@ async function validateUserPackages(userId: string) {
 
     const hasValidPayments = validPayments.length > 0;
     const hasQuizCredits = updatedUser.quizCredits ?? 0;
+    const hasValidPackages = validPackageIdsToKeep.size > 0;
 
-    if (hasValidPayments) {
+    if (hasValidPayments && hasValidPackages) {
       const firstValidPackage = packages.find(
         (pkg) =>
           pkg._id.toString() === Array.from(validPackageIdsToKeep)[0].toString()
@@ -239,6 +240,26 @@ async function validateUserPackages(userId: string) {
           $set: {
             isSubscribed: true,
             accessType: firstValidPackage.access,
+          },
+        }
+      );
+    } else if (hasValidPayments) {
+      await User.updateOne(
+        { _id: userId },
+        {
+          $set: {
+            isSubscribed: true,
+            accessType: "default",
+          },
+        }
+      );
+    } else {
+      await User.updateOne(
+        { _id: userId },
+        {
+          $set: {
+            isSubscribed: false,
+            accessType: "default",
           },
         }
       );
