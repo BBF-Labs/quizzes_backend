@@ -223,7 +223,28 @@ async function validateUserPackages(userId: string) {
     const hasValidPayments = validPayments.length > 0;
     const hasQuizCredits = updatedUser.quizCredits ?? 0;
 
-    if (!hasValidPayments || !hasQuizCredits) {
+    if (hasValidPayments) {
+      const firstValidPackage = packages.find(
+        (pkg) =>
+          pkg._id.toString() === Array.from(validPackageIdsToKeep)[0].toString()
+      );
+
+      if (!firstValidPackage) {
+        throw new Error("Valid package not found");
+      }
+
+      await User.updateOne(
+        { _id: userId },
+        {
+          $set: {
+            isSubscribed: true,
+            accessType: firstValidPackage.access,
+          },
+        }
+      );
+    }
+
+    if (!hasValidPayments && !hasQuizCredits) {
       await User.updateOne(
         { _id: userId },
         {
