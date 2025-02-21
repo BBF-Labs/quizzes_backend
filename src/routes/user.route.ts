@@ -7,7 +7,7 @@ import {
 } from "../controllers";
 import { authGuard, authenticateUser, authorizeRoles } from "../middlewares";
 import { StatusCodes } from "../config";
-import { User } from "../models";
+import { User, Question, QuizQuestion } from "../models";
 
 const userRoutes: Router = Router();
 
@@ -307,31 +307,6 @@ userRoutes.get(
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: "Error", error: err.message });
-    }
-  }
-);
-
-userRoutes.get(
-  "/restore-free-access",
-  authenticateUser,
-  authorizeRoles("admin"),
-  async (req: Request, res: Response) => {
-    try {
-      const doc = await User.find({});
-
-      const usrId = doc.map((u) => u._id.toString());
-
-      const final = await User.updateMany(
-        { _id: { $in: usrId } },
-        { hasFreeAccess: true, freeAccessCount: 2 },
-        { new: true }
-      );
-
-      res.status(StatusCodes.OK).json({ message: "Done", users: final });
-    } catch (error: any) {
-      res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .json({ error: error.message });
     }
   }
 );

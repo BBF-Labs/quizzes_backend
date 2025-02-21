@@ -223,7 +223,7 @@ async function validateUserPackages(userId: string) {
     const hasValidPayments = validPayments.length > 0;
     const hasQuizCredits = updatedUser.quizCredits ?? 0;
 
-    if (!hasValidPayments && !hasQuizCredits) {
+    if (!hasValidPayments || !hasQuizCredits) {
       await User.updateOne(
         { _id: userId },
         {
