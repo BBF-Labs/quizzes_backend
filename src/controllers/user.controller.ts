@@ -313,7 +313,11 @@ async function validateUserQuizAccess(username: string, quizId: string) {
 
     if (user.accessType === "duration") {
       if (!user.isSubscribed) {
-        throw new Error("Renew subscription");
+        throw new Error("Renew Subscription");
+      }
+
+      if (!user.paymentId) {
+        throw new Error("Renew Subscription");
       }
       return;
     }
