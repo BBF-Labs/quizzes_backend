@@ -397,7 +397,7 @@ async function validateUserQuizAccess(username: string, quizId: string) {
         throw new Error("Insufficient quiz credits");
 
       case "default":
-        if (user.isSubscribed) {
+        if (user.isSubscribed && !user.quizCredits) {
           return;
         }
 
