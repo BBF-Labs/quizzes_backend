@@ -154,7 +154,7 @@ async function findUserById(userId: string) {
 async function validateUserPackages(userId: string) {
   try {
     const user = await User.findById(userId);
-    if (!user) throw new Error("User  not found");
+    if (!user) throw new Error("User not found");
 
     if (user.role === "admin") return;
 
@@ -221,18 +221,21 @@ async function validateUserPackages(userId: string) {
     if (!updatedUser) throw new Error("Error updating user packages");
 
     const hasValidPayments = validPayments.length > 0;
-    const hasQuizCredits = updatedUser.quizCredits ?? 0;
+    const hasQuizCredits = (updatedUser.quizCredits ?? 0) > 0;
     const hasValidPackages = validPackageIdsToKeep.size > 0;
 
     if (hasValidPayments && hasValidPackages) {
-      const accessType = await Payment.findOne({ _id: validPayments[-1] });
+      const latestPayment = validPayments[validPayments.length - 1];
+      const latestPackage = packages.find(
+        (pkg) => pkg._id.toString() === latestPayment.package.toString()
+      );
 
       await User.updateOne(
         { _id: userId },
         {
           $set: {
             isSubscribed: true,
-            accessType: accessType?.type || "duration",
+            accessType: latestPackage?.access || "duration",
           },
         }
       );
@@ -247,18 +250,6 @@ async function validateUserPackages(userId: string) {
         }
       );
     } else {
-      await User.updateOne(
-        { _id: userId },
-        {
-          $set: {
-            isSubscribed: false,
-            accessType: "default",
-          },
-        }
-      );
-    }
-
-    if (!hasValidPayments && !hasQuizCredits) {
       await User.updateOne(
         { _id: userId },
         {
