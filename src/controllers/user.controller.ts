@@ -225,21 +225,14 @@ async function validateUserPackages(userId: string) {
     const hasValidPackages = validPackageIdsToKeep.size > 0;
 
     if (hasValidPayments && hasValidPackages) {
-      const firstValidPackage = packages.find(
-        (pkg) =>
-          pkg._id.toString() === Array.from(validPackageIdsToKeep)[0].toString()
-      );
-
-      if (!firstValidPackage) {
-        throw new Error("Valid package not found");
-      }
+      const accessType = await Payment.findOne({ _id: validPayments[-1] });
 
       await User.updateOne(
         { _id: userId },
         {
           $set: {
             isSubscribed: true,
-            accessType: firstValidPackage.access,
+            accessType: accessType?.type || "duration",
           },
         }
       );
