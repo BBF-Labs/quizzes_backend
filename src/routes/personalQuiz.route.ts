@@ -1,32 +1,25 @@
-import { Router, Request, Response } from "express";
-import { StatusCodes } from "../config";
+import express from "express";
 import {
-  generatePersonalQuiz,
+  createPersonalQuiz,
   getUserPersonalQuizzes,
-  getPersonalQuizById,
+  getPersonalQuiz,
   updatePersonalQuiz,
-  sharePersonalQuiz,
-  getSharedQuizByToken,
   deletePersonalQuiz,
+  regenerateQuestions,
+  getPublicPersonalQuizzes,
 } from "../controllers/personalQuiz.controller";
-import { findUserByUsername } from "../controllers/user.controller";
-import { authenticateUser } from "../middlewares/auth.middleware";
+import { authenticateUser } from "../middlewares";
 
-const personalQuizRoutes = Router();
-
-// Apply authentication middleware to all routes
-personalQuizRoutes.use(authenticateUser);
+const router = express.Router();
 
 /**
  * @swagger
- * /api/v1/personal-quizzes/generate:
+ * /api/v1/personal-quizzes:
  *   post:
- *     summary: Generate a personal quiz from user's materials
- *     description: Generate a personal quiz from user's uploaded materials using AI
- *     tags:
- *       - Personal Quizzes
+ *     summary: Create a new personal quiz
+ *     tags: [Personal Quizzes]
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -36,246 +29,123 @@ personalQuizRoutes.use(authenticateUser);
  *             required:
  *               - title
  *               - courseId
- *               - materialIds
- *               - questionCount
- *               - difficulty
- *               - estimatedDuration
- *               - tags
+ *               - materialId
  *             properties:
  *               title:
  *                 type: string
- *                 description: Title of the quiz
  *               description:
  *                 type: string
- *                 description: Description of the quiz
  *               courseId:
  *                 type: string
- *                 description: ID of the course
- *               materialIds:
- *                 type: array
- *                 items:
- *                   type: string
- *                 description: Array of material IDs to generate questions from
- *               questionCount:
- *                 type: number
- *                 description: Number of questions to generate
- *               difficulty:
+ *               materialId:
  *                 type: string
- *                 enum: [easy, medium, hard]
- *                 description: Difficulty level of the quiz
- *               estimatedDuration:
- *                 type: number
- *                 description: Estimated duration in minutes
+ *               settings:
+ *                 type: object
  *               tags:
  *                 type: array
  *                 items:
  *                   type: string
- *                 description: Tags for the quiz
  *     responses:
  *       201:
- *         description: Personal quiz generated successfully
- *       400:
- *         description: Invalid request data
+ *         description: Quiz created successfully
  *       401:
- *         description: Not authenticated
+ *         description: Unauthorized
  *       403:
- *         description: Access denied to materials
- *       500:
- *         description: Internal server error
+ *         description: Access denied
+ *       404:
+ *         description: Material or course not found
  */
-personalQuizRoutes.post("/generate", async (req: Request, res: Response) => {
-  try {
-    const user = req.user;
-    if (!user) {
-      return res
-        .status(StatusCodes.UNAUTHORIZED)
-        .json({ message: "Unauthorized" });
-    }
-
-    const {
-      title,
-      description,
-      courseId,
-      materialIds,
-      questionCount,
-      difficulty,
-      estimatedDuration,
-      tags,
-    } = req.body;
-
-    // Validate required fields
-    if (
-      !title ||
-      !courseId ||
-      !materialIds ||
-      !questionCount ||
-      !difficulty ||
-      !estimatedDuration ||
-      !tags
-    ) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        message: "Missing required fields",
-      });
-    }
-
-    const userDoc = await findUserByUsername(user.username);
-    if (!userDoc) {
-      return res
-        .status(StatusCodes.NOT_FOUND)
-        .json({ message: "User not found" });
-    }
-
-    const quiz = await generatePersonalQuiz(
-      userDoc._id.toString(),
-      materialIds,
-      {
-        title,
-        description,
-        courseId,
-        questionCount,
-        difficulty,
-        estimatedDuration,
-        tags,
-      }
-    );
-
-    res.status(StatusCodes.CREATED).json({
-      message: "Personal quiz generated successfully",
-      quiz,
-    });
-  } catch (error: any) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      message: error.message || "Failed to generate personal quiz",
-    });
-  }
-});
+router.post("/", authenticateUser, createPersonalQuiz);
 
 /**
  * @swagger
- * /api/v1/personal-quizzes:
+ * /api/v1/personal-quizzes/user:
  *   get:
- *     summary: Get user's personal quizzes
- *     description: Retrieve personal quizzes created by the authenticated user
- *     tags:
- *       - Personal Quizzes
+ *     summary: Get all personal quizzes for the authenticated user
+ *     tags: [Personal Quizzes]
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of personal quizzes
+ *       401:
+ *         description: Unauthorized
+ */
+router.get("/user", authenticateUser, getUserPersonalQuizzes);
+
+/**
+ * @swswagger
+ * /api/v1/personal-quizzes/public:
+ *   get:
+ *     summary: Get public personal quizzes
+ *     tags: [Personal Quizzes]
  *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
  *       - in: query
  *         name: courseId
  *         schema:
  *           type: string
- *         description: Filter by course ID
+ *       - in: query
+ *         name: tags
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
  *     responses:
  *       200:
- *         description: Personal quizzes retrieved successfully
- *       401:
- *         description: Not authenticated
- *       500:
- *         description: Internal server error
+ *         description: List of public personal quizzes
  */
-personalQuizRoutes.get("/", async (req: Request, res: Response) => {
-  try {
-    const user = req.user;
-    if (!user) {
-      return res
-        .status(StatusCodes.UNAUTHORIZED)
-        .json({ message: "Unauthorized" });
-    }
-
-    const { courseId } = req.query;
-
-    const quizzes = await getUserPersonalQuizzes(
-      user.username,
-      courseId as string
-    );
-
-    res.status(StatusCodes.OK).json({
-      message: "Personal quizzes retrieved successfully",
-      quizzes,
-      count: quizzes.length,
-    });
-  } catch (error: any) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      message: error.message || "Failed to retrieve personal quizzes",
-    });
-  }
-});
+router.get("/public", getPublicPersonalQuizzes);
 
 /**
  * @swagger
- * /api/v1/personal-quizzes/{id}:
+ * /api/v1/personal-quizzes/{quizId}:
  *   get:
- *     summary: Get personal quiz by ID
- *     description: Retrieve a specific personal quiz with full details
- *     tags:
- *       - Personal Quizzes
+ *     summary: Get a specific personal quiz
+ *     tags: [Personal Quizzes]
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: quizId
  *         required: true
  *         schema:
  *           type: string
- *         description: Quiz ID
  *     responses:
  *       200:
- *         description: Personal quiz retrieved successfully
+ *         description: Quiz details
  *       401:
- *         description: Not authenticated
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
  *       404:
  *         description: Quiz not found
- *       500:
- *         description: Internal server error
  */
-personalQuizRoutes.get("/:id", async (req: Request, res: Response) => {
-  try {
-    const user = req.user;
-    if (!user) {
-      return res
-        .status(StatusCodes.UNAUTHORIZED)
-        .json({ message: "Unauthorized" });
-    }
-
-    const { id } = req.params;
-
-    const quiz = await getPersonalQuizById(user.username, id);
-
-    if (!quiz) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        message: "Quiz not found",
-      });
-    }
-
-    res.status(StatusCodes.OK).json({
-      message: "Personal quiz retrieved successfully",
-      quiz,
-    });
-  } catch (error: any) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      message: error.message || "Failed to retrieve personal quiz",
-    });
-  }
-});
+router.get("/:quizId", authenticateUser, getPersonalQuiz);
 
 /**
  * @swagger
- * /api/v1/personal-quizzes/{id}:
+ * /api/v1/personal-quizzes/{quizId}:
  *   put:
- *     summary: Update personal quiz
- *     description: Update personal quiz details and settings
- *     tags:
- *       - Personal Quizzes
+ *     summary: Update a personal quiz
+ *     tags: [Personal Quizzes]
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: quizId
  *         required: true
  *         schema:
  *           type: string
- *         description: Quiz ID
  *     requestBody:
  *       required: true
  *       content:
@@ -285,213 +155,89 @@ personalQuizRoutes.get("/:id", async (req: Request, res: Response) => {
  *             properties:
  *               title:
  *                 type: string
- *                 description: Updated title
  *               description:
  *                 type: string
- *                 description: Updated description
+ *               questions:
+ *                 type: array
  *               settings:
  *                 type: object
- *                 description: Updated quiz settings
+ *               isPublic:
+ *                 type: boolean
  *               tags:
  *                 type: array
  *                 items:
  *                   type: string
- *                 description: Updated tags
- *               difficulty:
- *                 type: string
- *                 enum: [easy, medium, hard]
- *                 description: Updated difficulty
  *     responses:
  *       200:
- *         description: Personal quiz updated successfully
- *       400:
- *         description: Invalid request data
+ *         description: Quiz updated successfully
  *       401:
- *         description: Not authenticated
+ *         description: Unauthorized
  *       403:
  *         description: Access denied
  *       404:
  *         description: Quiz not found
- *       500:
- *         description: Internal server error
  */
-personalQuizRoutes.put("/:id", async (req: Request, res: Response) => {
-  try {
-    const user = req.user;
-    if (!user) {
-      return res
-        .status(StatusCodes.UNAUTHORIZED)
-        .json({ message: "Unauthorized" });
-    }
-
-    const { id } = req.params;
-    const updateData = req.body;
-
-    const updatedQuiz = await updatePersonalQuiz(user.username, id, updateData);
-
-    res.status(StatusCodes.OK).json({
-      message: "Personal quiz updated successfully",
-      quiz: updatedQuiz,
-    });
-  } catch (error: any) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      message: error.message || "Failed to update personal quiz",
-    });
-  }
-});
+router.put("/:quizId", authenticateUser, updatePersonalQuiz);
 
 /**
  * @swagger
- * /api/v1/personal-quizzes/{id}/share:
- *   post:
- *     summary: Share personal quiz
- *     description: Make personal quiz public and generate share URL
- *     tags:
- *       - Personal Quizzes
- *     security:
- *       - BearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Quiz ID
- *     responses:
- *       200:
- *         description: Personal quiz shared successfully
- *       401:
- *         description: Not authenticated
- *       403:
- *         description: Access denied
- *       404:
- *         description: Quiz not found
- *       500:
- *         description: Internal server error
- */
-personalQuizRoutes.post("/:id/share", async (req: Request, res: Response) => {
-  try {
-    const user = req.user;
-    if (!user) {
-      return res
-        .status(StatusCodes.UNAUTHORIZED)
-        .json({ message: "Unauthorized" });
-    }
-
-    const { id } = req.params;
-
-    const { shareUrl } = await sharePersonalQuiz(user.username, id);
-
-    res.status(StatusCodes.OK).json({
-      message: "Personal quiz shared successfully",
-      shareUrl,
-    });
-  } catch (error: any) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      message: error.message || "Failed to share personal quiz",
-    });
-  }
-});
-
-/**
- * @swagger
- * /api/v1/personal-quizzes/{id}:
+ * /api/v1/personal-quizzes/{quizId}:
  *   delete:
- *     summary: Delete personal quiz
- *     description: Delete a personal quiz created by the user
- *     tags:
- *       - Personal Quizzes
+ *     summary: Delete a personal quiz
+ *     tags: [Personal Quizzes]
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: quizId
  *         required: true
  *         schema:
  *           type: string
- *         description: Quiz ID
  *     responses:
  *       200:
- *         description: Personal quiz deleted successfully
+ *         description: Quiz deleted successfully
  *       401:
- *         description: Not authenticated
+ *         description: Unauthorized
  *       403:
  *         description: Access denied
  *       404:
  *         description: Quiz not found
- *       500:
- *         description: Internal server error
  */
-personalQuizRoutes.delete("/:id", async (req: Request, res: Response) => {
-  try {
-    const user = req.user;
-    if (!user) {
-      return res
-        .status(StatusCodes.UNAUTHORIZED)
-        .json({ message: "Unauthorized" });
-    }
-
-    const { id } = req.params;
-
-    await deletePersonalQuiz(user.username, id);
-
-    res.status(StatusCodes.OK).json({
-      message: "Personal quiz deleted successfully",
-    });
-  } catch (error: any) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      message: error.message || "Failed to delete personal quiz",
-    });
-  }
-});
+router.delete("/:quizId", authenticateUser, deletePersonalQuiz);
 
 /**
  * @swagger
- * /api/v1/personal-quizzes/shared/{token}:
- *   get:
- *     summary: Get shared quiz by token
- *     description: Retrieve a public shared quiz using the share token no authentication required
- *     tags:
- *       - Personal Quizzes
+ * /api/v1/personal-quizzes/{quizId}/regenerate:
+ *   post:
+ *     summary: Regenerate questions for a personal quiz
+ *     tags: [Personal Quizzes]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: token
+ *         name: quizId
  *         required: true
  *         schema:
  *           type: string
- *         description: Share token
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               questionCount:
+ *                 type: integer
+ *                 default: 10
  *     responses:
  *       200:
- *         description: Shared quiz retrieved successfully
+ *         description: Questions regenerated successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
  *       404:
- *         description: Quiz not found or not public
- *       500:
- *         description: Internal server error
+ *         description: Quiz not found
  */
-personalQuizRoutes.get(
-  "/shared/:token",
-  async (req: Request, res: Response) => {
-    try {
-      const { token } = req.params;
+router.post("/:quizId/regenerate", authenticateUser, regenerateQuestions);
 
-      const quiz = await getSharedQuizByToken(token);
-
-      if (!quiz) {
-        return res.status(StatusCodes.NOT_FOUND).json({
-          message: "Quiz not found or not public",
-        });
-      }
-
-      res.status(StatusCodes.OK).json({
-        message: "Shared quiz retrieved successfully",
-        quiz,
-      });
-    } catch (error: any) {
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-        message: error.message || "Failed to retrieve shared quiz",
-      });
-    }
-  }
-);
-
-export default personalQuizRoutes;
+export default router;
