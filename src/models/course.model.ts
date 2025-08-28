@@ -32,6 +32,10 @@ const CourseSchema = new Schema<ICourse>(
       type: Number,
       default: 3,
     },
+    year: {
+      type: Number,
+      default: new Date().getFullYear(),
+    },
     isDeleted: {
       type: Boolean,
       default: false,

@@ -8,6 +8,7 @@ interface IQuiz extends Document {
   questions: Types.ObjectId[];
   creator: Types.ObjectId;
   isPublished: boolean;
+  year: number;
 }
 
 export default IQuiz;

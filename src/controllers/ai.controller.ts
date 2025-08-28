@@ -90,7 +90,7 @@ type OutputQuestion = z.infer<typeof outputSchema>[number];
  * @returns Extracted text content
  * @throws Error if extraction fails
  */
-const extractText = async (
+export const extractText = async (
   fileUrl: string,
   type: MaterialType
 ): Promise<string> => {

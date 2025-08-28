@@ -17,6 +17,9 @@ import {
   paymentRoutes,
   packageRoutes,
   aiRoutes,
+  flashcardRoutes,
+  personalQuizRoutes,
+  aiAssistantRoutes,
 } from "./routes";
 import crypto from "crypto";
 
@@ -120,6 +123,9 @@ async function startServer() {
     app.use("/api/v1/payments", paymentRoutes);
     app.use("/api/v1/packages", packageRoutes);
     app.use("/api/v1/ai", aiRoutes);
+    app.use("/api/v1/flashcards", flashcardRoutes);
+    app.use("/api/v1/personal-quizzes", personalQuizRoutes);
+    app.use("/api/v1/ai-assistant", aiAssistantRoutes);
 
     // Error Handling & Logging Middleware
     app.use(ErrorHandler);
