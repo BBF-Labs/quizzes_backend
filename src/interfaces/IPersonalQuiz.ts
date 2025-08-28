@@ -1,30 +1,37 @@
-import { Document, Types } from "mongoose";
+import { Document } from "mongoose";
 
-interface IPersonalQuiz extends Document {
-  _id: Types.ObjectId;
+export interface IPersonalQuiz extends Document {
   title: string;
   description?: string;
-  courseId: Types.ObjectId;
-  questions: Types.ObjectId[];
-  createdBy: Types.ObjectId;
-  isPublic: boolean;
-  isPublished: boolean;
+  courseId: string;
+  materialId: string;
+  createdBy: string;
+  questions: Array<{
+    question: string;
+    options: string[];
+    answer: string;
+    explanation?: string;
+    type: "multiple-choice" | "true-false" | "short-answer";
+    difficulty: "easy" | "medium" | "hard";
+    lectureNumber?: string;
+    hint?: string;
+  }>;
   settings: {
-    timeLimit?: number;
+    timeLimit?: number; // in minutes
+    shuffleQuestions: boolean;
     showHints: boolean;
     showExplanations: boolean;
-    randomizeQuestions: boolean;
     allowRetakes: boolean;
-    passingScore: number;
+    passingScore: number; // percentage
   };
+  stats: {
+    totalAttempts: number;
+    averageScore: number;
+    bestScore: number;
+    lastAttempted?: Date;
+  };
+  isPublic: boolean;
   tags: string[];
-  difficulty: "easy" | "medium" | "hard";
-  estimatedDuration: number; // in minutes
-  shareToken?: string; // for sharing via URL
-  shareExpiry?: Date;
-  completionCount: number;
-  averageScore: number;
-  lastModified: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
-
-export default IPersonalQuiz;

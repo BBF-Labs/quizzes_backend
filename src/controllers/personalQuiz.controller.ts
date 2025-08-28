@@ -1,350 +1,351 @@
-import { IPersonalQuiz, IQuestion } from "../interfaces";
-import { PersonalQuiz, Question, Material, User } from "../models";
+import { Request, Response } from "express";
+import { PersonalQuiz, Material, Course, User } from "../models";
+import { generatePersonalQuizFromMaterial } from "../services/aiService";
 import { findUserByUsername } from "./user.controller";
-import { gemini15Flash, googleAI } from "@genkit-ai/googleai";
-import { genkit } from "genkit";
-import { z } from "zod";
 
-// Initialize AI client for quiz generation
-const ai = genkit({
-  plugins: [googleAI({ apiKey: process.env.GOOGLE_GENAI_API_KEY || "" })],
-  model: gemini15Flash,
-});
-
-// Schema for personal quiz generation
-const personalQuizOutputSchema = z.array(
-  z.object({
-    question: z.string().describe("The question text"),
-    options: z.array(z.string()).describe("Multiple choice options"),
-    answer: z.string().describe("The correct answer"),
-    type: z.enum(["mcq", "fill-in", "true-false"]).describe("Question type"),
-    explanation: z.string().describe("Explanation of the answer"),
-    hint: z.string().describe("Hint for the question"),
-  })
-);
-
-type PersonalQuizOutput = z.infer<typeof personalQuizOutputSchema>[number];
-
-/**
- * Generate a personal quiz from user's materials
- */
-async function generatePersonalQuiz(
-  userId: string,
-  materialIds: string[],
-  quizData: {
-    title: string;
-    description?: string;
-    courseId: string;
-    questionCount: number;
-    difficulty: "easy" | "medium" | "hard";
-    estimatedDuration: number;
-    tags: string[];
-  }
-): Promise<IPersonalQuiz> {
+// Create a new personal quiz automatically from uploaded material
+export const createPersonalQuiz = async (req: Request, res: Response) => {
   try {
-    const user = await User.findById(userId);
-    if (!user) {
-      throw new Error("User not found");
+    const { materialId, questionCount = 10 } = req.body;
+    const username = req.user?.username;
+
+    if (!username) {
+      return res.status(401).json({ message: "User not authenticated" });
     }
 
-    // Check access control for premium features
-    if (
-      !user.isSubscribed &&
-      (!user.quizCredits || user.quizCredits <= 0) &&
-      (!user.hasFreeAccess ||
-        !user.freeAccessCount ||
-        user.freeAccessCount <= 0)
-    ) {
-      throw new Error("Access requires a subscription or quiz credits");
+    // Verify material exists and belongs to user
+    const material = await Material.findById(materialId);
+    if (!material) {
+      return res.status(404).json({ message: "Material not found" });
     }
 
-    // Deduct free access count if user has free access
-    if (
-      user.hasFreeAccess &&
-      user.freeAccessCount &&
-      user.freeAccessCount > 0
-    ) {
-      const newFreeAccessCount = user.freeAccessCount - 1;
-      const hasFreeAccess = newFreeAccessCount > 0;
+    const userDoc = await findUserByUsername(username);
 
-      await User.updateOne(
-        { username: user.username },
-        { freeAccessCount: newFreeAccessCount, hasFreeAccess }
-      );
+    if (!userDoc) {
+      return res.status(404).json({ message: "User not found" });
     }
 
-    // Verify user has access to all materials
-    const materials = await Material.find({
-      _id: { $in: materialIds },
-      $or: [{ uploadedBy: user._id }, { courseId: quizData.courseId }],
-    });
-
-    if (materials.length !== materialIds.length) {
-      throw new Error("Access denied to some materials");
+    if ((material.uploadedBy as any).toString() !== userDoc._id.toString()) {
+      return res
+        .status(403)
+        .json({ message: "Access denied to this material" });
     }
 
-    // Generate questions using AI
-    const materialTitles = materials.map((m) => m.title).join(", ");
-    const prompt = `Generate ${quizData.questionCount} quiz questions from the following educational materials.
-    Focus on key concepts and important information.
-    
-    Materials: ${materialTitles}
-    Difficulty: ${quizData.difficulty}
-    
-    Generate questions that are:
-    - Clear and well-structured
-    - Appropriate for the specified difficulty level
-    - Cover different aspects of the material
-    - Include helpful hints and explanations
-    
-    Return as JSON array with question, options, answer, type, explanation, and hint fields.`;
-
-    const { output } = await ai.generate({
-      prompt,
-      output: { schema: personalQuizOutputSchema },
-    });
-
-    if (!output || output.length === 0) {
-      throw new Error("Failed to generate quiz questions");
+    // Verify course exists
+    const course = await Course.findById(material.courseId);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
     }
 
-    // Create question documents
-    const questions = await Promise.all(
-      output.map(async (questionData) => {
-        const question = new Question({
-          courseId: quizData.courseId,
-          question: questionData.question,
-          options: questionData.options,
-          answer: questionData.answer,
-          type: questionData.type,
-          explanation: questionData.explanation,
-          hint: questionData.hint,
-          author: user._id,
-          isModerated: true, // User-generated questions are pre-approved
-          moderatedBy: user._id,
-        });
-
-        return await question.save();
-      })
+    // Generate complete quiz using AI service
+    const generatedQuiz = await generatePersonalQuizFromMaterial(
+      material,
+      questionCount
     );
 
-    // Create personal quiz
+    // Create personal quiz with AI-generated content
     const personalQuiz = new PersonalQuiz({
-      title: quizData.title,
-      description: quizData.description,
-      courseId: quizData.courseId,
-      questions: questions.map((q) => q._id),
-      createdBy: user._id,
-      isPublic: false,
-      isPublished: false,
+      title: generatedQuiz.title,
+      description: generatedQuiz.description,
+      courseId: material.courseId,
+      materialId: material._id,
+      createdBy: userDoc._id,
+      questions: generatedQuiz.questions,
       settings: {
+        timeLimit: Math.ceil(generatedQuiz.estimatedDuration * 1.2), // Add 20% buffer
+        shuffleQuestions: true,
         showHints: true,
         showExplanations: true,
-        randomizeQuestions: false,
         allowRetakes: true,
         passingScore: 70,
       },
-      tags: quizData.tags,
-      difficulty: quizData.difficulty,
-      estimatedDuration: quizData.estimatedDuration,
-      completionCount: 0,
-      averageScore: 0,
+      stats: {
+        totalAttempts: 0,
+        averageScore: 0,
+        bestScore: 0,
+      },
+      isPublic: false,
+      tags: generatedQuiz.tags,
     });
 
-    const savedQuiz = await personalQuiz.save();
-    return savedQuiz;
-  } catch (error: any) {
-    console.error("Error generating personal quiz:", error);
-    throw new Error(error.message || "Failed to generate personal quiz");
-  }
-}
+    await personalQuiz.save();
 
-/**
- * Get user's personal quizzes
- */
-async function getUserPersonalQuizzes(
-  username: string,
-  courseId?: string
-): Promise<IPersonalQuiz[]> {
-  try {
-    const user = await findUserByUsername(username);
-    if (!user) {
-      throw new Error("User not found");
+    res.status(201).json({
+      message: "Personal quiz created successfully",
+      quiz: personalQuiz,
+    });
+  } catch (error: any) {
+    console.error("Error creating personal quiz:", error);
+
+    // Handle AI generation errors specifically
+    if (error.message.includes("Failed to generate personal quiz")) {
+      return res.status(503).json({
+        message:
+          "AI service temporarily unavailable. Please try again in a few minutes.",
+        error: "AI_GENERATION_FAILED",
+        retryAfter: 60, // Suggest retry after 1 minute
+      });
     }
 
-    const query: any = { createdBy: user._id };
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Get all personal quizzes for a user
+export const getUserPersonalQuizzes = async (req: Request, res: Response) => {
+  try {
+    const username = req.user?.username;
+
+    if (!username) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    const userDoc = await findUserByUsername(username);
+
+    if (!userDoc) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const quizzes = await PersonalQuiz.find({ createdBy: userDoc._id })
+      .populate("courseId", "code title")
+      .populate("materialId", "title type")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ quizzes });
+  } catch (error) {
+    console.error("Error fetching user personal quizzes:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Get a specific personal quiz
+export const getPersonalQuiz = async (req: Request, res: Response) => {
+  try {
+    const { quizId } = req.params;
+    const username = req.user?.username;
+
+    if (!username) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    const userDoc = await findUserByUsername(username);
+
+    if (!userDoc) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const quiz = await PersonalQuiz.findById(quizId)
+      .populate("courseId", "code title about")
+      .populate("materialId", "title type questionRefType")
+      .populate("createdBy", "name username");
+
+    if (!quiz) {
+      return res.status(404).json({ message: "Quiz not found" });
+    }
+
+    // Check if user has access to this quiz
+    if (
+      (quiz.createdBy as any)._id.toString() !== userDoc._id.toString() &&
+      !quiz.isPublic
+    ) {
+      return res.status(403).json({ message: "Access denied to this quiz" });
+    }
+
+    res.status(200).json({ quiz });
+  } catch (error) {
+    console.error("Error fetching personal quiz:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Update a personal quiz
+export const updatePersonalQuiz = async (req: Request, res: Response) => {
+  try {
+    const { quizId } = req.params;
+    const updateData = req.body;
+    const username = req.user?.username;
+
+    if (!username) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    const userDoc = await findUserByUsername(username);
+
+    if (!userDoc) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const quiz = await PersonalQuiz.findById(quizId);
+    if (!quiz) {
+      return res.status(404).json({ message: "Quiz not found" });
+    }
+
+    if ((quiz.createdBy as any).toString() !== userDoc._id.toString()) {
+      return res.status(403).json({ message: "Access denied to this quiz" });
+    }
+
+    // Update allowed fields
+    const allowedUpdates = [
+      "title",
+      "description",
+      "questions",
+      "settings",
+      "isPublic",
+      "tags",
+    ];
+
+    allowedUpdates.forEach((field) => {
+      if (updateData[field] !== undefined) {
+        (quiz as any)[field] = updateData[field];
+      }
+    });
+
+    await quiz.save();
+
+    res.status(200).json({
+      message: "Quiz updated successfully",
+      quiz,
+    });
+  } catch (error) {
+    console.error("Error updating personal quiz:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Delete a personal quiz
+export const deletePersonalQuiz = async (req: Request, res: Response) => {
+  try {
+    const { quizId } = req.params;
+    const username = req.user?.username;
+
+    if (!username) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    const userDoc = await findUserByUsername(username);
+
+    if (!userDoc) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const quiz = await PersonalQuiz.findById(quizId);
+    if (!quiz) {
+      return res.status(404).json({ message: "Quiz not found" });
+    }
+
+    if ((quiz.createdBy as any).toString() !== userDoc._id.toString()) {
+      return res.status(403).json({ message: "Access denied to this quiz" });
+    }
+
+    await PersonalQuiz.findByIdAndDelete(quizId);
+
+    res.status(200).json({ message: "Quiz deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting personal quiz:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Regenerate questions for a personal quiz
+export const regenerateQuestions = async (req: Request, res: Response) => {
+  try {
+    const { quizId } = req.params;
+    const { questionCount = 10 } = req.body;
+    const username = req.user?.username;
+
+    if (!username) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    const userDoc = await findUserByUsername(username);
+
+    if (!userDoc) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const quiz = await PersonalQuiz.findById(quizId).populate("materialId");
+
+    if (!quiz) {
+      return res.status(404).json({ message: "Quiz not found" });
+    }
+
+    if ((quiz.createdBy as any).toString() !== userDoc._id.toString()) {
+      return res.status(403).json({ message: "Access denied to this quiz" });
+    }
+
+    // Generate new questions using AI
+    const newQuiz = await generatePersonalQuizFromMaterial(
+      quiz.materialId as any,
+      questionCount
+    );
+
+    // Update quiz with new AI-generated content
+    quiz.title = newQuiz.title;
+    quiz.description = newQuiz.description;
+    quiz.questions = newQuiz.questions;
+    quiz.tags = newQuiz.tags;
+    quiz.settings.timeLimit = Math.ceil(newQuiz.estimatedDuration * 1.2);
+
+    await quiz.save();
+
+    res.status(200).json({
+      message: "Questions regenerated successfully",
+      quiz,
+    });
+  } catch (error: any) {
+    console.error("Error regenerating questions:", error);
+
+    // Handle AI generation errors specifically
+    if (error.message.includes("Failed to generate personal quiz")) {
+      return res.status(503).json({
+        message:
+          "AI service temporarily unavailable. Please try again in a few minutes.",
+        error: "AI_GENERATION_FAILED",
+        retryAfter: 60,
+      });
+    }
+
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Get public personal quizzes
+export const getPublicPersonalQuizzes = async (req: Request, res: Response) => {
+  try {
+    const { page = 1, limit = 10, courseId, tags } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const filter: any = { isPublic: true };
 
     if (courseId) {
-      query.courseId = courseId;
+      filter.courseId = courseId;
     }
 
-    const quizzes = await PersonalQuiz.find(query)
+    if (tags && Array.isArray(tags)) {
+      filter.tags = { $in: tags };
+    }
+
+    const quizzes = await PersonalQuiz.find(filter)
       .populate("courseId", "code title")
-      .populate("questions", "question type")
-      .sort({ lastModified: -1 });
+      .populate("materialId", "title type")
+      .populate("createdBy", "name username")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit));
 
-    return quizzes;
-  } catch (error: any) {
-    console.error("Error fetching user personal quizzes:", error);
-    throw new Error(error.message || "Failed to fetch personal quizzes");
-  }
-}
+    const total = await PersonalQuiz.countDocuments(filter);
 
-/**
- * Get personal quiz by ID with full details
- */
-async function getPersonalQuizById(
-  username: string,
-  quizId: string
-): Promise<IPersonalQuiz | null> {
-  try {
-    const user = await findUserByUsername(username);
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const quiz = await PersonalQuiz.findOne({
-      _id: quizId,
-      createdBy: user._id,
-    })
-      .populate("courseId", "code title")
-      .populate({
-        path: "questions",
-        select: "question options type hint explanation",
-      });
-
-    return quiz;
-  } catch (error: any) {
-    console.error("Error fetching personal quiz:", error);
-    return null;
-  }
-}
-
-/**
- * Update personal quiz
- */
-async function updatePersonalQuiz(
-  username: string,
-  quizId: string,
-  updateData: Partial<IPersonalQuiz>
-): Promise<IPersonalQuiz> {
-  try {
-    const user = await findUserByUsername(username);
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const quiz = await PersonalQuiz.findOneAndUpdate(
-      { _id: quizId, createdBy: user._id },
-      updateData,
-      { new: true, runValidators: true }
-    );
-
-    if (!quiz) {
-      throw new Error("Quiz not found or access denied");
-    }
-
-    return quiz;
-  } catch (error: any) {
-    console.error("Error updating personal quiz:", error);
-    throw new Error(error.message || "Failed to update personal quiz");
-  }
-}
-
-/**
- * Share personal quiz (make public and generate share token)
- */
-async function sharePersonalQuiz(
-  username: string,
-  quizId: string
-): Promise<{ shareUrl: string }> {
-  try {
-    const user = await findUserByUsername(username);
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const quiz = await PersonalQuiz.findOneAndUpdate(
-      { _id: quizId, createdBy: user._id },
-      { isPublic: true, isPublished: true },
-      { new: true, runValidators: true }
-    );
-
-    if (!quiz) {
-      throw new Error("Quiz not found or access denied");
-    }
-
-    // Generate share URL
-    const shareUrl = `${
-      process.env.FRONTEND_URL || "http://localhost:3000"
-    }/quizzes/shared/${quiz.shareToken}`;
-
-    return { shareUrl };
-  } catch (error: any) {
-    console.error("Error sharing personal quiz:", error);
-    throw new Error(error.message || "Failed to share personal quiz");
-  }
-}
-
-/**
- * Get shared quiz by token
- */
-async function getSharedQuizByToken(
-  shareToken: string
-): Promise<IPersonalQuiz | null> {
-  try {
-    const quiz = await PersonalQuiz.findOne({
-      shareToken,
-      isPublic: true,
-      isPublished: true,
-      shareExpiry: { $gt: new Date() },
-    })
-      .populate("courseId", "code title")
-      .populate({
-        path: "questions",
-        select: "question options type hint",
-      });
-
-    return quiz;
-  } catch (error: any) {
-    console.error("Error fetching shared quiz:", error);
-    return null;
-  }
-}
-
-/**
- * Delete personal quiz
- */
-async function deletePersonalQuiz(
-  username: string,
-  quizId: string
-): Promise<void> {
-  try {
-    const user = await findUserByUsername(username);
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const result = await PersonalQuiz.deleteOne({
-      _id: quizId,
-      createdBy: user._id,
+    res.status(200).json({
+      quizzes,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / Number(limit)),
+      },
     });
-
-    if (result.deletedCount === 0) {
-      throw new Error("Quiz not found or access denied");
-    }
-  } catch (error: any) {
-    console.error("Error deleting personal quiz:", error);
-    throw new Error(error.message || "Failed to delete personal quiz");
+  } catch (error) {
+    console.error("Error fetching public personal quizzes:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
-}
-
-export {
-  generatePersonalQuiz,
-  getUserPersonalQuizzes,
-  getPersonalQuizById,
-  updatePersonalQuiz,
-  sharePersonalQuiz,
-  getSharedQuizByToken,
-  deletePersonalQuiz,
 };

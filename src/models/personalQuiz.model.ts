@@ -1,8 +1,42 @@
-import mongoose, { Schema, model, Model } from "mongoose";
-import { IPersonalQuiz } from "../interfaces";
-import crypto from "crypto";
+import mongoose, { Schema, Document } from "mongoose";
 
-const PersonalQuizSchema: Schema<IPersonalQuiz> = new Schema(
+export interface IPersonalQuiz extends Document {
+  title: string;
+  description?: string;
+  courseId: mongoose.Types.ObjectId;
+  materialId: mongoose.Types.ObjectId;
+  createdBy: mongoose.Types.ObjectId;
+  questions: Array<{
+    question: string;
+    options: string[];
+    answer: string;
+    explanation?: string;
+    type: "mcq" | "fill-in" | "true-false";
+    difficulty: "basic" | "intermediate" | "advanced" | "critical";
+    lectureNumber?: string;
+    hint?: string;
+  }>;
+  settings: {
+    timeLimit?: number; // in minutes
+    shuffleQuestions: boolean;
+    showHints: boolean;
+    showExplanations: boolean;
+    allowRetakes: boolean;
+    passingScore: number; // percentage
+  };
+  stats: {
+    totalAttempts: number;
+    averageScore: number;
+    bestScore: number;
+    lastAttempted?: Date;
+  };
+  isPublic: boolean;
+  tags: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const PersonalQuizSchema = new Schema<IPersonalQuiz>(
   {
     title: {
       type: String,
@@ -18,30 +52,59 @@ const PersonalQuizSchema: Schema<IPersonalQuiz> = new Schema(
       ref: "Course",
       required: true,
     },
-    questions: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Question",
-        required: true,
-      },
-    ],
+    materialId: {
+      type: Schema.Types.ObjectId,
+      ref: "Material",
+      required: true,
+    },
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    isPublic: {
-      type: Boolean,
-      default: false,
-    },
-    isPublished: {
-      type: Boolean,
-      default: false,
-    },
+    questions: [
+      {
+        question: {
+          type: String,
+          required: true,
+        },
+        options: {
+          type: [String],
+          required: true,
+        },
+        answer: {
+          type: String,
+          required: true,
+        },
+        explanation: {
+          type: String,
+        },
+        type: {
+          type: String,
+          enum: ["mcq", "true-false", "fill-in"],
+          default: "mcq",
+        },
+        difficulty: {
+          type: String,
+          enum: ["basic", "intermediate", "advanced", "critical"],
+          default: "intermediate",
+        },
+        lectureNumber: {
+          type: String,
+        },
+        hint: {
+          type: String,
+        },
+      },
+    ],
     settings: {
       timeLimit: {
         type: Number,
         min: 0,
+      },
+      shuffleQuestions: {
+        type: Boolean,
+        default: true,
       },
       showHints: {
         type: Boolean,
@@ -51,20 +114,37 @@ const PersonalQuizSchema: Schema<IPersonalQuiz> = new Schema(
         type: Boolean,
         default: true,
       },
-      randomizeQuestions: {
-        type: Boolean,
-        default: false,
-      },
       allowRetakes: {
         type: Boolean,
         default: true,
       },
       passingScore: {
         type: Number,
-        default: 70,
         min: 0,
         max: 100,
+        default: 70,
       },
+    },
+    stats: {
+      totalAttempts: {
+        type: Number,
+        default: 0,
+      },
+      averageScore: {
+        type: Number,
+        default: 0,
+      },
+      bestScore: {
+        type: Number,
+        default: 0,
+      },
+      lastAttempted: {
+        type: Date,
+      },
+    },
+    isPublic: {
+      type: Boolean,
+      default: false,
     },
     tags: [
       {
@@ -72,38 +152,6 @@ const PersonalQuizSchema: Schema<IPersonalQuiz> = new Schema(
         trim: true,
       },
     ],
-    difficulty: {
-      type: String,
-      enum: ["easy", "medium", "hard"],
-      default: "medium",
-    },
-    estimatedDuration: {
-      type: Number,
-      default: 30,
-      min: 1,
-    },
-    shareToken: {
-      type: String,
-      unique: true,
-      sparse: true,
-    },
-    shareExpiry: {
-      type: Date,
-    },
-    completionCount: {
-      type: Number,
-      default: 0,
-    },
-    averageScore: {
-      type: Number,
-      default: 0,
-      min: 0,
-      max: 100,
-    },
-    lastModified: {
-      type: Date,
-      default: Date.now,
-    },
   },
   {
     timestamps: true,
@@ -112,24 +160,11 @@ const PersonalQuizSchema: Schema<IPersonalQuiz> = new Schema(
 
 // Indexes for better query performance
 PersonalQuizSchema.index({ courseId: 1, createdBy: 1 });
-PersonalQuizSchema.index({ isPublic: 1, isPublished: 1 });
+PersonalQuizSchema.index({ materialId: 1 });
+PersonalQuizSchema.index({ createdBy: 1, isPublic: 1 });
 PersonalQuizSchema.index({ tags: 1 });
-PersonalQuizSchema.index({ difficulty: 1 });
-PersonalQuizSchema.index({ shareToken: 1 });
 
-// Pre-save middleware to generate share token if needed
-PersonalQuizSchema.pre("save", function (next) {
-  if (this.isPublic && !this.shareToken) {
-    this.shareToken = crypto.randomBytes(16).toString("hex");
-    this.shareExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
-  }
-  this.lastModified = new Date();
-  next();
-});
-
-const PersonalQuiz: Model<IPersonalQuiz> = model<IPersonalQuiz>(
+export const PersonalQuiz = mongoose.model<IPersonalQuiz>(
   "PersonalQuiz",
   PersonalQuizSchema
 );
-
-export default PersonalQuiz;
