@@ -8,6 +8,8 @@ import IPayment from "./IPayment";
 import IPackage from "./IPackage";
 import IQuizQuestion from "./IQuizQuestion";
 import IToken from "./IToken";
+import IFlashcard from "./IFlashcard";
+import IPersonalQuiz from "./IPersonalQuiz";
 
 export {
   ICourse,
@@ -20,4 +22,6 @@ export {
   IPackage,
   IQuizQuestion,
   IToken,
+  IFlashcard,
+  IPersonalQuiz,
 };

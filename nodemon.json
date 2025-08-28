@@ -8,6 +8,6 @@
   "legacy-watch": true,
   "restartable": true,
   "events": {
-    "start": "clear"
+    "start": "cls && echo 'Starting server...'"
   }
 }

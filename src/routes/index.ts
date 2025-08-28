@@ -9,6 +9,9 @@ import materialRoutes from "./material.route";
 import paymentRoutes from "./payment.route";
 import packageRoutes from "./package.route";
 import aiRoutes from "./ai.route";
+import aiAssistantRoutes from "./aiAssistant.route";
+import flashcardRoutes from "./flashcard.route";
+import personalQuizRoutes from "./personalQuiz.route";
 
 export {
   userRoutes,
@@ -22,4 +25,7 @@ export {
   paymentRoutes,
   packageRoutes,
   aiRoutes,
+  aiAssistantRoutes,
+  flashcardRoutes,
+  personalQuizRoutes,
 };

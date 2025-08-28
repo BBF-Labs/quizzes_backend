@@ -33,6 +33,10 @@ const QuizSchema = new Schema<IQuiz>(
       required: true,
       default: false,
     },
+    year: {
+      type: Number,
+      default: new Date().getFullYear(),
+    },
   },
   {
     timestamps: true,
