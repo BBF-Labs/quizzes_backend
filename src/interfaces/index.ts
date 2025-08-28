@@ -9,7 +9,8 @@ import IPackage from "./IPackage";
 import IQuizQuestion from "./IQuizQuestion";
 import IToken from "./IToken";
 import IFlashcard from "./IFlashcard";
-import IPersonalQuiz from "./IPersonalQuiz";
+import { IPersonalQuiz } from "./IPersonalQuiz";
+import { IWebhookData } from "./IWebhook";
 
 export {
   ICourse,
@@ -24,4 +25,5 @@ export {
   IToken,
   IFlashcard,
   IPersonalQuiz,
+  IWebhookData,
 };

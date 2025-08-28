@@ -1,5 +1,5 @@
 import Flashcard from "./flashcard.model";
-import PersonalQuiz from "./personalQuiz.model";
+import { PersonalQuiz } from "./personalQuiz.model";
 
 export { default as User } from "./user.model";
 export { default as QuizQuestion } from "./quizquestion.model";

@@ -20,6 +20,7 @@ import {
   flashcardRoutes,
   personalQuizRoutes,
   aiAssistantRoutes,
+  webhookRoutes,
 } from "./routes";
 import crypto from "crypto";
 
@@ -126,6 +127,7 @@ async function startServer() {
     app.use("/api/v1/flashcards", flashcardRoutes);
     app.use("/api/v1/personal-quizzes", personalQuizRoutes);
     app.use("/api/v1/ai-assistant", aiAssistantRoutes);
+    app.use("/api/v1/webhooks", webhookRoutes);
 
     // Error Handling & Logging Middleware
     app.use(ErrorHandler);

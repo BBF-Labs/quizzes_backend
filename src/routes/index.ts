@@ -12,6 +12,7 @@ import aiRoutes from "./ai.route";
 import aiAssistantRoutes from "./aiAssistant.route";
 import flashcardRoutes from "./flashcard.route";
 import personalQuizRoutes from "./personalQuiz.route";
+import webhookRoutes from "./webhook.route";
 
 export {
   userRoutes,
@@ -28,4 +29,5 @@ export {
   aiAssistantRoutes,
   flashcardRoutes,
   personalQuizRoutes,
+  webhookRoutes,
 };
