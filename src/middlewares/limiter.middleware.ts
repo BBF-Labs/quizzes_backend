@@ -1,7 +1,7 @@
 import rateLimit from "express-rate-limit";
 const Limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 60,
+  windowMs: 6 * 60 * 1000,
+  limit: 200,
   message: { error: "Too many requests, please try again later" },
   handler: (req, res) => {
     res

@@ -9,6 +9,7 @@ interface IQuestion extends Document {
   type: "mcq" | "fill-in" | "true-false";
   explanation?: string;
   lectureNumber?: string;
+  hint?: string;
   author: Types.ObjectId;
   isModerated: boolean;
   moderatedBy: Types.ObjectId;

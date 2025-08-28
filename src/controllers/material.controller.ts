@@ -18,6 +18,7 @@ const getFileType = (mimeType: string, filename: string) => {
   if (mimeType.includes("pdf")) return "pdf";
   if (mimeType.includes("doc")) return "doc";
   if (mimeType.includes("image")) return "img";
+  if (mimeType.includes("json") || filename.endsWith(".json")) return "data";
   if (filename.endsWith(".ppt") || filename.endsWith(".pptx")) return "slides";
   return "text";
 };

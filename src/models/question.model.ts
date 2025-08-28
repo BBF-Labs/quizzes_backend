@@ -31,6 +31,9 @@ const QuestionSchema = new Schema<IQuestion>(
     lectureNumber: {
       type: String,
     },
+    hint: {
+      type: String,
+    },
     author: {
       type: Schema.Types.ObjectId,
       ref: "User",
