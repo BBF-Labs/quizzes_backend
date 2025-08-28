@@ -13,6 +13,12 @@ export const createPersonalQuiz = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "User not authenticated" });
     }
 
+    // Validate question count
+    const validatedQuestionCount = Math.min(
+      20,
+      Math.max(1, questionCount || 10)
+    );
+
     // Verify material exists and belongs to user
     const material = await Material.findById(materialId);
     if (!material) {
@@ -40,7 +46,7 @@ export const createPersonalQuiz = async (req: Request, res: Response) => {
     // Generate complete quiz using AI service
     const generatedQuiz = await generatePersonalQuizFromMaterial(
       material,
-      questionCount
+      validatedQuestionCount
     );
 
     // Create personal quiz with AI-generated content
