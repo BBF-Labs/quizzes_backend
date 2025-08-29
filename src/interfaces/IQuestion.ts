@@ -13,6 +13,7 @@ interface IQuestion extends Document {
   author: Types.ObjectId;
   isModerated: boolean;
   moderatedBy: Types.ObjectId;
+  year: number;
 }
 
 export default IQuestion;
