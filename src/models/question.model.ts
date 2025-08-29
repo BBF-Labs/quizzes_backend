@@ -47,6 +47,10 @@ const QuestionSchema = new Schema<IQuestion>(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
+    year: {
+      type: Number,
+      default: new Date().getFullYear(),
+    },
   },
   {
     timestamps: true,
