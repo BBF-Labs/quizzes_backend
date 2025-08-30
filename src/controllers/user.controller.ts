@@ -418,6 +418,80 @@ async function validateUserQuizAccess(username: string, quizId: string) {
   }
 }
 
+async function validateUserAIAccess(username: string) {
+  try {
+    const user = await User.findOne({ username });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.role === "admin") {
+      return;
+    }
+
+    if (user.isBanned) {
+      throw new Error("User is banned");
+    }
+
+    if (user.isDeleted) {
+      throw new Error("No user found");
+    }
+
+    if (user.hasFreeAccess && user.freeAccessCount! >= 2) {
+      const newFreeAccessCount =
+        user.freeAccessCount === 2 ? 0 : user.freeAccessCount! - 1;
+      const hasFreeAccess = newFreeAccessCount > 0;
+
+      await User.updateOne(
+        { username: user.username },
+        { freeAccessCount: newFreeAccessCount, hasFreeAccess }
+      );
+      return;
+    }
+
+    // Validate user packages and get updated status
+    const validateUserPackageStat = await validateUserPackages(
+      user._id.toString()
+    );
+    if (!validateUserPackageStat) {
+      throw new Error("Error validating user packages");
+    }
+
+    // Handle different access types
+    switch (user.accessType) {
+      case "duration":
+        if (!user.isSubscribed) {
+          throw new Error("Renew your subscription to use our AI Model");
+        }
+        return;
+
+      case "default":
+        if (user.isSubscribed && !user.quizCredits) {
+          return;
+        }
+
+        const currentQuizCredits = user.quizCredits ?? 0;
+
+        if (currentQuizCredits >= 3000) {
+          await User.updateOne(
+            { username },
+            { quizCredits: currentQuizCredits - 550 }
+          );
+          return;
+        }
+        throw new Error(
+          "Your subscription does not allow you to use our AI Model"
+        );
+
+      default:
+        throw new Error("Invalid access type");
+    }
+  } catch (err: any) {
+    throw new Error(`Error validating user AI access: ${err.message}`);
+  }
+}
+
 async function getUsers() {
   try {
     const users = await User.find();
@@ -442,5 +516,6 @@ export {
   findUserById,
   validateUserPackages,
   validateUserQuizAccess,
+  validateUserAIAccess,
   getUsers,
 };

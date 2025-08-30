@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "../config";
 import { Payment, User, Question } from "../models";
-import { findUserByUsername } from "./user.controller";
+import { findUserByUsername, validateUserAIAccess } from "./user.controller";
 import { genkit, z } from "genkit";
 import { gemini15Flash, googleAI, gemini20Flash } from "@genkit-ai/googleai";
 import { Config } from "../config";
@@ -49,15 +49,8 @@ export const aiAssistantController = {
 
       const userId = userDoc._id.toString();
 
-      // Access control: Check if user has AI access
-      const hasAccess = await checkAIAccess(user);
-      if (!hasAccess) {
-        return res.status(StatusCodes.FORBIDDEN).json({
-          success: false,
-          message: "AI assistance requires a subscription or quiz credits",
-          required: "subscription_or_credits",
-        });
-      }
+      // await validateUserAIAccess(user.username);
+      // in beta version, we will not validate AI access
 
       if (!question || question.trim().length === 0) {
         return res.status(StatusCodes.BAD_REQUEST).json({
@@ -181,33 +174,6 @@ export const aiAssistantController = {
     }
   },
 };
-
-// Helper function to check AI access
-async function checkAIAccess(user: any): Promise<boolean> {
-  if (user.role === "admin") {
-    return true;
-  }
-
-  // Check if user has active subscription
-  if (
-    user.subscription?.status === "active" &&
-    user.subscription?.expiresAt > new Date()
-  ) {
-    return true;
-  }
-
-  // Check if user has quiz credits
-  if (user.quizCredits && user.quizCredits > 0) {
-    return true;
-  }
-
-  // Check if user has free tier access (limited)
-  if (user.freeTierAccess && user.freeTierAccess.aiQuestionsRemaining > 0) {
-    return true;
-  }
-
-  return false;
-}
 
 // Helper function to generate AI response
 async function generateAIResponse(
