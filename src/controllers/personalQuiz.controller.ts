@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { PersonalQuiz, Material, Course, User } from "../models";
 import { generatePersonalQuizFromMaterial } from "../services/aiService";
-import { findUserByUsername } from "./user.controller";
+import { findUserByUsername, validateUserAIAccess } from "./user.controller";
 
 // Create a new personal quiz automatically from uploaded material
 export const createPersonalQuiz = async (req: Request, res: Response) => {
@@ -12,6 +12,8 @@ export const createPersonalQuiz = async (req: Request, res: Response) => {
     if (!username) {
       return res.status(401).json({ message: "User not authenticated" });
     }
+
+    await validateUserAIAccess(username);
 
     // Validate question count
     const validatedQuestionCount = Math.min(
@@ -58,7 +60,7 @@ export const createPersonalQuiz = async (req: Request, res: Response) => {
       createdBy: userDoc._id,
       questions: generatedQuiz.questions,
       settings: {
-        timeLimit: Math.ceil(generatedQuiz.estimatedDuration * 1.2), // Add 20% buffer
+        timeLimit: generatedQuiz.estimatedDuration,
         shuffleQuestions: true,
         showHints: true,
         showExplanations: true,

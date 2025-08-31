@@ -1,7 +1,7 @@
 import { IFlashcard, IMaterial } from "../interfaces";
 import { Flashcard, Material, User } from "../models";
 import { extractText } from "./ai.controller";
-import { findUserByUsername } from "./user.controller";
+import { findUserByUsername, validateUserAIAccess } from "./user.controller";
 import { gemini15Flash, googleAI } from "@genkit-ai/googleai";
 import { genkit } from "genkit";
 import { z } from "zod";
@@ -44,31 +44,7 @@ async function generateFlashcards(
       throw new Error("User not found");
     }
 
-    // Check access control for premium features
-    if (
-      !user.isSubscribed &&
-      (!user.quizCredits || user.quizCredits <= 0) &&
-      (!user.hasFreeAccess ||
-        !user.freeAccessCount ||
-        user.freeAccessCount <= 0)
-    ) {
-      throw new Error("Access requires a subscription or quiz credits");
-    }
-
-    // Deduct free access count if user has free access
-    if (
-      user.hasFreeAccess &&
-      user.freeAccessCount &&
-      user.freeAccessCount > 0
-    ) {
-      const newFreeAccessCount = user.freeAccessCount - 1;
-      const hasFreeAccess = newFreeAccessCount > 0;
-
-      await User.updateOne(
-        { username: user.username },
-        { freeAccessCount: newFreeAccessCount, hasFreeAccess }
-      );
-    }
+    await validateUserAIAccess(user.username);
 
     const material = await Material.findById(materialId);
     if (!material) {
@@ -185,30 +161,45 @@ async function updateFlashcard(
   updateData: Partial<IFlashcard>
 ): Promise<IFlashcard> {
   try {
-    console.log(
-      `Updating flashcard ${flashcardId} for user ${username} with:`,
-      updateData
-    );
-
     const user = await findUserByUsername(username);
     if (!user) {
       throw new Error("User not found");
     }
 
-    const flashcard = await Flashcard.findOneAndUpdate(
-      { _id: flashcardId, createdBy: user._id },
-      {
-        ...updateData,
-        lastReviewed: new Date(),
-      },
+    // First, find the flashcard to check if it exists and user has access
+    const existingFlashcard = await Flashcard.findById(flashcardId);
+    if (!existingFlashcard) {
+      throw new Error("Flashcard not found");
+    }
+
+    // Check if user has access to this flashcard
+    if (existingFlashcard.createdBy.toString() !== user._id.toString()) {
+      throw new Error("Access denied to this flashcard");
+    }
+
+    // Prepare update data, ensuring we don't override required fields
+    const safeUpdateData = {
+      ...updateData,
+      lastReviewed: new Date(),
+      // Ensure we don't override required fields
+      courseId: existingFlashcard.courseId,
+      materialId: existingFlashcard.materialId,
+      front: existingFlashcard.front,
+      back: existingFlashcard.back,
+      lectureNumber: existingFlashcard.lectureNumber,
+      createdBy: existingFlashcard.createdBy,
+    };
+
+    const flashcard = await Flashcard.findByIdAndUpdate(
+      flashcardId,
+      safeUpdateData,
       { new: true, runValidators: true }
     );
 
     if (!flashcard) {
-      throw new Error("Flashcard not found or access denied");
+      throw new Error("Failed to update flashcard");
     }
 
-    console.log(`Flashcard ${flashcardId} updated successfully`);
     return flashcard;
   } catch (error: any) {
     console.error("Error updating flashcard:", error);
