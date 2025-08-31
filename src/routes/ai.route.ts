@@ -4,6 +4,7 @@ import { StatusCodes } from "../config";
 import { batchCreateQuestionsAI } from "../controllers";
 import { Material } from "../models";
 import { authenticateUser, authorizeRoles } from "../middlewares";
+import { validateUserAIAccess } from "../controllers/user.controller";
 
 const aiRoutes: Router = Router();
 
@@ -47,6 +48,8 @@ aiRoutes.post("/generate", async (req: Request, res: Response) => {
       res.status(StatusCodes.UNAUTHORIZED).json({ message: "Unauthorized" });
       return;
     }
+
+    await validateUserAIAccess(user.username);
 
     const { url } = req.body;
 

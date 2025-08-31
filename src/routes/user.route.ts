@@ -83,7 +83,7 @@ userRoutes.post("/register", async (req: Request, res: Response) => {
     if (!newUser) {
       res
         .status(StatusCodes.BAD_REQUEST)
-        .json({ message: "User already exists" });
+        .json({ message: "Username or email already taken" });
       return;
     }
 

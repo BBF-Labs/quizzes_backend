@@ -10,6 +10,7 @@ import {
 } from "../controllers";
 import { authenticateUser } from "../middlewares";
 import { StatusCodes } from "../config";
+import { updateUserLastLogin } from "../controllers/user.controller";
 
 type JWTPayload = {
   username: string;
@@ -112,6 +113,8 @@ authRoutes.post("/login", async (req: Request, res: Response) => {
     const refreshToken = await generateRefreshToken(payload);
 
     await updateToken(user.username, { accessToken, refreshToken });
+
+    await updateUserLastLogin(user.username);
 
     await validateUserPackages(user._id.toString());
 
