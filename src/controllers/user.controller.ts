@@ -24,7 +24,7 @@ async function createUser(user: Partial<IUser>) {
     });
 
     if (existingUser) {
-      throw new Error("User already exists");
+      throw new Error("Username or email already taken");
     }
 
     const { password, ...userDetails } = user;
@@ -519,7 +519,6 @@ async function updateUserLastLogin(username: string) {
     throw new Error(`Error updating user last login: ${err.message}`);
   }
 }
-
 
 export {
   createUser,
