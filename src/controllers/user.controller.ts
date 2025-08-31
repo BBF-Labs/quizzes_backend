@@ -506,6 +506,21 @@ async function getUsers() {
   }
 }
 
+async function updateUserLastLogin(username: string) {
+  try {
+    const user = await User.findOne({ username });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    await User.updateOne({ username }, { lastLogin: new Date() });
+  } catch (err: any) {
+    throw new Error(`Error updating user last login: ${err.message}`);
+  }
+}
+
+
 export {
   createUser,
   updateUser,
@@ -518,4 +533,5 @@ export {
   validateUserQuizAccess,
   validateUserAIAccess,
   getUsers,
+  updateUserLastLogin,
 };
