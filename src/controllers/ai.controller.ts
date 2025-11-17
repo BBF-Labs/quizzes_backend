@@ -141,7 +141,7 @@ export const extractText = async (
 const createPrompt = (
   extractedText: string,
   materialRecord: Partial<IMaterial>,
-  existingQuestions: Partial<IQuestion[] | null>
+  existingQuestions: IQuestion[] | null
 ): string => {
   const isAssessmentMaterial = ["quiz", "IA"].includes(
     materialRecord.questionRefType?.toLowerCase() || ""
@@ -278,7 +278,7 @@ const generateQuestions = async (
 
     const questionsDoc = await Question.find({
       courseId: materialRecord.courseId,
-    }).lean(); // Use lean() for better performance when only reading
+    }).lean() as unknown as IQuestion[]; // Type cast to fix TypeScript error
 
     const extractedText = await extractText(fileUrl, materialRecord.type);
     if (!extractedText || extractedText.trim().length === 0) {
