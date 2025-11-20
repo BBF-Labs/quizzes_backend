@@ -1,4 +1,4 @@
-import { gemini15Flash, googleAI } from "@genkit-ai/googleai";
+import { gemini20Flash, googleAI } from "@genkit-ai/googleai";
 import { genkit } from "genkit";
 import { z } from "zod";
 import IMaterial from "../interfaces/IMaterial";
@@ -8,7 +8,7 @@ import { extractText } from "../controllers/ai.controller";
 // Initialize AI client
 const ai = genkit({
   plugins: [googleAI({ apiKey: Config.GOOGLE_GENAI_API_KEY })],
-  model: gemini15Flash,
+  model: gemini20Flash,
 });
 
 // Output schema for personal quiz generation
