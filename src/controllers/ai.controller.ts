@@ -1,4 +1,4 @@
-import { gemini15Flash, googleAI } from "@genkit-ai/googleai";
+import { gemini20Flash, googleAI } from "@genkit-ai/googleai";
 import { genkit } from "genkit";
 import axios from "axios";
 import { parseOfficeAsync, OfficeParserConfig } from "officeparser";
@@ -11,7 +11,7 @@ import Tesseract from "tesseract.js";
 // Initialize AI client
 const ai = genkit({
   plugins: [googleAI({ apiKey: Config.GOOGLE_GENAI_API_KEY })],
-  model: gemini15Flash,
+  model: gemini20Flash,
 });
 
 // Types and Schemas
@@ -276,9 +276,9 @@ const generateQuestions = async (
       throw new Error("Material already processed");
     }
 
-    const questionsDoc = await Question.find({
+    const questionsDoc = (await Question.find({
       courseId: materialRecord.courseId,
-    }).lean() as unknown as IQuestion[]; // Type cast to fix TypeScript error
+    }).lean()) as unknown as IQuestion[]; // Type cast to fix TypeScript error
 
     const extractedText = await extractText(fileUrl, materialRecord.type);
     if (!extractedText || extractedText.trim().length === 0) {

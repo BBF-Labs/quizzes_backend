@@ -2,14 +2,14 @@ import { IFlashcard, IMaterial } from "../interfaces";
 import { Flashcard, Material, User } from "../models";
 import { extractText } from "./ai.controller";
 import { findUserByUsername, validateUserAIAccess } from "./user.controller";
-import { gemini15Flash, googleAI } from "@genkit-ai/googleai";
+import { gemini20Flash, googleAI } from "@genkit-ai/googleai";
 import { genkit } from "genkit";
 import { z } from "zod";
 
 // Initialize AI client for flashcard generation
 const ai = genkit({
   plugins: [googleAI({ apiKey: process.env.GOOGLE_GENAI_API_KEY || "" })],
-  model: gemini15Flash,
+  model: gemini20Flash,
 });
 
 // Schema for flashcard generation

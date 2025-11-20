@@ -3,7 +3,7 @@ import { StatusCodes } from "../config";
 import { Payment, User, Question } from "../models";
 import { findUserByUsername, validateUserAIAccess } from "./user.controller";
 import { genkit, z } from "genkit";
-import { gemini15Flash, googleAI, gemini20Flash } from "@genkit-ai/googleai";
+import { googleAI, gemini20Flash } from "@genkit-ai/googleai";
 import { Config } from "../config";
 
 interface AIQuestionRequest {
