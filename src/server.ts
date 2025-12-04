@@ -21,6 +21,7 @@ import {
   personalQuizRoutes,
   aiAssistantRoutes,
   webhookRoutes,
+  waitlistRoutes,
 } from "./routes";
 import crypto from "crypto";
 
@@ -128,6 +129,7 @@ async function startServer() {
     app.use("/api/v1/personal-quizzes", personalQuizRoutes);
     app.use("/api/v1/ai-assistant", aiAssistantRoutes);
     app.use("/api/v1/webhooks", webhookRoutes);
+    app.use("/api/v1/waitlist", waitlistRoutes);
 
     // Error Handling & Logging Middleware
     app.use(ErrorHandler);
