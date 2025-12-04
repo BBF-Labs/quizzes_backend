@@ -29,7 +29,7 @@ async function addToWaitlist(req: Request, res: Response) {
             university,
         });
 
-        // Send welcome email asynchronously
+        // Send welcome email 
         sendWelcomeEmail(email, name).catch((err: any) =>
             console.error("Failed to send welcome email:", err)
         );
