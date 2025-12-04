@@ -12,6 +12,12 @@ const Config = {
   PAYSTACK_SECRET_KEY_TEST: process.env.PAYSTACK_SECRET_KEY_TEST!,
   PAYSTACK_SECRET_KEY_LIVE: process.env.PAYSTACK_SECRET_KEY_LIVE!,
   GOOGLE_GENAI_API_KEY: process.env.GOOGLE_GENAI_API_KEY!,
+  SMTP_HOST: process.env.SMTP_HOST || "smtp.example.com",
+  SMTP_PORT: process.env.SMTP_PORT || "587",
+  SMTP_USER: process.env.SMTP_USER || "user",
+  SMTP_PASS: process.env.SMTP_PASS || "pass",
+  SMTP_FROM_NAME: process.env.SMTP_FROM_NAME || "Quizzes App",
+  SMTP_FROM_EMAIL: process.env.SMTP_FROM_EMAIL || "noreply@example.com",
 };
 
 const StatusCodes = {

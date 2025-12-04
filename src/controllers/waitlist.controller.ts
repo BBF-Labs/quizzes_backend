@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "../config";
 import { Waitlist } from "../models";
+import { sendWelcomeEmail } from "../services/email.service";
 
 async function addToWaitlist(req: Request, res: Response) {
     try {
@@ -27,6 +28,11 @@ async function addToWaitlist(req: Request, res: Response) {
             email,
             university,
         });
+
+        // Send welcome email asynchronously
+        sendWelcomeEmail(email, name).catch((err: any) =>
+            console.error("Failed to send welcome email:", err)
+        );
 
         res.status(StatusCodes.CREATED).json({
             message: "Successfully added to the waitlist",

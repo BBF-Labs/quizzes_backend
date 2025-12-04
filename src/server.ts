@@ -23,6 +23,7 @@ import {
   webhookRoutes,
   waitlistRoutes,
 } from "./routes";
+import { initScheduledJobs } from "./services/scheduler.service";
 import crypto from "crypto";
 
 import cors from "cors";
@@ -149,6 +150,7 @@ async function startServer() {
       if (Config.ENV === "development") {
         console.log(`🚀 Server running on http://localhost:${Config.PORT}`);
       }
+      initScheduledJobs();
     });
 
     return server;
