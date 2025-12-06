@@ -8,7 +8,7 @@ const recipients = Array.from({ length: 60 }, (_, i) => ({
 }));
 
 // Ensure specific user is included
-recipients[0] = { email: "palomautku1@gmail.com", name: "Paloma Utku" };
+recipients[0] = { email: "test1@example.com", name: "Test User 1" };
 
 async function runTest() {
     console.log("Starting bulk email test...");
