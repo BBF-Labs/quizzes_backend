@@ -48,11 +48,24 @@ async function addToWaitlist(req: Request, res: Response) {
 
 async function getWaitlist(req: Request, res: Response) {
     try {
-        const waitlist = await Waitlist.find().sort({ createdAt: -1 });
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 50;
+        const skip = (page - 1) * limit;
+
+        const [waitlist, total] = await Promise.all([
+            Waitlist.find().sort({ createdAt: -1 }).skip(skip).limit(limit),
+            Waitlist.countDocuments()
+        ]);
 
         res.status(StatusCodes.OK).json({
             message: "Waitlist retrieved successfully",
             data: waitlist,
+            pagination: {
+                page,
+                limit,
+                total,
+                pages: Math.ceil(total / limit)
+            }
         });
     } catch (error: any) {
         console.error("Error retrieving waitlist:", error);
