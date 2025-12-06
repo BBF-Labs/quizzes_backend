@@ -95,6 +95,7 @@ import {
 } from "./token.controller";
 
 import { generateQuestions, outputSchema } from "./ai.controller";
+import { addToWaitlist, getWaitlist } from "./waitlist.controller";
 
 export {
   generateAccessToken,
@@ -165,4 +166,6 @@ export {
   generateQuestions,
   batchCreateQuestionsAI,
   outputSchema,
+  addToWaitlist,
+  getWaitlist,
 };

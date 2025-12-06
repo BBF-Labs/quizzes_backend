@@ -1,16 +1,24 @@
 {
   "compilerOptions": {
-    "target": "es2020", //
-    "module": "commonjs", // Or "esnext" if you're using modules
-    "outDir": "./dist", // Output directory for compiled JavaScript
-    "rootDir": "./src", // Root directory for your TypeScript source files
-    "strict": true, // Enable strict type checking
-    "esModuleInterop": true, // Important for compatibility with CommonJS modules
-    "skipLibCheck": true, // Skip type checking of declaration files
-    "forceConsistentCasingInFileNames": true, // Enforce consistent casing
+    "target": "es2020",
+    "module": "commonjs",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "typeRoots": ["./src/@types", " ./node_modules/@types"]
+    "typeRoots": [
+      "./src/@types",
+      "./node_modules/@types"
+    ],
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules/**/*"]
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules/**/*"
+  ]
 }

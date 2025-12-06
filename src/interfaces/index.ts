@@ -11,6 +11,7 @@ import IToken from "./IToken";
 import IFlashcard from "./IFlashcard";
 import { IPersonalQuiz } from "./IPersonalQuiz";
 import { IWebhookData } from "./IWebhook";
+import IWaitlist from "./IWait";
 
 export {
   ICourse,
@@ -26,4 +27,5 @@ export {
   IFlashcard,
   IPersonalQuiz,
   IWebhookData,
+  IWaitlist,
 };
