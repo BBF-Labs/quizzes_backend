@@ -60,7 +60,7 @@ async function runTests() {
     } finally {
         // Cleanup
         await mongoose.disconnect();
-        if (mongoServer!) await mongoServer.stop();
+        if (mongoServer) await mongoServer.stop();
         console.log("\nTests Completed");
     }
 }
