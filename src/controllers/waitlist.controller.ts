@@ -14,6 +14,14 @@ async function addToWaitlist(req: Request, res: Response) {
             return;
         }
 
+        // Email format validation (same as Waitlist model)
+        const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+        if (!emailRegex.test(email)) {
+            res.status(StatusCodes.BAD_REQUEST).json({
+                message: "Please provide a valid email address",
+            });
+            return;
+        }
         const existingUser = await Waitlist.findOne({ email });
 
         if (existingUser) {
