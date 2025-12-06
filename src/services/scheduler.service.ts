@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import { Waitlist } from "../models";
-import { sendEmail, sendBulkEmails } from "./email.service";
+import { sendBulkEmails } from "./email.service";
 
 // Schedule a task to run every day at 9:00 AM
 export const initScheduledJobs = () => {
