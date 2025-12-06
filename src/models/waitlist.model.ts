@@ -15,7 +15,7 @@ const WaitlistSchema: Schema = new Schema(
             trim: true,
             lowercase: true,
             match: [
-                /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
+                /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                 "Please fill a valid email address",
             ],
         },
