@@ -21,7 +21,9 @@ import {
   personalQuizRoutes,
   aiAssistantRoutes,
   webhookRoutes,
+  waitlistRoutes,
 } from "./routes";
+import { initScheduledJobs } from "./services/scheduler.service";
 import crypto from "crypto";
 
 import cors from "cors";
@@ -128,6 +130,7 @@ async function startServer() {
     app.use("/api/v1/personal-quizzes", personalQuizRoutes);
     app.use("/api/v1/ai-assistant", aiAssistantRoutes);
     app.use("/api/v1/webhooks", webhookRoutes);
+    app.use("/api/v1/waitlist", waitlistRoutes);
 
     // Error Handling & Logging Middleware
     app.use(ErrorHandler);
@@ -147,6 +150,7 @@ async function startServer() {
       if (Config.ENV === "development") {
         console.log(`🚀 Server running on http://localhost:${Config.PORT}`);
       }
+      initScheduledJobs();
     });
 
     return server;
