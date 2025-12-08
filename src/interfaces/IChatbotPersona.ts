@@ -1,6 +1,6 @@
 import { Document, Types } from "mongoose";
 
-export default interface IChatbotPersona extends Document {
+interface IChatbotPersona extends Document {
   name: string;
   description: string;
   personalityTraits: string[];
@@ -18,3 +18,5 @@ export default interface IChatbotPersona extends Document {
   schoolId?: Types.ObjectId;
   createdBy?: Types.ObjectId;
 }
+
+export default IChatbotPersona;

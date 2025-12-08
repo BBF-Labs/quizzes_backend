@@ -1,6 +1,6 @@
 import { Document, Types } from "mongoose";
 
-export default interface IStudyPartnerSession extends Document {
+interface IStudyPartnerSession extends Document {
   sessionId: string;
   participants: Types.ObjectId[];
   courseId: Types.ObjectId;
@@ -22,3 +22,5 @@ export default interface IStudyPartnerSession extends Document {
   startedAt: Date;
   endedAt?: Date;
 }
+
+export default IStudyPartnerSession;
