@@ -7,7 +7,7 @@ export default interface IStudyPartnerSession extends Document {
   materialId?: Types.ObjectId;
   sessionType: "discussion" | "quiz-solving" | "material-review";
   isActive?: boolean;
-  message: {
+  messages: {
     senderId: Types.ObjectId;
     content: string;
     timestamp: Date;
