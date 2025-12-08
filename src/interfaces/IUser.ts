@@ -19,6 +19,18 @@ interface IUser extends Document {
   packageId?: Types.ObjectId[];
   lastLogin?: Date;
   isDeleted?: boolean;
+  schoolId?: Types.ObjectId;
+  campusId?: Types.ObjectId;
+  studyPartnerSessions?: Types.ObjectId[];
+  preferredPersonaId?: Types.ObjectId;
+  aiUsageStats?: {
+    totalCreditsUsed: number;
+    creditsRemaining: number;
+    lastRechargeDate?: Date;
+    monthlyUsage?: Record<string, number>;
+    questionsAsked?: number;
+    explanationsRequested?: number;
+  };
 }
 
 export default IUser;

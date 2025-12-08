@@ -12,6 +12,11 @@ import IFlashcard from "./IFlashcard";
 import { IPersonalQuiz } from "./IPersonalQuiz";
 import { IWebhookData } from "./IWebhook";
 import IWaitlist from "./IWait";
+import ICampus from "./ICampus";
+import ISchool from "./ISchool";
+import IAIResponse from "./IAIResponse";
+import IChatbotPersona from "./IChatbotPersona";
+import IStudyPartnerSession from "./IStudyPartnerSession";
 
 export {
   ICourse,
@@ -28,4 +33,9 @@ export {
   IPersonalQuiz,
   IWebhookData,
   IWaitlist,
+  ICampus,
+  ISchool,
+  IAIResponse,
+  IChatbotPersona,
+  IStudyPartnerSession,
 };
