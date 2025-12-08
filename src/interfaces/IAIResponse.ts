@@ -22,5 +22,5 @@ export default interface IAIResponse {
   creditsCharged: number;
   sessionId?: Types.ObjectId;
   queryType: "explanation" | "answer" | "hint" | "discussion" | "other";
-  personaId?: string;
+  personaId?: Types.ObjectId;
 }
