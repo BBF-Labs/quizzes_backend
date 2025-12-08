@@ -17,7 +17,7 @@ export default interface IStudyPartnerSession extends Document {
   }[];
   quizAttempts?: Types.ObjectId[];
   aiAssistanceEnabled?: boolean;
-  activePersonaId?: string;
+  activePersonaId?: Types.ObjectId;
   creditsUsed?: number;
   startedAt: Date;
   endedAt?: Date;
