@@ -1,6 +1,6 @@
-import { Types } from "mongoose";
+import { Types, Document } from "mongoose";
 
-export default interface ICampus {
+export default interface ICampus extends Document {
   name: string;
   code: string;
   schoolId: Types.ObjectId;
