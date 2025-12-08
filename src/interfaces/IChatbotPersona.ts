@@ -1,6 +1,6 @@
-import { Types } from "mongoose";
+import { Document, Types } from "mongoose";
 
-export default interface IChatbotPersona {
+export default interface IChatbotPersona extends Document {
   name: string;
   description: string;
   personalityTraits: string[];
