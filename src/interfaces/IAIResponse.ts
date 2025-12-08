@@ -1,6 +1,6 @@
-import { Types } from "mongoose";
+import { Document, Types } from "mongoose";
 
-export default interface IAIResponse {
+export default interface IAIResponse extends Document {
   userId: Types.ObjectId;
   questionId?: Types.ObjectId;
   query: string;
