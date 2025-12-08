@@ -1,6 +1,6 @@
 import { Types, Document } from "mongoose";
 
-export default interface ICampus extends Document {
+interface ICampus extends Document {
   name: string;
   code: string;
   schoolId: Types.ObjectId;
@@ -12,3 +12,5 @@ export default interface ICampus extends Document {
   admins?: Types.ObjectId[];
   isActive?: boolean;
 }
+
+export default ICampus;

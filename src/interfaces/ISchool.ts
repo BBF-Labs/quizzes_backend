@@ -1,6 +1,6 @@
 import { Document, Types } from "mongoose";
 
-export default interface ISchool extends Document {
+interface ISchool extends Document {
   name: string;
   code: string;
   description?: string;
@@ -15,3 +15,5 @@ export default interface ISchool extends Document {
     allowPublicCourses: boolean;
   };
 }
+
+export default ISchool;

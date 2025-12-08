@@ -1,24 +1,26 @@
 import { Document, Types } from "mongoose";
 
-export default interface IStudyPartnerSession extends Document {
+interface IStudyPartnerSession extends Document {
   sessionId: string;
   participants: Types.ObjectId[];
   courseId: Types.ObjectId;
   materialId?: Types.ObjectId;
   sessionType: "discussion" | "quiz-solving" | "material-review";
   isActive?: boolean;
-  message: {
+  messages: {
     senderId: Types.ObjectId;
     content: string;
     timestamp: Date;
     isAI?: boolean;
     creditsUsed?: number;
-    personaUsed?: string;
+    personaUsed?: Types.ObjectId;
   }[];
   quizAttempts?: Types.ObjectId[];
   aiAssistanceEnabled?: boolean;
   activePersonaId?: Types.ObjectId;
-  creditsUsed?: number;
+  totalCreditsUsed?: number;
   startedAt: Date;
   endedAt?: Date;
 }
+
+export default IStudyPartnerSession;
