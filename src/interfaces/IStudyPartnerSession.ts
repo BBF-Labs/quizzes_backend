@@ -13,7 +13,7 @@ interface IStudyPartnerSession extends Document {
     timestamp: Date;
     isAI?: boolean;
     creditsUsed?: number;
-    personaUsed?: string;
+    personaUsed?: Types.ObjectId;
   }[];
   quizAttempts?: Types.ObjectId[];
   aiAssistanceEnabled?: boolean;
