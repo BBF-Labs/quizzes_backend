@@ -1,6 +1,6 @@
-import { Types } from "mongoose";
+import { Document, Types } from "mongoose";
 
-export default interface ISchool {
+export default interface ISchool extends Document {
   name: string;
   code: string;
   description?: string;
