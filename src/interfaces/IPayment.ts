@@ -19,8 +19,9 @@ interface IPayment extends Document {
     | "queued"
     | "success"
     | "reversed";
-  type: "course" | "quiz" | "duration" | "default";
+  type: "course" | "quiz" | "duration" | "credits" | "default";
   package: Types.ObjectId;
+  creditsAdded?: number;
 }
 
 export default IPayment;
