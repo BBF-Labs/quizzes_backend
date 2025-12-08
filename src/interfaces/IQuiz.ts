@@ -9,6 +9,12 @@ interface IQuiz extends Document {
   creator: Types.ObjectId;
   isPublished: boolean;
   year: number;
+  schoolId: Types.ObjectId;
+  campusId: Types.ObjectId;
+  accessLevel?: "campus" | "school" | "shared" | "public";
+  allowedCampuses?: Types.ObjectId[];
+  allowedSchools?: Types.ObjectId[];
+  tags?: string[];
 }
 
 export default IQuiz;
