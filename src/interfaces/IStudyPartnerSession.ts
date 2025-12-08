@@ -1,6 +1,6 @@
-import { Types } from "mongoose";
+import { Document, Types } from "mongoose";
 
-export default interface IStudyPartnerSession {
+export default interface IStudyPartnerSession extends Document {
   sessionId: string;
   participants: Types.ObjectId[];
   courseId: Types.ObjectId;
