@@ -18,7 +18,7 @@ interface IStudyPartnerSession extends Document {
   quizAttempts?: Types.ObjectId[];
   aiAssistanceEnabled?: boolean;
   activePersonaId?: Types.ObjectId;
-  creditsUsed?: number;
+  totalCreditsUsed?: number;
   startedAt: Date;
   endedAt?: Date;
 }
