@@ -13,8 +13,8 @@ interface ICourse extends Document {
   isDeleted?: boolean;
   students?: Types.ObjectId[];
   createdBy: Types.ObjectId;
-  schoolId: Types.ObjectId;
-  campusId: Types.ObjectId;
+  schoolId?: Types.ObjectId;
+  campusId?: Types.ObjectId;
   isShared?: boolean;
   sharedWith?: Types.ObjectId[];
   sharedAcrossSchools?: boolean;
