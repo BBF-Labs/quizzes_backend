@@ -5,16 +5,19 @@ const SchoolSchema = new Schema<ISchool> (
     {
         name: {
             type: String,
+            required: true,
         },
         code: {
           type: String,
+          unique: true,
+          required: true,
         },
         description: {
             type: String,
         },
         campuses:{
             type: [Schema.Types.ObjectId],
-            ref: "Campuses",
+            ref: "Campus",
         },
         logo: {
             type: String,
@@ -28,15 +31,19 @@ const SchoolSchema = new Schema<ISchool> (
         settings: {
             allowCrossSchoolSharing: {
                 type: Boolean,
+                default: false,
             },
             requireEmailVerification: {
                 type: Boolean,
+                default: true,
             },
             defaultStudentCredits: {
                 type: Number,
+                default: 1200
             },
             allowPublicCourses: {
                 type: Boolean,
+                default: true
             }
         },
     },
