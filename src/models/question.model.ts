@@ -51,6 +51,12 @@ const QuestionSchema = new Schema<IQuestion>(
       type: Number,
       default: new Date().getFullYear(),
     },
+    aiGeneratedExplanation: {
+      type: String,
+    },
+    aiConfidenceScore: {
+      type: Number,
+    }
   },
   {
     timestamps: true,

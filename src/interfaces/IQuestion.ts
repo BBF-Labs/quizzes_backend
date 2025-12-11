@@ -14,6 +14,8 @@ interface IQuestion extends Document {
   isModerated: boolean;
   moderatedBy: Types.ObjectId;
   year: number;
+  aiGeneratedExplanation: string;
+  aiConfidenceScore: number;
 }
 
 export default IQuestion;
