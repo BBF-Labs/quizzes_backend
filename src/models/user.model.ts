@@ -78,11 +78,12 @@ const UserSchema = new Schema<IUser>(
     },
     schoolId: {
       type: Schema.Types.ObjectId,
-      required: false,
+      required: false, // Rationale: Backward Compatibility
       ref: "School",
     },
     campusId: {
       type: Schema.Types.ObjectId,
+      required: true,
       ref: "Campus",
     },
     studyPartnerSessions: {
@@ -91,7 +92,7 @@ const UserSchema = new Schema<IUser>(
     },
     preferredPersonaId: {
       type: Schema.Types.ObjectId,
-      required: false,
+      required: false, // Rationale: Backward compatibiliy
       ref: "ChatbotPersona",
     },
     aiUsageStats: {
@@ -109,7 +110,7 @@ const UserSchema = new Schema<IUser>(
       monthlyUsage: {
         type: Map,
         of: Number,
-        default: {},
+        default: {}, // Since the interface had Record<string, number>
       },
       questionsAsked: {
         type: Number,
