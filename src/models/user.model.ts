@@ -19,6 +19,7 @@ const UserSchema = new Schema<IUser>(
     },
     password: {
       type: String,
+      required: true,
     },
     authKey: {
       type: String,
@@ -75,6 +76,49 @@ const UserSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    schoolId: {
+      type: Schema.Types.ObjectId,
+      required: false,
+      ref: "School",
+    },
+    campusId: {
+      type: Schema.Types.ObjectId,
+      ref: "Campus",
+    },
+    studyPartnerSessions: {
+      type: [Schema.Types.ObjectId],
+      ref: "StudyPartnerSession",
+    },
+    preferredPersonaId: {
+      type: Schema.Types.ObjectId,
+      required: false,
+      ref: "ChatbotPersona",
+    },
+    aiUsageStats: {
+      totalCreditsUsed: {
+        type: Number,
+        default: 0,
+      },
+      creditsRemaining: {
+        type: Number,
+        default: 1200,
+      },
+      lastRechargeDate: {
+        type: Date,
+      },
+      monthlyUsage: {
+        type: Map,
+        of: Number,
+        default: {},
+      },
+      questionsAsked: {
+        type: Number,
+        default: 0,
+      },
+      explanationsRequested: {
+        type: Number,
+      }
+    }
   },
   {
     timestamps: true,
