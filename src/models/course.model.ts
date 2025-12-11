@@ -76,6 +76,9 @@ const CourseSchema = new Schema<ICourse>(
       type: [Schema.Types.ObjectId],
       ref: "School",
       required: false, // Migration Notes
+    },
+    tags: {
+      type: [String],
     }
   },
   {

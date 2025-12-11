@@ -37,6 +37,33 @@ const QuizSchema = new Schema<IQuiz>(
       type: Number,
       default: new Date().getFullYear(),
     },
+    schoolId: {
+      type: Schema.Types.ObjectId,
+      ref: "School",
+      required: false, // Migration Notes 
+    },
+    campusId: {
+      type: Schema.Types.ObjectId,
+      ref: "Campus",
+      required: true,
+    },
+    accessLevel: {
+      type: String,
+      enum: ["campus", "school", "shared", "public"],
+      default: "public",
+    },
+    allowedCampuses: {
+      type: [Schema.Types.ObjectId],
+      ref: "Campus",
+    },
+    allowedSchools: {
+      type: [Schema.Types.ObjectId],
+      ref: "School",
+      required: false, // Migration Notes
+    },
+    tags: {
+      type: [String]
+    }
   },
   {
     timestamps: true,
