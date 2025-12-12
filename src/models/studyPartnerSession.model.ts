@@ -74,6 +74,14 @@ const StudyPartnerSessionSchema = new Schema<IStudyPartnerSession>(
       type: Number,
       default: 0,
     },
+    startedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    endedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true
