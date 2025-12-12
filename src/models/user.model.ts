@@ -118,6 +118,7 @@ const UserSchema = new Schema<IUser>(
       },
       explanationsRequested: {
         type: Number,
+        default: 0,
       }
     }
   },
