@@ -1,40 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
-
-export interface IPersonalQuiz extends Document {
-  title: string;
-  description?: string;
-  courseId: mongoose.Types.ObjectId;
-  materialId: mongoose.Types.ObjectId;
-  createdBy: mongoose.Types.ObjectId;
-  questions: Array<{
-    question: string;
-    options: string[];
-    answer: string;
-    explanation?: string;
-    type: "mcq" | "fill-in" | "true-false";
-    difficulty: "basic" | "intermediate" | "advanced" | "critical";
-    lectureNumber?: string;
-    hint?: string;
-  }>;
-  settings: {
-    timeLimit?: number; // in minutes
-    shuffleQuestions: boolean;
-    showHints: boolean;
-    showExplanations: boolean;
-    allowRetakes: boolean;
-    passingScore: number; // percentage
-  };
-  stats: {
-    totalAttempts: number;
-    averageScore: number;
-    bestScore: number;
-    lastAttempted?: Date;
-  };
-  isPublic: boolean;
-  tags: string[];
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { IPersonalQuiz } from "../interfaces";
 
 const PersonalQuizSchema = new Schema<IPersonalQuiz>(
   {
@@ -65,7 +30,7 @@ const PersonalQuizSchema = new Schema<IPersonalQuiz>(
     questions: [
       {
         question: {
-          type: String,
+          type: [String],
           required: true,
         },
         options: {

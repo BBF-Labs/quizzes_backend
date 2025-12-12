@@ -50,7 +50,9 @@ const SchoolSchema = new Schema<ISchool> (
     {
         timestamps: true
     }
-);              
+);
+
+SchoolSchema.index({code:1}, {unique: true});
 
 const School: Model<ISchool> = model<ISchool>("School" ,SchoolSchema);
 export default School;

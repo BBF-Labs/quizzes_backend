@@ -126,5 +126,11 @@ const UserSchema = new Schema<IUser>(
   }
 );
 
+UserSchema.index({email: 1}, {unique: true});
+UserSchema.index({username: 1}, {unique: true});
+UserSchema.index({campusId:1, role:1});
+UserSchema.index({schoolId: 1, campusId: 1});
+
+
 const User: Model<IUser> = model<IUser>("User", UserSchema);
 export default User;

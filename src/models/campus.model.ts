@@ -51,5 +51,8 @@ const CampusSchema = new Schema<ICampus>(
   }
 );
 
+CampusSchema.index({code: 1}, {unique: true});
+CampusSchema.index({schoolId: 1});
+
 const Campus : Model<ICampus> = model<ICampus>("Campus", CampusSchema);
 export default Campus;

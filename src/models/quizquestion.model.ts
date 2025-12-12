@@ -1,6 +1,7 @@
 import { Schema, model, Model } from "mongoose";
 import { IQuizQuestion } from "../interfaces";
 
+
 const QuizQuestionSchema = new Schema<IQuizQuestion>(
   {
     courseId: {

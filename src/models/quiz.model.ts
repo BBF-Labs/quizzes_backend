@@ -70,5 +70,9 @@ const QuizSchema = new Schema<IQuiz>(
   }
 );
 
+QuizSchema.index({courseCode: 1, campusId: 1});
+QuizSchema.index({creator: 1, isPublished: 1});
+QuizSchema.index({accessLevel: 1, campusId: 1});
+
 const Quiz: Model<IQuiz> = model<IQuiz>("Quiz", QuizSchema);
 export default Quiz;

@@ -30,10 +30,12 @@ const ProgressSchema = new Schema<IProgress>(
     courseId: {
       type: Schema.Types.ObjectId,
       required: true,
+      ref: "Course"
     },
     quizId: {
       type: Schema.Types.ObjectId,
       required: true,
+      ref: "Quiz"
     },
   },
   {

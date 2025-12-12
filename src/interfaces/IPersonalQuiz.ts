@@ -1,18 +1,18 @@
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
 
 export interface IPersonalQuiz extends Document {
   title: string;
   description?: string;
-  courseId: string;
-  materialId: string;
-  createdBy: string;
+  courseId: Types.ObjectId;
+  materialId: Types.ObjectId;
+  createdBy: Types.ObjectId;
   questions: Array<{
     question: string;
     options: string[];
     answer: string;
     explanation?: string;
-    type: "multiple-choice" | "true-false" | "short-answer";
-    difficulty: "easy" | "medium" | "hard";
+    type: "mcq" | "true-false" | "short-answer";
+    difficulty: "basic" | "immediate" | "advance" | "critical";
     lectureNumber?: string;
     hint?: string;
   }>;
@@ -35,3 +35,5 @@ export interface IPersonalQuiz extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export default IPersonalQuiz;
