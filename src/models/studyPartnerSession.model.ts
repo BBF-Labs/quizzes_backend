@@ -47,7 +47,7 @@ const StudyPartnerSessionSchema = new Schema<IStudyPartnerSession>(
         type: Boolean,
         default: false,
       },
-      creditsConsumed: {
+      creditsUsed: {
         type: Number,
         default: 0,
       },
