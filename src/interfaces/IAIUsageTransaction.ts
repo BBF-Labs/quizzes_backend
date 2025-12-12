@@ -10,7 +10,11 @@ interface IAIUsageTransaction extends Document {
   aiResponse: Types.ObjectId;
   sessionId: Types.ObjectId;
   paymentId: Types.ObjectId;
-  metadata: Types.ObjectId;
+  metadata: {
+    modelUsage?: string;
+    tokensConsumed?: number;
+    responseTime?: number;
+  };
 }
 
 export default IAIUsageTransaction;
