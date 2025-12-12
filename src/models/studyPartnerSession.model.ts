@@ -54,7 +54,7 @@ const StudyPartnerSessionSchema = new Schema<IStudyPartnerSession>(
       personaUsed: {
         type: Schema.Types.ObjectId,
         ref: "ChatbotPersona",
-      }
+      },
     }],
     quizAttempts: {
       type: [Schema.Types.ObjectId],
