@@ -56,6 +56,7 @@ const QuestionSchema = new Schema<IQuestion>(
     },
     aiConfidenceScore: {
       type: Number,
+      default: 0,
     }
   },
   {
