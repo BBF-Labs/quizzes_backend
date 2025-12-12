@@ -12,7 +12,7 @@ export interface IPersonalQuiz extends Document {
     answer: string;
     explanation?: string;
     type: "mcq" | "true-false" | "short-answer";
-    difficulty: "basic" | "immediate" | "advance" | "critical";
+    difficulty: "basic" | "intermediate" | "advanced" | "critical";
     lectureNumber?: string;
     hint?: string;
   }>;
