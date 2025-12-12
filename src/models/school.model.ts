@@ -1,4 +1,4 @@
-import {Schema, model, Model, SchemaType} from 'mongoose';
+import {Schema, model, Model} from 'mongoose';
 import { ISchool } from '../interfaces';
 
 const SchoolSchema = new Schema<ISchool> (
