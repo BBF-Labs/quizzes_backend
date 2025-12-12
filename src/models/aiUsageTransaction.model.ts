@@ -6,7 +6,7 @@ const AIUsageTransactionSchema = new Schema<IAIUsageTransaction>(
     userId: {
       type: Schema.Types.ObjectId,
       required: true,
-      ref: "user",
+      ref: "User",
     },
     transactionType: {
       type: String,
