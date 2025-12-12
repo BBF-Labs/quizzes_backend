@@ -30,7 +30,7 @@ const PersonalQuizSchema = new Schema<IPersonalQuiz>(
     questions: [
       {
         question: {
-          type: [String],
+          type: String,
           required: true,
         },
         options: {
