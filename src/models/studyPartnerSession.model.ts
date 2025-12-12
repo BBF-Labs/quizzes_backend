@@ -1,7 +1,5 @@
 import { Schema, model, Model } from "mongoose";
 import { IStudyPartnerSession } from "../interfaces";
-import { timeStamp } from "console";
-
 const StudyPartnerSessionSchema = new Schema<IStudyPartnerSession>(
   {
     sessionId: {
