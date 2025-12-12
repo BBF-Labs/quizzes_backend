@@ -92,7 +92,7 @@ const UserSchema = new Schema<IUser>(
     },
     preferredPersonaId: {
       type: Schema.Types.ObjectId,
-      required: false, // Rationale: Backward compatibiliy
+      required: false, // Rationale: Backward compatibility
       ref: "ChatbotPersona",
     },
     aiUsageStats: {
