@@ -40,7 +40,7 @@ const StudyPartnerSessionSchema = new Schema<IStudyPartnerSession>(
         type: String,
         required: true,
       },
-      timeStamp: {
+      timestamp: {
         type: Date,
       },
       isAI: {
