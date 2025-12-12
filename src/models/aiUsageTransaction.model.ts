@@ -35,7 +35,7 @@ const AIUsageTransactionSchema = new Schema<IAIUsageTransaction>(
     },
     sessionId: {
       type: Schema.Types.ObjectId,
-      ref: "StudyPartner",
+      ref: "StudyPartnerSession",
     },
     paymentId: {
       type: Schema.Types.ObjectId,
