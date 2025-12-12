@@ -53,18 +53,26 @@ const PaymentSchema: Schema<IPayment> = new Schema(
     },
     type: {
       type: String,
-      enum: ["course", "quiz", "duration", "default"],
+      enum: ["course", "quiz", "duration","credits", "default"],
       default: "default",
     },
     package: {
       type: Schema.Types.ObjectId,
       ref: "Package",
     },
+    creditsAdded: {
+      type: Number,
+      default: 0
+    }
   },
   {
     timestamps: true,
   }
 );
+
+PaymentSchema.index({userId: 1, status: 1});
+PaymentSchema.index({reference: 1}, {unique: true});
+
 
 const Payment: Model<IPayment> = model<IPayment>("Payment", PaymentSchema);
 export default Payment;

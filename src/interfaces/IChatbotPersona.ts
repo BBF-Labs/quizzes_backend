@@ -10,7 +10,7 @@ interface IChatbotPersona extends Document {
     | "encouraging"
     | "concise"
     | "detailed";
-  systemInstructions: string;
+  systemPrompt: string;
   isDefault?: boolean;
   isActive?: boolean;
   usageCount?: number;

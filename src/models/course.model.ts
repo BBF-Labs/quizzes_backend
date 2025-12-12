@@ -49,6 +49,37 @@ const CourseSchema = new Schema<ICourse>(
       ref: "User",
       required: true,
     },
+    schoolId: {
+      type: Schema.Types.ObjectId,
+      ref: "School",
+      required: false, // Migration Notes
+    },
+    campusId: {
+      type: Schema.Types.ObjectId,
+      ref: "Campus",
+      required: true,
+    },
+    isShared: {
+      type: Boolean,
+      default: false,
+    },
+    sharedWith: {
+      type: [Schema.Types.ObjectId],
+      ref: "Campus",
+    },
+    sharedAcrossSchools: {
+      type: Boolean,
+      default: false,
+      required: false, // Migration notes
+    },
+    sharedWithSchools: {
+      type: [Schema.Types.ObjectId],
+      ref: "School",
+      required: false, // Migration Notes
+    },
+    tags: {
+      type: [String],
+    }
   },
   {
     timestamps: true,

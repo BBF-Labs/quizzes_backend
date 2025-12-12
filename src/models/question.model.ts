@@ -51,11 +51,21 @@ const QuestionSchema = new Schema<IQuestion>(
       type: Number,
       default: new Date().getFullYear(),
     },
+    aiGeneratedExplanation: {
+      type: String,
+    },
+    aiConfidenceScore: {
+      type: Number,
+      default: 0,
+    }
   },
   {
     timestamps: true,
   }
 );
+
+QuestionSchema.index({courseId: 1, isModerated: 1});
+QuestionSchema.index({reference: 1}, {unique: true});
 
 const Question: Model<IQuestion> = model<IQuestion>("Question", QuestionSchema);
 export default Question;
