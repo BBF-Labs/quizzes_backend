@@ -40,16 +40,20 @@ const quizQuestionsRoutes: Router = Router();
  */
 quizQuestionsRoutes.get("/", async (req: Request, res: Response) => {
   try {
-    const questions = await getQuizQuestions();
+    const { page, limit } = req.query;
+    const paginatedResult = await getQuizQuestions({
+      page: parseInt(page as string) || 1,
+      limit: parseInt(limit as string) || 10,
+    });
 
-    if (!questions) {
+    if (!paginatedResult.data) {
       res
         .status(StatusCodes.NOT_FOUND)
         .json({ message: "No quizzes currently available" });
       return;
     }
 
-    res.status(StatusCodes.OK).json({ message: "Success", quizzes: questions });
+    res.status(StatusCodes.OK).json({ message: "Success", ...paginatedResult });
   } catch (err: any) {
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)

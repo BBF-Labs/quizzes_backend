@@ -295,14 +295,18 @@ userRoutes.get(
   authorizeRoles("admin"),
   async (req: Request, res: Response) => {
     try {
-      const users = await getUsers();
+      const { page, limit } = req.query;
+      const paginatedResult = await getUsers({
+        page: parseInt(page as string) || 1,
+        limit: parseInt(limit as string) || 10,
+      });
 
-      if (!users) {
+      if (!paginatedResult.data) {
         res.status(StatusCodes.NOT_FOUND).json({ message: "No users found" });
         return;
       }
 
-      res.status(StatusCodes.OK).json({ message: "Success", users: users });
+      res.status(StatusCodes.OK).json({ message: "Success", ...paginatedResult });
     } catch (err: any) {
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
