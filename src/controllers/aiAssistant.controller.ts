@@ -5,6 +5,7 @@ import { findUserByUsername, validateUserAIAccess } from "./user.controller";
 import { genkit, z } from "genkit";
 import { googleAI, gemini20Flash } from "@genkit-ai/googleai";
 import { Config } from "../config";
+import { Flashcard } from "../models";
 
 interface AIQuestionRequest {
   question: string;
@@ -73,7 +74,6 @@ export const aiAssistantController = {
 
       if (flashcardId) {
         // Import Flashcard model if not already imported
-        const { Flashcard } = await import("../models");
         const flashcardDoc = await Flashcard.findById(flashcardId);
         if (flashcardDoc) {
           fullContext += `\n\nFlashcard Context:\nQuestion: ${
@@ -178,7 +178,7 @@ export const aiAssistantController = {
 // Helper function to generate AI response
 async function generateAIResponse(
   context: string,
-  metadata: { questionId: string | "general"; userId: string }
+  metadata: { questionId: string | "general"; userId: string },
 ): Promise<AIResponse & { tokensUsed?: number }> {
   try {
     const prompt = `
@@ -247,7 +247,7 @@ function extractRelatedTopics(text: string): string[] {
   ];
 
   const foundTopics = commonTopics.filter((topic) =>
-    text.toLowerCase().includes(topic.toLowerCase())
+    text.toLowerCase().includes(topic.toLowerCase()),
   );
 
   return foundTopics.slice(0, 3); // Return max 3 topics
@@ -260,7 +260,7 @@ async function logAIUsage(
     question: string;
     questionId: string | "general";
     tokensUsed: number;
-  }
+  },
 ) {
   try {
     // Update user's AI usage stats

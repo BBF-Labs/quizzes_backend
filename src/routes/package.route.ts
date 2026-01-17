@@ -224,7 +224,7 @@ packageRoutes.put(
   authorizeRoles("admin"),
   async (req: Request, res: Response) => {
     try {
-      const packageId = req.params.id;
+      const packageId = asString(req.params.id);
       const updatedPackageData = req.body;
 
       if (!packageId || !updatedPackageData) {

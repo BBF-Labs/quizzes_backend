@@ -129,7 +129,9 @@ PersonalQuizSchema.index({ materialId: 1 });
 PersonalQuizSchema.index({ createdBy: 1, isPublic: 1 });
 PersonalQuizSchema.index({ tags: 1 });
 
-export const PersonalQuiz = mongoose.model<IPersonalQuiz>(
+const PersonalQuiz = mongoose.model<IPersonalQuiz>(
   "PersonalQuiz",
   PersonalQuizSchema,
 );
+
+export default PersonalQuiz;

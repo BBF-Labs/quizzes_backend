@@ -1,6 +1,3 @@
-import Flashcard from "./flashcard.model";
-import { PersonalQuiz } from "./personalQuiz.model";
-
 export { default as User } from "./user.model";
 export { default as QuizQuestion } from "./quizquestion.model";
 export { default as Question } from "./question.model";
@@ -12,4 +9,5 @@ export { default as Payment } from "./payment.model";
 export { default as Package } from "./package.model";
 export { default as Token } from "./token.model";
 export { default as Waitlist } from "./waitlist.model";
-export { Flashcard, PersonalQuiz };
+export { default as Flashcard } from "./flashcard.model";
+export { default as PersonalQuiz } from "./personalQuiz.model";
