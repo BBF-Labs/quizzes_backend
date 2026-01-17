@@ -23,6 +23,12 @@ const questionRoutes: Router = Router();
 
 questionRoutes.use(authenticateUser);
 
+// Normalize Express params/query values that may be string | string[] | ParsedQs
+const asString = (val: unknown): string | undefined => {
+  if (Array.isArray(val)) return asString(val[0]);
+  return typeof val === "string" ? val : undefined;
+};
+
 /**
  * @swagger
  * /api/v1/question/id/c/{courseId}:
@@ -52,7 +58,7 @@ questionRoutes.use(authenticateUser);
  */
 questionRoutes.get("/id/c/:courseId", async (req: Request, res: Response) => {
   try {
-    const courseId = req.params.courseId;
+    const courseId = asString(req.params.courseId);
 
     const user = req.user;
 
@@ -67,10 +73,11 @@ questionRoutes.get("/id/c/:courseId", async (req: Request, res: Response) => {
       throw new Error("Course ID is required");
     }
 
-    const { page, limit } = req.query;
+    const pageStr = asString(req.query.page);
+    const limitStr = asString(req.query.limit);
     const paginatedResult = await getCourseQuestions(courseId, {
-      page: parseInt(page as string) || 1,
-      limit: parseInt(limit as string) || 10,
+      page: (pageStr ? parseInt(pageStr) : 1) || 1,
+      limit: (limitStr ? parseInt(limitStr) : 10) || 10,
     });
 
     const questions = paginatedResult.data; // Helper to keep existing logic working slightly adapted
@@ -84,7 +91,7 @@ questionRoutes.get("/id/c/:courseId", async (req: Request, res: Response) => {
     // I added a separate count query for moderationCount.
 
     const questionDoc = questions.filter(
-      (question: IQuestion) => question.isModerated == true
+      (question: IQuestion) => question.isModerated == true,
     );
     // This filtering on the page seems wrong if we are paginating "all questions" but then filtering.
     // Ideally, the endpoint should be "getModeratedQuestions" and "getUnmoderatedQuestions".
@@ -97,7 +104,7 @@ questionRoutes.get("/id/c/:courseId", async (req: Request, res: Response) => {
       message: "Success",
       question: questionDoc, // This returns only moderated questions from THIS PAGE
       moderation: moderationCount,
-      pagination: paginatedResult.pagination
+      pagination: paginatedResult.pagination,
     });
   } catch (err: any) {
     res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
@@ -135,7 +142,7 @@ questionRoutes.get("/id/c/:courseId", async (req: Request, res: Response) => {
  */
 questionRoutes.get("/id/:questionId", async (req: Request, res: Response) => {
   try {
-    const questionId = req.params.questionId;
+    const questionId = asString(req.params.questionId);
 
     if (!questionId) {
       throw new Error("Question ID is required");
@@ -202,7 +209,7 @@ questionRoutes.post(
     } catch (err: any) {
       res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
     }
-  }
+  },
 );
 
 /**
@@ -236,25 +243,30 @@ questionRoutes.get(
   "/unchecked/:courseId",
   async (req: Request, res: Response) => {
     try {
-      const courseId = req.params.courseId;
+      const courseId = asString(req.params.courseId);
 
       if (!courseId) {
         throw new Error("Course ID is required");
       }
 
-      const { page, limit } = req.query;
+      const pageStr = asString(req.query.page);
+      const limitStr = asString(req.query.limit);
       const paginatedResult = await getUncheckedQuestions(courseId, {
-        page: parseInt(page as string) || 1,
-        limit: parseInt(limit as string) || 10,
+        page: (pageStr ? parseInt(pageStr) : 1) || 1,
+        limit: (limitStr ? parseInt(limitStr) : 10) || 10,
       });
 
       res
         .status(StatusCodes.OK)
-        .json({ message: "Success", question: paginatedResult.data, pagination: paginatedResult.pagination });
+        .json({
+          message: "Success",
+          question: paginatedResult.data,
+          pagination: paginatedResult.pagination,
+        });
     } catch (err: any) {
       res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
     }
-  }
+  },
 );
 
 /**
@@ -288,7 +300,7 @@ questionRoutes.get(
   "/course/:courseCode",
   async (req: Request, res: Response) => {
     try {
-      const courseCode = req.params.courseCode;
+      const courseCode = asString(req.params.courseCode);
 
       if (!courseCode) {
         throw new Error("Course Code is required");
@@ -297,11 +309,11 @@ questionRoutes.get(
       const questions = await getQuestionByCourseCode(courseCode);
 
       const moderationCount = questions.filter(
-        (question) => question.isModerated == false
+        (question) => question.isModerated == false,
       ).length;
 
       const questionDoc = questions.filter(
-        (question) => question.isModerated == true
+        (question) => question.isModerated == true,
       );
 
       res.status(StatusCodes.OK).json({
@@ -312,7 +324,7 @@ questionRoutes.get(
     } catch (err: any) {
       res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
     }
-  }
+  },
 );
 
 /**
@@ -505,7 +517,7 @@ questionRoutes.post(
         const questionDoc = await batchCreateQuestions(
           question,
           author,
-          courseId
+          courseId,
         );
 
         res
@@ -522,7 +534,7 @@ questionRoutes.post(
     } catch (err: any) {
       res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
     }
-  }
+  },
 );
 
 /**
@@ -655,15 +667,18 @@ questionRoutes.post(
       }
 
       const moderator = req.body.moderator || user.username;
-      const { courseId } = req.params;
+      const courseId = asString(req.params.courseId);
 
       if (!courseId) {
         throw new Error("Course ID is required");
       }
 
-      const approvalResult = await approveAllByModerator(courseId, moderator);
+      const approvalResult = await approveAllByModerator(
+        courseId as string,
+        moderator,
+      );
 
-      const questionDocs = await getCourseQuestions(courseId);
+      const questionDocs = await getCourseQuestions(courseId as string);
       const questionsData = questionDocs.data;
 
       const questionIds = questionsData
@@ -679,7 +694,7 @@ questionRoutes.post(
     } catch (error: any) {
       res.status(StatusCodes.BAD_REQUEST).json({ message: error.message });
     }
-  }
+  },
 );
 
 export default questionRoutes;

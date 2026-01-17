@@ -24,9 +24,15 @@ const paymentRoutes: Router = Router();
 
 paymentRoutes.use(authenticateUser);
 
+// Normalize Express params that may be string | string[] | ParsedQs
+const asString = (val: unknown): string | undefined => {
+  if (Array.isArray(val)) return asString(val[0]);
+  return typeof val === "string" ? val : undefined;
+};
+
 const calculateDiscountedAmount = (
   packageDoc: any,
-  discountCode?: string
+  discountCode?: string,
 ): number | null => {
   if (!packageDoc.discountCode || !packageDoc.discountPercentage) {
     return packageDoc.price;
@@ -251,7 +257,7 @@ paymentRoutes.post("/pay", async (req: Request, res: Response) => {
  */
 paymentRoutes.get("/:reference/verify", async (req: Request, res: Response) => {
   try {
-    const { reference } = req.params;
+    const reference = asString(req.params.reference);
     const user = req.user;
 
     if (!user) {
@@ -269,7 +275,7 @@ paymentRoutes.get("/:reference/verify", async (req: Request, res: Response) => {
       return;
     }
 
-    const referenceDoc = await getPaymentByReference(reference);
+    const referenceDoc = await getPaymentByReference(reference as string);
     if (!referenceDoc) {
       res.status(StatusCodes.NOT_FOUND).json({
         message: "Transaction not found",
@@ -280,6 +286,12 @@ paymentRoutes.get("/:reference/verify", async (req: Request, res: Response) => {
 
     if (referenceDoc.isValid) {
       // If already valid, no need to verify again
+      if (!reference) {
+        res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: "Reference is required" });
+        return;
+      }
       await updateUserPaymentDetails(reference);
       res.status(StatusCodes.OK).json({
         message: "Transaction is already valid",
@@ -290,7 +302,7 @@ paymentRoutes.get("/:reference/verify", async (req: Request, res: Response) => {
 
     // Verify the payment with Paystack
     try {
-      const data = await verifyPayment(reference);
+      const data = await verifyPayment(reference as string);
 
       if (!data || !data.status) {
         res.status(StatusCodes.BAD_REQUEST).json({
@@ -301,13 +313,19 @@ paymentRoutes.get("/:reference/verify", async (req: Request, res: Response) => {
 
       // Update payment record
       const isValid = data.status === "success";
-      await updatePayment(reference, {
+      await updatePayment(reference as string, {
         status: data.status,
         isValid,
         method: data.channel,
       });
 
       if (isValid) {
+        if (!reference) {
+          res
+            .status(StatusCodes.BAD_REQUEST)
+            .json({ message: "Reference is required" });
+          return;
+        }
         await updateUserPaymentDetails(reference);
       }
 
@@ -385,7 +403,14 @@ paymentRoutes.get("/:reference/verify", async (req: Request, res: Response) => {
  */
 paymentRoutes.get("/:reference", async (req: Request, res: Response) => {
   try {
-    const { reference } = req.params;
+    const reference = asString(req.params.reference);
+
+    if (!reference) {
+      res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Reference is required" });
+      return;
+    }
 
     const payment = await getPaymentByReference(reference);
 
@@ -484,7 +509,7 @@ paymentRoutes.get(
   authorizeRoles("admin"),
   async (req: Request, res: Response) => {
     try {
-      const { userId } = req.params;
+      const userId = asString(req.params.userId);
 
       if (!userId) {
         res
@@ -493,7 +518,7 @@ paymentRoutes.get(
         return;
       }
 
-      const userDoc = await findUserById(userId);
+      const userDoc = await findUserById(userId as string);
 
       if (!userDoc) {
         res.status(StatusCodes.NOT_FOUND).json({ message: "User not found" });
@@ -508,7 +533,7 @@ paymentRoutes.get(
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: err.message });
     }
-  }
+  },
 );
 
 /**
@@ -539,7 +564,7 @@ paymentRoutes.get(
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: err.message });
     }
-  }
+  },
 );
 
 /**
@@ -578,7 +603,7 @@ paymentRoutes.get(
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: `Error: ${err.message}` });
     }
-  }
+  },
 );
 
 export default paymentRoutes;

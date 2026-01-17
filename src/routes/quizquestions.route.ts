@@ -13,6 +13,12 @@ import { StatusCodes } from "../config";
 
 const quizQuestionsRoutes: Router = Router();
 
+// Normalize Express params/query values that may be string | string[] | ParsedQs
+const asString = (val: unknown): string | undefined => {
+  if (Array.isArray(val)) return asString(val[0]);
+  return typeof val === "string" ? val : undefined;
+};
+
 /**
  * @swagger
  * /api/v1/quizzes:
@@ -40,10 +46,11 @@ const quizQuestionsRoutes: Router = Router();
  */
 quizQuestionsRoutes.get("/", async (req: Request, res: Response) => {
   try {
-    const { page, limit } = req.query;
+    const pageStr = asString(req.query.page);
+    const limitStr = asString(req.query.limit);
     const paginatedResult = await getQuizQuestions({
-      page: parseInt(page as string) || 1,
-      limit: parseInt(limit as string) || 10,
+      page: (pageStr ? parseInt(pageStr) : 1) || 1,
+      limit: (limitStr ? parseInt(limitStr) : 10) || 10,
     });
 
     if (!paginatedResult.data) {
@@ -117,7 +124,7 @@ quizQuestionsRoutes.post(
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: err.message });
     }
-  }
+  },
 );
 
 /**
@@ -165,7 +172,7 @@ quizQuestionsRoutes.put(
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: err.message });
     }
-  }
+  },
 );
 
 /**
@@ -198,7 +205,7 @@ quizQuestionsRoutes.get(
   authenticateUser,
   async (req: Request, res: Response) => {
     try {
-      const { courseId } = req.params;
+      const courseId = asString(req.params.courseId);
 
       if (!courseId) {
         throw new Error("Course ID is required");
@@ -222,7 +229,7 @@ quizQuestionsRoutes.get(
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: `Error: ${err.message}` });
     }
-  }
+  },
 );
 
 /**
@@ -254,7 +261,7 @@ quizQuestionsRoutes.get(
   authenticateUser,
   async (req: Request, res: Response) => {
     try {
-      const { courseId } = req.params;
+      const courseId = asString(req.params.courseId);
 
       const user = req.user;
 
@@ -288,7 +295,7 @@ quizQuestionsRoutes.get(
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: `Error: ${err.message}` });
     }
-  }
+  },
 );
 
 export default quizQuestionsRoutes;

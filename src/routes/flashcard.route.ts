@@ -18,6 +18,12 @@ const flashcardRoutes = Router();
 // Apply authentication middleware to all routes
 flashcardRoutes.use(authenticateUser);
 
+// Normalize Express params/query values that may be string | string[] | ParsedQs
+const asString = (val: unknown): string | undefined => {
+  if (Array.isArray(val)) return asString(val[0]);
+  return typeof val === "string" ? val : undefined;
+};
+
 /**
  * @swagger
  * /api/v1/flashcards/generate:
@@ -82,7 +88,7 @@ flashcardRoutes.post("/generate", async (req: Request, res: Response) => {
     const flashcards = await generateFlashcards(
       userDoc._id.toString(),
       materialId,
-      count
+      count,
     );
 
     res.status(StatusCodes.CREATED).json({
@@ -135,12 +141,12 @@ flashcardRoutes.get("/", async (req: Request, res: Response) => {
         .json({ message: "Unauthorized" });
     }
 
-    const { courseId, materialId } = req.query;
-
+    const courseId = asString(req.query.courseId);
+    const materialId = asString(req.query.materialId);
     const flashcards = await getUserFlashcards(
       user.username,
-      courseId as string,
-      materialId as string
+      courseId,
+      materialId,
     );
 
     res.status(StatusCodes.OK).json({
@@ -210,13 +216,18 @@ flashcardRoutes.put("/:id", async (req: Request, res: Response) => {
         .json({ message: "Unauthorized" });
     }
 
-    const { id } = req.params;
+    const id = asString(req.params.id);
+    if (!id) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Flashcard ID is required" });
+    }
     const updateData = req.body;
 
     const updatedFlashcard = await updateFlashcard(
       user.username,
       id,
-      updateData
+      updateData,
     );
 
     res.status(StatusCodes.OK).json({
@@ -268,7 +279,12 @@ flashcardRoutes.post("/:id/share", async (req: Request, res: Response) => {
         .json({ message: "Unauthorized" });
     }
 
-    const { id } = req.params;
+    const id = asString(req.params.id);
+    if (!id) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Flashcard ID is required" });
+    }
 
     const { shareUrl } = await shareFlashcard(user.username, id);
 
@@ -321,7 +337,12 @@ flashcardRoutes.delete("/:id", async (req: Request, res: Response) => {
         .json({ message: "Unauthorized" });
     }
 
-    const { id } = req.params;
+    const id = asString(req.params.id);
+    if (!id) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Flashcard ID is required" });
+    }
 
     await deleteFlashcard(user.username, id);
 
@@ -360,7 +381,12 @@ flashcardRoutes.delete("/:id", async (req: Request, res: Response) => {
  */
 flashcardRoutes.get("/shared/:id", async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = asString(req.params.id);
+    if (!id) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Flashcard ID is required" });
+    }
 
     const flashcard = await getSharedFlashcard(id);
 
@@ -488,23 +514,36 @@ flashcardRoutes.get(
           .json({ message: "Unauthorized" });
       }
 
-      const { courseId } = req.params;
+      const courseId = asString(req.params.courseId);
       const { difficulty, tags, masteryLevel, lastReviewed } = req.query;
+
+      if (!courseId) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: "Course ID is required" });
+      }
 
       // Parse query parameters
       const filters: any = {};
-      if (difficulty) filters.difficulty = difficulty;
-      if (tags) filters.tags = Array.isArray(tags) ? tags : [tags];
+      const difficultyStr = asString(difficulty);
+      if (difficultyStr) filters.difficulty = difficultyStr;
+      if (tags)
+        filters.tags = Array.isArray(tags)
+          ? tags.map(asString).filter(Boolean)
+          : [asString(tags)].filter(Boolean);
       if (masteryLevel) {
         try {
-          filters.masteryLevel = JSON.parse(masteryLevel as string);
+          const masteryStr = asString(masteryLevel);
+          if (masteryStr) filters.masteryLevel = JSON.parse(masteryStr);
         } catch (e) {
           // Ignore invalid JSON
         }
       }
       if (lastReviewed) {
         try {
-          filters.lastReviewed = JSON.parse(lastReviewed as string);
+          const lastReviewedStr = asString(lastReviewed);
+          if (lastReviewedStr)
+            filters.lastReviewed = JSON.parse(lastReviewedStr);
         } catch (e) {
           // Ignore invalid JSON
         }
@@ -513,7 +552,7 @@ flashcardRoutes.get(
       const flashcards = await getUserFlashcardsByCourse(
         user.username,
         courseId,
-        filters
+        filters,
       );
 
       res.status(StatusCodes.OK).json({
@@ -527,7 +566,7 @@ flashcardRoutes.get(
         message: error.message || "Failed to retrieve course flashcards",
       });
     }
-  }
+  },
 );
 
 export default flashcardRoutes;

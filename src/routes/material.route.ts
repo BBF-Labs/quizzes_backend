@@ -43,6 +43,12 @@ const upload = multer({
 
 materialRoutes.use(authenticateUser);
 
+// Normalize Express params that may be string | string[]
+const asString = (val: string | string[] | undefined): string | undefined => {
+  if (Array.isArray(val)) return val[0];
+  return typeof val === "string" ? val : undefined;
+};
+
 /**
  * @swagger
  * /api/v1/materials/upload:
@@ -126,7 +132,7 @@ materialRoutes.post(
         file,
         courseId,
         user.username,
-        questionRefType
+        questionRefType,
       );
 
       res.status(StatusCodes.CREATED).json({
@@ -139,7 +145,7 @@ materialRoutes.post(
           error instanceof Error ? error.message : "Error uploading material",
       });
     }
-  }
+  },
 );
 
 /**
@@ -388,7 +394,7 @@ materialRoutes.get("/user", async (req: Request, res: Response) => {
  */
 materialRoutes.get("/course/:courseId", async (req: Request, res: Response) => {
   try {
-    const courseId = req.params.courseId;
+    const courseId = asString(req.params.courseId);
 
     if (!courseId) {
       res.status(StatusCodes.BAD_REQUEST).json({

@@ -14,6 +14,12 @@ import { StatusCodes } from "../config";
 
 const courseRoutes: Router = Router();
 
+// Normalize Express params/query values that may be string | string[] | ParsedQs
+const asString = (val: unknown): string | undefined => {
+  if (Array.isArray(val)) return asString(val[0]);
+  return typeof val === "string" ? val : undefined;
+};
+
 /**
  * @swagger
  * /api/v1/courses:
@@ -41,10 +47,11 @@ const courseRoutes: Router = Router();
  */
 courseRoutes.get("/", async (req: Request, res: Response) => {
   try {
-    const { page, limit } = req.query;
+    const pageStr = asString(req.query.page);
+    const limitStr = asString(req.query.limit);
     const paginatedResult = await getAllCourses({
-      page: parseInt(page as string) || 1,
-      limit: parseInt(limit as string) || 10,
+      page: (pageStr ? parseInt(pageStr) : 1) || 1,
+      limit: (limitStr ? parseInt(limitStr) : 10) || 10,
     });
 
     if (!paginatedResult.data) {
@@ -94,7 +101,13 @@ courseRoutes.get("/", async (req: Request, res: Response) => {
  */
 courseRoutes.get("/code/:courseCode", async (req: Request, res: Response) => {
   try {
-    const { courseCode } = req.params;
+    const courseCode = asString(req.params.courseCode);
+    if (!courseCode) {
+      res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Course code is required" });
+      return;
+    }
     const course = await findCourseByCode(courseCode);
 
     if (!course) {
@@ -148,9 +161,14 @@ courseRoutes.get("/code/:courseCode", async (req: Request, res: Response) => {
  */
 courseRoutes.get("/id/:courseId", async (req: Request, res: Response) => {
   try {
-    const { courseId } = req.params;
-
-    const course = await findCourseById(courseId.trim());
+    const rawCourseId = asString(req.params.courseId);
+    if (!rawCourseId) {
+      res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Course ID is required" });
+      return;
+    }
+    const course = await findCourseById(rawCourseId.trim());
 
     if (!course) {
       res.status(StatusCodes.NOT_FOUND).json({ message: "Course not found" });
@@ -238,7 +256,7 @@ courseRoutes.post(
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: err.message });
     }
-  }
+  },
 );
 
 /**
@@ -279,7 +297,13 @@ courseRoutes.put(
   authorizeRoles("admin"),
   async (req: Request, res: Response) => {
     try {
-      const { courseId } = req.params;
+      const courseId = asString(req.params.courseId);
+      if (!courseId) {
+        res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: "Course ID is required" });
+        return;
+      }
       const course = await findCourseById(courseId);
 
       if (!course) {
@@ -309,7 +333,7 @@ courseRoutes.put(
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: err.message });
     }
-  }
+  },
 );
 
 /**
@@ -344,7 +368,13 @@ courseRoutes.delete(
   authorizeRoles("admin"),
   async (req: Request, res: Response) => {
     try {
-      const { courseId } = req.params;
+      const courseId = asString(req.params.courseId);
+      if (!courseId) {
+        res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: "Course ID is required" });
+        return;
+      }
       const course = await findCourseById(courseId);
 
       if (!course) {
@@ -367,7 +397,7 @@ courseRoutes.delete(
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: err.message });
     }
-  }
+  },
 );
 
 export default courseRoutes;

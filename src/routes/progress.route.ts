@@ -12,6 +12,12 @@ const progressRoutes: Router = Router();
 
 progressRoutes.use(authenticateUser);
 
+// Normalize Express params that may be string | string[] | ParsedQs
+const asString = (val: unknown): string | undefined => {
+  if (Array.isArray(val)) return asString(val[0]);
+  return typeof val === "string" ? val : undefined;
+};
+
 /**
  * @swagger
  * /api/v1/progress/user/{courseId}:
@@ -58,13 +64,20 @@ progressRoutes.use(authenticateUser);
  */
 progressRoutes.get("/user/:courseId", async (req: Request, res: Response) => {
   try {
-    const { courseId } = req.params;
+    const courseId = asString(req.params.courseId);
     const user = req.user;
 
     if (!user) {
       res
         .status(StatusCodes.UNAUTHORIZED)
         .json({ error: "User not authenticated" });
+      return;
+    }
+
+    if (!courseId) {
+      res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ error: "Course ID is required" });
       return;
     }
 
@@ -270,7 +283,7 @@ progressRoutes.put("/:progressId", async (req: Request, res: Response) => {
         .json({ message: "Login to access this route" });
       return;
     }
-    const progressId = req.params.progressId;
+    const progressId = asString(req.params.progressId);
 
     const progress = req.body;
 

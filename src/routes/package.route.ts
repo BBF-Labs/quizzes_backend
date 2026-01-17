@@ -11,6 +11,12 @@ import { StatusCodes } from "../config";
 
 const packageRoutes: Router = Router();
 
+// Normalize Express params that may be string | string[] | ParsedQs
+const asString = (val: unknown): string | undefined => {
+  if (Array.isArray(val)) return asString(val[0]);
+  return typeof val === "string" ? val : undefined;
+};
+
 /**
  * @swagger
  * /api/v1/packages:
@@ -62,7 +68,7 @@ packageRoutes.get("/", async (req: Request, res: Response) => {
  */
 packageRoutes.get("/:id", async (req: Request, res: Response) => {
   try {
-    const packageId = req.params.id;
+    const packageId = asString(req.params.id);
 
     if (!packageId) {
       res
@@ -113,12 +119,13 @@ packageRoutes.get("/:id", async (req: Request, res: Response) => {
  */
 packageRoutes.get("/discount/:code", async (req: Request, res: Response) => {
   try {
-    const discountCode = req.params.code;
+    const discountCode = asString(req.params.code);
 
     if (!discountCode) {
       res
         .status(StatusCodes.BAD_REQUEST)
         .json({ message: "Discount code is required" });
+      return;
     }
 
     const packageByDiscountCode = await getPackageByDiscountCode(discountCode);
@@ -183,7 +190,7 @@ packageRoutes.post(
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: `Error creating package: ${err.message}` });
     }
-  }
+  },
 );
 
 /**
@@ -243,7 +250,7 @@ packageRoutes.put(
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: `Error updating package: ${err.message}` });
     }
-  }
+  },
 );
 
 export default packageRoutes;
