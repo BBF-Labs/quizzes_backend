@@ -11,7 +11,7 @@ export interface IPersonalQuiz extends Document {
     options: string[];
     answer: string;
     explanation?: string;
-    type: "mcq" | "true-false" | "short-answer";
+    type: "mcq" | "true-false" | "short-answer" | "fill-in";
     difficulty: "basic" | "intermediate" | "advanced" | "critical";
     lectureNumber?: string;
     hint?: string;

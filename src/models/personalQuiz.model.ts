@@ -46,7 +46,7 @@ const PersonalQuizSchema = new Schema<IPersonalQuiz>(
         },
         type: {
           type: String,
-          enum: ["mcq", "true-false", "fill-in"],
+          enum: ["mcq", "true-false", "fill-in", "short-answer"],
           default: "mcq",
         },
         difficulty: {
@@ -120,7 +120,7 @@ const PersonalQuizSchema = new Schema<IPersonalQuiz>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Indexes for better query performance
@@ -131,5 +131,5 @@ PersonalQuizSchema.index({ tags: 1 });
 
 export const PersonalQuiz = mongoose.model<IPersonalQuiz>(
   "PersonalQuiz",
-  PersonalQuizSchema
+  PersonalQuizSchema,
 );
