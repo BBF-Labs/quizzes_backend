@@ -5,7 +5,7 @@ const CorsOption: CorsOptions = {
   origin:
     Config.ENV === "production"
       ? [
-          /^(https?:\/\/.*\.bflabs\.tech)$/i,
+          /^https?:\/\/(www\.)?.*\.bflabs\.tech$/i,
           "https://theminiscripts.vercel.app",
           "https://www.theminiscripts.vercel.app",
         ]
