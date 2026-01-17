@@ -1,5 +1,5 @@
 import { User, Package, Payment, Question, QuizQuestion } from "../models";
-import { IUser } from "../interfaces";
+import { IUser, IPagination, PaginatedResult } from "../interfaces";
 import { hashPassword } from "./auth.controller";
 
 async function isUserValid(prop: {
@@ -492,15 +492,32 @@ async function validateUserAIAccess(username: string) {
   }
 }
 
-async function getUsers() {
+async function getUsers(
+  query: IPagination = { page: 1, limit: 10 }
+): Promise<PaginatedResult<IUser>> {
   try {
-    const users = await User.find();
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await Promise.all([
+      User.find().skip(skip).limit(limit),
+      User.countDocuments(),
+    ]);
 
     if (!users) {
       throw new Error("No users found");
     }
 
-    return users;
+    return {
+      data: users,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   } catch (err: any) {
     throw new Error(`Error getting users: ${err.message}`);
   }

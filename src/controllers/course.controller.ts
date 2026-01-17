@@ -1,5 +1,5 @@
 import { Course } from "../models";
-import { ICourse } from "../interfaces";
+import { ICourse, IPagination, PaginatedResult } from "../interfaces";
 
 async function isCourseValid(prop: { courseId?: string; courseCode?: string }) {
   const course = await Course.findOne({
@@ -94,21 +94,34 @@ async function updateCourse(courseId: string, updatedCourse: Partial<ICourse>) {
   }
 }
 
-async function getAllCourses() {
+async function getAllCourses(
+  query: IPagination = { page: 1, limit: 10 }
+): Promise<PaginatedResult<ICourse>> {
   try {
-    const courses = await Course.find({});
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const [courses, total] = await Promise.all([
+      Course.find({ isDeleted: { $ne: true } })
+        .skip(skip)
+        .limit(limit),
+      Course.countDocuments({ isDeleted: { $ne: true } }),
+    ]);
 
     if (!courses) {
-      return null;
+      throw new Error("No courses found");
     }
 
-    const courseDoc = courses.map((course) => {
-      if (course.isDeleted) return;
-
-      return course;
-    });
-
-    return courseDoc;
+    return {
+      data: courses,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   } catch (err: any) {
     throw new Error(`Error fetching courses: ${err.message}`);
   }

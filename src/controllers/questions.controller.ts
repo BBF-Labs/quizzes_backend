@@ -1,4 +1,4 @@
-import { IQuizQuestion } from "../interfaces";
+import { IQuizQuestion, IPagination, PaginatedResult } from "../interfaces";
 import { Question, Course, QuizQuestion } from "../models";
 import mongoose from "mongoose";
 
@@ -109,15 +109,32 @@ async function getCourseQuizQuestions(courseId: string) {
   }
 }
 
-async function getQuizQuestions() {
+async function getQuizQuestions(
+  query: IPagination = { page: 1, limit: 10 }
+): Promise<PaginatedResult<IQuizQuestion>> {
   try {
-    const questions = await QuizQuestion.find();
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    const skip = (page - 1) * limit;
 
-    if (questions.length == 0) {
+    const [questions, total] = await Promise.all([
+      QuizQuestion.find().skip(skip).limit(limit),
+      QuizQuestion.countDocuments(),
+    ]);
+
+    if (!questions) {
       throw new Error("Quiz Questions not found");
     }
 
-    return questions;
+    return {
+      data: questions,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   } catch (err: any) {
     throw new Error(err.message);
   }

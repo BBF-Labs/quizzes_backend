@@ -1,6 +1,6 @@
 import { Course, Question, User } from "../models";
 import { isValidObjectId } from "mongoose";
-import { IQuestion } from "../interfaces";
+import { IQuestion, IPagination, PaginatedResult } from "../interfaces";
 import {
   findCourseByCode,
   findCourseById,
@@ -56,27 +56,66 @@ async function createQuestion(
   }
 }
 
-async function getQuestions(courseId: string) {
+async function getQuestions(
+  courseId: string,
+  query: IPagination = { page: 1, limit: 10 }
+): Promise<PaginatedResult<IQuestion>> {
   try {
-    const questions = await Question.find({ courseId, isModerated: true });
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    const skip = (page - 1) * limit;
 
-    if (!questions) {
+    const baseQuery = { courseId, isModerated: true };
+
+    const [questions, total] = await Promise.all([
+      Question.find(baseQuery).skip(skip).limit(limit),
+      Question.countDocuments(baseQuery),
+    ]);
+
+    if (!questions || questions.length === 0) {
+      // Fallback logic for finding by code (if needed, but simpler first)
       const courseCode = await findCourseByCode(courseId);
+      if (courseCode) {
+        const fallbackQuery = { courseId: courseCode._id, isModerated: true };
+        const [fbQuestions, fbTotal] = await Promise.all([
+          Question.find(fallbackQuery).skip(skip).limit(limit),
+          Question.countDocuments(fallbackQuery),
+        ]);
 
-      if (!courseCode) {
-        throw new Error("Course Questions not found");
+        if (fbQuestions.length > 0) {
+          return {
+            data: fbQuestions,
+            pagination: {
+              total: fbTotal,
+              page,
+              limit,
+              totalPages: Math.ceil(fbTotal / limit),
+            },
+          };
+        }
       }
-
-      const questions = await Question.find({ courseId: courseCode._id });
-
-      if (!questions) {
-        throw new Error("Course Questions not found");
-      }
-
-      return questions;
+      // If still nothing
+      // We return empty structure rather than error for pagination usually, but keeping existing error behavior slightly adapted
+      return {
+        data: [],
+        pagination: {
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+        },
+      };
     }
 
-    return questions;
+    return {
+      data: questions,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   } catch (err: any) {
     throw new Error(err.message);
   }
@@ -115,32 +154,73 @@ async function updateQuestion(
   }
 }
 
-async function getCourseQuestions(courseId: string) {
+async function getCourseQuestions(
+  courseId: string,
+  query: IPagination = { page: 1, limit: 10 }
+): Promise<PaginatedResult<IQuestion>> {
   try {
-    const questions = await Question.find({ courseId });
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const [questions, total] = await Promise.all([
+      Question.find({ courseId }).skip(skip).limit(limit),
+      Question.countDocuments({ courseId }),
+    ]);
 
     if (!questions) {
       throw new Error("Course Questions not found");
     }
 
-    return questions;
+    return {
+      data: questions,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   } catch (err: any) {
     throw new Error(err.message);
   }
 }
 
-async function getUncheckedQuestions(courseId: string) {
+async function getUncheckedQuestions(
+  courseId: string,
+  query: IPagination = { page: 1, limit: 10 }
+): Promise<PaginatedResult<IQuestion>> {
   try {
-    const questions = await Question.find({
-      courseId,
-      isModerated: { $ne: true },
-    });
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const [questions, total] = await Promise.all([
+      Question.find({
+        courseId,
+        isModerated: { $ne: true },
+      })
+        .skip(skip)
+        .limit(limit),
+      Question.countDocuments({
+        courseId,
+        isModerated: { $ne: true },
+      }),
+    ]);
 
     if (!questions) {
       throw new Error("Course Questions not found");
     }
 
-    return questions;
+    return {
+      data: questions,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   } catch (err: any) {
     throw new Error(err.message);
   }

@@ -41,14 +41,18 @@ const courseRoutes: Router = Router();
  */
 courseRoutes.get("/", async (req: Request, res: Response) => {
   try {
-    const courses = await getAllCourses();
+    const { page, limit } = req.query;
+    const paginatedResult = await getAllCourses({
+      page: parseInt(page as string) || 1,
+      limit: parseInt(limit as string) || 10,
+    });
 
-    if (!courses) {
+    if (!paginatedResult.data) {
       res.status(StatusCodes.NOT_FOUND).json({ message: "Courses not found" });
       return;
     }
 
-    res.status(StatusCodes.OK).json({ message: "Success", courses: courses });
+    res.status(StatusCodes.OK).json({ message: "Success", ...paginatedResult });
   } catch (err: any) {
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)

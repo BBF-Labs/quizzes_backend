@@ -17,6 +17,7 @@ import ISchool from "./ISchool";
 import IAIResponse from "./IAIResponse";
 import IChatbotPersona from "./IChatbotPersona";
 import IStudyPartnerSession from "./IStudyPartnerSession";
+import { IPagination, PaginatedResult } from "./IPagination";
 
 export {
   ICourse,
@@ -38,4 +39,6 @@ export {
   IAIResponse,
   IChatbotPersona,
   IStudyPartnerSession,
+  IPagination,
+  PaginatedResult,
 };
