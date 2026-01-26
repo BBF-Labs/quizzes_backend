@@ -414,9 +414,118 @@ async function getUserFlashcardsByCourse(
   }
 }
 
+/**
+ * Get user's flashcards grouped by course with stats
+ */
+async function getUserFlashcardsGroupedByCourse(username: string): Promise<Array<{
+  course: any;
+  flashcards: IFlashcard[];
+  stats: {
+    totalCards: number;
+    mastered: number;
+    needReview: number;
+    averageMastery: number;
+  };
+}>> {
+  try {
+    const user = await findUserByUsername(username);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Use aggregation pipeline for better performance
+    const courseGroups = await Flashcard.aggregate([
+      { $match: { createdBy: user._id } },
+      {
+        $lookup: {
+          from: "courses",
+          localField: "courseId",
+          foreignField: "_id",
+          as: "course",
+        },
+      },
+      { $unwind: "$course" },
+      {
+        $group: {
+          _id: "$courseId",
+          course: { $first: "$course" },
+          flashcards: { $push: "$$ROOT" },
+          totalCards: { $sum: 1 },
+          mastered: {
+            $sum: { $cond: [{ $gte: ["$masteryLevel", 80] }, 1, 0] },
+          },
+          needReview: {
+            $sum: { $cond: [{ $lt: ["$masteryLevel", 60] }, 1, 0] },
+          },
+          avgMastery: { $avg: "$masteryLevel" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          course: {
+            _id: "$course._id",
+            code: "$course.code",
+            title: "$course.title",
+            about: "$course.about",
+            creditHours: "$course.creditHours",
+            year: "$course.year",
+            semester: "$course.semester",
+          },
+          flashcards: {
+            $map: {
+              input: "$flashcards",
+              as: "card",
+              in: {
+                _id: "$$card._id",
+                courseId: "$$card.courseId",
+                materialId: "$$card.materialId",
+                front: "$$card.front",
+                back: "$$card.back",
+                lectureNumber: "$$card.lectureNumber",
+                createdBy: "$$card.createdBy",
+                isPublic: "$$card.isPublic",
+                tags: "$$card.tags",
+                difficulty: "$$card.difficulty",
+                lastReviewed: "$$card.lastReviewed",
+                reviewCount: "$$card.reviewCount",
+                masteryLevel: "$$card.masteryLevel",
+                createdAt: "$$card.createdAt",
+                updatedAt: "$$card.updatedAt",
+              },
+            },
+          },
+          stats: {
+            totalCards: "$totalCards",
+            mastered: "$mastered",
+            needReview: "$needReview",
+            averageMastery: { $round: ["$avgMastery", 0] },
+          },
+        },
+      },
+      {
+        $sort: { "flashcards.0.createdAt": -1 }, // Sort by newest flashcard
+      },
+    ]);
+
+    // Sort flashcards within each group by creation date
+    courseGroups.forEach((group) => {
+      group.flashcards.sort((a: any, b: any) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+    });
+
+    return courseGroups;
+  } catch (error: any) {
+    console.error("Error fetching grouped flashcards:", error);
+    throw new Error(error.message || "Failed to fetch grouped flashcards");
+  }
+}
+
 export {
   generateFlashcards,
   getUserFlashcards,
+  getUserFlashcardsGroupedByCourse,
   updateFlashcard,
   shareFlashcard,
   getSharedFlashcard,

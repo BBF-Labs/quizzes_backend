@@ -3,6 +3,7 @@ import { StatusCodes } from "../config";
 import {
   generateFlashcards,
   getUserFlashcards,
+  getUserFlashcardsGroupedByCourse,
   updateFlashcard,
   shareFlashcard,
   getSharedFlashcard,
