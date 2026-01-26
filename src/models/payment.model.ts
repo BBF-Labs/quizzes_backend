@@ -71,7 +71,7 @@ const PaymentSchema: Schema<IPayment> = new Schema(
 );
 
 PaymentSchema.index({userId: 1, status: 1});
-PaymentSchema.index({reference: 1}, {unique: true});
+
 
 
 const Payment: Model<IPayment> = model<IPayment>("Payment", PaymentSchema);

@@ -65,7 +65,7 @@ const QuestionSchema = new Schema<IQuestion>(
 );
 
 QuestionSchema.index({courseId: 1, isModerated: 1});
-QuestionSchema.index({reference: 1}, {unique: true});
+
 
 const Question: Model<IQuestion> = model<IQuestion>("Question", QuestionSchema);
 export default Question;
