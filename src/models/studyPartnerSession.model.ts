@@ -58,7 +58,7 @@ const StudyPartnerSessionSchema = new Schema<IStudyPartnerSession>(
     }],
     quizAttempts: {
       type: [Schema.Types.ObjectId],
-      ref: "Quiz",
+      ref: "Quizzes",
     },
     aiAssistanceEnabled: {
       type: Boolean,

@@ -96,22 +96,55 @@ async function updateCourse(courseId: string, updatedCourse: Partial<ICourse>) {
 
 async function getAllCourses(
   query: IPagination = { page: 1, limit: 10 }
-): Promise<PaginatedResult<ICourse>> {
+): Promise<PaginatedResult<ICourse & { hasQuiz: boolean }>> {
   try {
-    const page = query.page || 1;
-    const limit = query.limit || 10;
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
+    const search = query.search || "";
 
-    const [courses, total] = await Promise.all([
-      Course.find({ isDeleted: { $ne: true } })
-        .skip(skip)
-        .limit(limit),
-      Course.countDocuments({ isDeleted: { $ne: true } }),
-    ]);
+    const matchQuery: any = { isDeleted: { $ne: true } };
 
-    if (!courses) {
-      throw new Error("No courses found");
+    if (search) {
+      const searchRegex = new RegExp(search, "i");
+      matchQuery.$or = [
+        { title: searchRegex },
+        { code: searchRegex },
+        { about: searchRegex },
+      ];
     }
+
+    const pipeline: any[] = [
+      { $match: matchQuery },
+      {
+        $lookup: {
+          from: "quizquestions",
+          localField: "_id",
+          foreignField: "courseId",
+          as: "quizInfo",
+        },
+      },
+      {
+        $addFields: {
+          hasQuiz: { $gt: [{ $size: "$quizInfo" }, 0] },
+        },
+      },
+      {
+        $project: {
+          quizInfo: 0,
+        },
+      },
+      {
+        $facet: {
+          data: [{ $skip: skip }, { $limit: limit }],
+          total: [{ $count: "count" }],
+        },
+      },
+    ];
+
+    const [result] = await Course.aggregate(pipeline);
+    const courses = result.data;
+    const total = result.total[0] ? result.total[0].count : 0;
 
     return {
       data: courses,

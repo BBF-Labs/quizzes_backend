@@ -111,20 +111,84 @@ async function getCourseQuizQuestions(courseId: string) {
 
 async function getQuizQuestions(
   query: IPagination = { page: 1, limit: 10 }
-): Promise<PaginatedResult<IQuizQuestion>> {
+): Promise<PaginatedResult<any>> {
   try {
-    const page = query.page || 1;
-    const limit = query.limit || 10;
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
+    const search = query.search || "";
 
-    const [questions, total] = await Promise.all([
-      QuizQuestion.find().skip(skip).limit(limit),
-      QuizQuestion.countDocuments(),
-    ]);
+    const pipeline: any[] = [
+      {
+        $lookup: {
+          from: "courses", // lookup from the courses collection
+          localField: "courseId",
+          foreignField: "_id",
+          as: "course",
+        },
+      },
+      { $unwind: "$course" }, // Unwind to make course object accessible
+    ];
 
-    if (!questions) {
-      throw new Error("Quiz Questions not found");
+    if (search) {
+      const searchRegex = new RegExp(search, "i");
+      pipeline.push({
+        $match: {
+          $or: [
+            { "course.title": searchRegex },
+            { "course.code": searchRegex },
+          ],
+        },
+      });
     }
+
+    pipeline.push(
+      {
+        $addFields: {
+          title: "$course.title",
+          category: "$course.code",
+          lectureStats: {
+            $map: {
+              input: "$quizQuestions",
+              as: "lecture",
+              in: {
+                name: "$$lecture.name",
+                count: { $size: "$$lecture.questions" },
+              },
+            },
+          },
+          totalQuestions: {
+            $reduce: {
+              input: "$quizQuestions",
+              initialValue: 0,
+              in: { $add: ["$$value", { $size: "$$this.questions" }] },
+            },
+          },
+          completions: { $ifNull: ["$completions", 0] },
+          createdAt: "$createdAt",
+        },
+      },
+      {
+        $project: {
+          course: 0,
+          quizQuestions: 0, // Exclude heavy nested array of IDs
+        },
+      },
+      {
+        $facet: {
+          data: [
+            { $sort: { createdAt: -1 } },
+            { $skip: skip },
+            { $limit: limit },
+          ],
+          total: [{ $count: "count" }],
+        },
+      }
+    );
+
+    const [result] = await QuizQuestion.aggregate(pipeline);
+    const questions = result.data;
+    const total = result.total[0] ? result.total[0].count : 0;
 
     return {
       data: questions,
