@@ -22,7 +22,7 @@ async function generateAccessToken(user: TokenUser) {
   );
 }
 
-async function generateRefreshToken(user: Partial<IUser>) {
+async function generateRefreshToken(user: Partial<IUser>, expiresIn: string = "15m") {
   if (!user || Object.keys(user).length === 0) {
     throw new Error("Invalid user object for access token generation");
   }
@@ -30,7 +30,7 @@ async function generateRefreshToken(user: Partial<IUser>) {
   return Jwt.sign(
     { username: user.username, role: user.role, isBanned: user.isBanned },
     Config.REFRESH_TOKEN_SECRET,
-    { expiresIn: "15m" }
+    { expiresIn: expiresIn } as any
   );
 }
 

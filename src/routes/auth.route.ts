@@ -77,7 +77,7 @@ const authRoutes: Router = Router();
  */
 authRoutes.post("/login", async (req: Request, res: Response) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, rememberMe } = req.body;
     const user = await findUserByUsername(username);
 
     if (!user) {
@@ -110,7 +110,9 @@ authRoutes.post("/login", async (req: Request, res: Response) => {
     };
 
     const accessToken = await generateAccessToken(payload);
-    const refreshToken = await generateRefreshToken(payload);
+    // If rememberMe is true, set refresh token to 30 days
+    const refreshTokenExpiry = rememberMe ? "30d" : "15m";
+    const refreshToken = await generateRefreshToken(payload, refreshTokenExpiry);
 
     await updateToken(user.username, { accessToken, refreshToken });
 

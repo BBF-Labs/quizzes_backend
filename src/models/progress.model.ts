@@ -35,7 +35,7 @@ const ProgressSchema = new Schema<IProgress>(
     quizId: {
       type: Schema.Types.ObjectId,
       required: true,
-      ref: "Quiz"
+      ref: "Quizzes"
     },
   },
   {
