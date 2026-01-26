@@ -10,6 +10,7 @@ import {
 } from "../controllers";
 import { authenticateUser, authorizeRoles } from "../middlewares";
 import { StatusCodes } from "../config";
+import { QuizQuestion } from "../models";
 
 const quizQuestionsRoutes: Router = Router();
 
@@ -257,11 +258,11 @@ quizQuestionsRoutes.get(
  *         description: Internal server error
  */
 quizQuestionsRoutes.get(
-  "/full/:courseId",
+  "/full/:quizId",
   authenticateUser,
   async (req: Request, res: Response) => {
     try {
-      const courseId = asString(req.params.courseId);
+      const quizId = asString(req.params.quizId);
 
       const user = req.user;
 
@@ -269,10 +270,21 @@ quizQuestionsRoutes.get(
         throw new Error("User not found");
       }
 
-      if (!courseId) {
-        throw new Error("Course ID is required");
+      if (!quizId) {
+        throw new Error("Quiz ID is required");
       }
 
+      // First, find the quiz document to get the courseId
+      const quizDoc = await QuizQuestion.findById(quizId).select("courseId");
+      
+      if (!quizDoc) {
+        res.status(StatusCodes.NOT_FOUND).json({
+          message: "Quiz not found",
+        });
+        return;
+      }
+
+      const courseId = quizDoc.courseId.toString();
       const fullQuizQuestions = await getFullQuizInformation(courseId);
 
       if (!fullQuizQuestions) {
@@ -294,6 +306,7 @@ quizQuestionsRoutes.get(
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: `Error: ${err.message}` });
+        console.log(err);
     }
   },
 );

@@ -3,6 +3,7 @@ import { StatusCodes } from "../config";
 import {
   generateFlashcards,
   getUserFlashcards,
+  getUserFlashcardsGroupedByCourse,
   updateFlashcard,
   shareFlashcard,
   getSharedFlashcard,
@@ -157,6 +158,47 @@ flashcardRoutes.get("/", async (req: Request, res: Response) => {
   } catch (error: any) {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       message: error.message || "Failed to retrieve flashcards",
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/v1/flashcards/grouped:
+ *   get:
+ *     summary: Get user's flashcards grouped by course
+ *     description: Retrieve flashcards grouped by course with aggregated stats
+ *     tags:
+ *       - Flashcards
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Grouped flashcards retrieved successfully
+ *       401:
+ *         description: Not authenticated
+ *       500:
+ *         description: Internal server error
+ */
+flashcardRoutes.get("/grouped", async (req: Request, res: Response) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json({ message: "Unauthorized" });
+    }
+
+    const courseGroups = await getUserFlashcardsGroupedByCourse(user.username);
+
+    res.status(StatusCodes.OK).json({
+      message: "Grouped flashcards retrieved successfully",
+      courseGroups,
+      count: courseGroups.length,
+    });
+  } catch (error: any) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      message: error.message || "Failed to retrieve grouped flashcards",
     });
   }
 });

@@ -169,9 +169,26 @@ async function getQuizQuestions(
         },
       },
       {
+        $addFields: {
+          // Calculate duration: (totalQuestions * 30 seconds) / 60 = minutes
+          duration: {
+            $toString: {
+              $floor: {
+                $divide: [{ $multiply: ["$totalQuestions", 30] }, 60],
+              },
+            },
+          },
+          // Rename totalQuestions to questions for frontend compatibility
+          questions: "$totalQuestions",
+          // Add id field as string version of _id for frontend
+          id: { $toString: "$_id" },
+        },
+      },
+      {
         $project: {
           course: 0,
-          quizQuestions: 0, // Exclude heavy nested array of IDs
+          quizQuestions: 0,
+          totalQuestions: 0, // Exclude since we renamed it to questions
         },
       },
       {
@@ -234,40 +251,100 @@ interface IFullQuizInfo {
       lectureNumber?: string;
     }>;
   }>;
+  questions: any[]; // Flattened questions array
+  lectures: string[]; // Lecture names array
   creditHours?: number;
 }
 
 async function getFullQuizInformation(
   courseId: string
 ): Promise<IFullQuizInfo> {
-  const quizDocument = await QuizQuestion.findOne({ courseId }).lean();
+  // Use aggregation pipeline for better performance
+  const result = await QuizQuestion.aggregate([
+    { $match: { courseId: new mongoose.Types.ObjectId(courseId) } },
+    {
+      $lookup: {
+        from: "courses",
+        localField: "courseId",
+        foreignField: "_id",
+        as: "course",
+      },
+    },
+    { $unwind: "$course" },
+    {
+      $project: {
+        _id: 1,
+        isApproved: 1,
+        creditHours: 1,
+        courseCode: "$course.code",
+        quizQuestions: 1,
+      },
+    },
+  ]);
 
-  if (!quizDocument) {
+  if (!result || result.length === 0) {
     throw new Error("No quiz found for this course");
   }
 
-  const course = await Course.findById(courseId).select("name code").lean();
+  const quizDocument = result[0];
 
-  if (!course) {
-    throw new Error("Course not found");
-  }
-
-  const fullQuizQuestions = await Promise.all(
-    quizDocument.quizQuestions.map(async (lectureQuiz) => ({
-      name: lectureQuiz.name,
-      questions: await Question.find({
-        _id: { $in: lectureQuiz.questions },
-      })
-        .lean()
-        .select("question options answer type explanation lectureNumber hint"),
-    }))
+  // Fetch all question IDs in a single query
+  const allQuestionIds = quizDocument.quizQuestions.flatMap(
+    (lecture: any) => lecture.questions
   );
+
+  const allQuestions = await Question.find({
+    _id: { $in: allQuestionIds },
+  })
+    .lean()
+    .select("_id question options answer type explanation lectureNumber hint");
+
+  // Create a map for quick lookup
+  const questionMap = new Map(
+    allQuestions.map((q: any) => [q._id.toString(), q])
+  );
+
+  // Build structured response
+  const fullQuizQuestions: any[] = [];
+  const flattenedQuestions: any[] = [];
+  const lectureNames: string[] = [];
+
+  quizDocument.quizQuestions.forEach((lecture: any) => {
+    lectureNames.push(lecture.name);
+    const lectureQuestions: any[] = [];
+
+    lecture.questions.forEach((questionId: any) => {
+      const question = questionMap.get(questionId.toString());
+      if (question) {
+        const formattedQuestion = {
+          _id: question._id,
+          question: question.question,
+          options: question.options || [],
+          answer: question.answer,
+          type: question.type,
+          explanation: question.explanation,
+          lectureNumber: lecture.name,
+          hint: question.hint,
+        };
+
+        lectureQuestions.push(formattedQuestion);
+        flattenedQuestions.push(formattedQuestion);
+      }
+    });
+
+    fullQuizQuestions.push({
+      name: lecture.name,
+      questions: lectureQuestions,
+    });
+  });
 
   return {
     id: quizDocument._id.toString(),
-    courseCode: course.code,
+    courseCode: quizDocument.courseCode,
     isApproved: quizDocument.isApproved,
     quizQuestions: fullQuizQuestions,
+    questions: flattenedQuestions,
+    lectures: lectureNames,
     creditHours: quizDocument.creditHours,
   };
 }
