@@ -5,8 +5,8 @@ import NewsletterEmail from "../templates/NewsletterEmail";
 import { Config } from "../config";
 
 const transporter = nodemailer.createTransport({
-  host: Config.SMTP_HOST,
-  port: Number(Config.SMTP_PORT),
+  host: Config.SMTP_HOST || "smtp.gmail.com",
+  port: Number(Config.SMTP_PORT) || 587,
   secure: Number(Config.SMTP_PORT) === 465,
   auth: {
     user: Config.SMTP_USER,
@@ -17,7 +17,7 @@ const transporter = nodemailer.createTransport({
 export const sendEmail = async (to: string, subject: string, html: string) => {
   try {
     const info = await transporter.sendMail({
-      from: `"${Config.SMTP_FROM_NAME}" <${Config.SMTP_FROM_EMAIL}>`,
+      from: `"${Config.SMTP_FROM_NAME || "BetaForge Labs" }" <${Config.SMTP_FROM_EMAIL || "admin@bflabs.tech"}>`,
       to,
       subject,
       html,
