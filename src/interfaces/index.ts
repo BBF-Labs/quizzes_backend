@@ -12,6 +12,7 @@ import IFlashcard from "./IFlashcard";
 import { IPersonalQuiz } from "./IPersonalQuiz";
 import { IWebhookData } from "./IWebhook";
 import IWaitlist from "./IWait";
+import IEmailUpdate from "./IEmailUpdate";
 import ICampus from "./ICampus";
 import ISchool from "./ISchool";
 import IAIResponse from "./IAIResponse";
@@ -34,6 +35,7 @@ export {
   IPersonalQuiz,
   IWebhookData,
   IWaitlist,
+  IEmailUpdate,
   ICampus,
   ISchool,
   IAIResponse,
