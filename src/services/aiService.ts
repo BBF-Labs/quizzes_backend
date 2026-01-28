@@ -193,6 +193,7 @@ export const generateWaitlistMarkdown = async (
     5. Always refer to the team as "The BetaForge Labs Team".
     6. Close with a powerful call to action${type === 'promotional' ? ' that creates urgency.' : '.'}
     7. NEVER include any greeting or salutation (e.g., "Hello,", "Hi there,", "Dear Waitlist Member,") at the start. The system already provides a "Hello [Name]," header. Start immediately with the email body content.
+    8. SUBJECT LINE RULES: Do NOT use prefixes like "Important Update:", "Security Alert:", "Announcement:", or "Action Required:". The subject should be a direct statement. Example: Use "Protect your BetaForge Labs account" instead of "Important Security Update: Protect your BetaForge Labs Account".
 
     Generate the subject and markdown content following the schema precisely.`;
 
