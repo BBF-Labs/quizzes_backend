@@ -170,21 +170,29 @@ const waitlistUpdateOutputSchema = z.object({
 });
 
 export const generateWaitlistMarkdown = async (
-  context: string
+  context: string,
+  type: 'update' | 'promotional' | 'security' | 'general' = 'update'
 ): Promise<{ subject: string; content: string }> => {
   try {
-    const prompt = `Generate a newsletter update for our waitlist users.
+    const prompt = `Generate a ${type.toUpperCase()} newsletter for BetaForge Labs waitlist users.
     
     Context Information:
     ${context}
 
+    Email Type & Voice:
+    - UPDATE: Technical, transparent, and progress-oriented. Focus on "what we built" and "where we are on the roadmap".
+    - PROMOTIONAL: High energy, marketing-driven, and persuasive. Focus on "why you should be excited" and "missing out is not an option". Use emotional hooks.
+    - SECURITY: Grave, clear, and authoritative. Focus on "keeping your data safe" and "privacy as a human right". Be reassuring but firm.
+    - GENERAL: Friendly, community-oriented, and conversational. Focus on stories, community shoutouts, or high-level announcements.
+
     Instructions:
-    1. Provide a catchy, engaging subject line.
-    2. The content MUST be in Markdown format.
+    1. ${type === 'promotional' ? 'Create an irresistible, FOMO-inducing subject line.' : 'Provide a clear and engaging subject line.'}
+    2. The content MUST be in high-quality Markdown.
+    3. Tone: ${type === 'security' ? 'Reassuring but serious.' : type === 'promotional' ? 'Extremely exciting and urgent.' : 'Professional and innovative.'}
     4. Highlight the key updates provided in the context.
-    5. Maintain a professional yet exciting tone (BetaForge Labs).
-    6. Close with a call to action or a "stay tuned" message.
-    7. Do not include user-specific placeholders like [Name] in the markdown body itself (the template handles the greeting name).
+    5. Always refer to the team as "The BetaForge Labs Team".
+    6. Close with a powerful call to action${type === 'promotional' ? ' that creates urgency.' : '.'}
+    7. NEVER include any greeting or salutation (e.g., "Hello,", "Hi there,", "Dear Waitlist Member,") at the start. The system already provides a "Hello [Name]," header. Start immediately with the email body content.
 
     Generate the subject and markdown content following the schema precisely.`;
 

@@ -16,7 +16,7 @@ const CorsOption: CorsOptions = {
           "http://127.0.0.1",
           `http://localhost:${Config.PORT}`,
         ],
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 };

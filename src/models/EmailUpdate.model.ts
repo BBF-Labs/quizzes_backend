@@ -16,6 +16,17 @@ const EmailUpdateSchema: Schema = new Schema(
             type: String,
             trim: true,
         },
+        type: {
+            type: String,
+            enum: ['update', 'promotional', 'security', 'general'],
+            default: 'update',
+        },
+        links: [
+            {
+                label: String,
+                url: String,
+            }
+        ],
         status: {
             type: String,
             enum: ['draft', 'approved', 'sent'],
