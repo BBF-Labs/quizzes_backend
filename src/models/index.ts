@@ -11,3 +11,4 @@ export { default as Token } from "./token.model";
 export { default as Waitlist } from "./waitlist.model";
 export { default as Flashcard } from "./flashcard.model";
 export { default as PersonalQuiz } from "./personalQuiz.model";
+export { default as EmailUpdate } from "./EmailUpdate.model";

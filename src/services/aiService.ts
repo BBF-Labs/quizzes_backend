@@ -1,4 +1,5 @@
-import { gemini20Flash, googleAI } from "@genkit-ai/googleai";
+
+import { googleAI } from "@genkit-ai/google-genai";
 import { genkit } from "genkit";
 import { z } from "zod";
 import IMaterial from "../interfaces/IMaterial";
@@ -6,9 +7,9 @@ import { Config } from "../config";
 import { extractText } from "../controllers/ai.controller";
 
 // Initialize AI client
-const ai = genkit({
+export const ai = genkit({
   plugins: [googleAI({ apiKey: Config.GOOGLE_GENAI_API_KEY })],
-  model: gemini20Flash,
+  model: "gemini-3-flash-preview",
 });
 
 // Output schema for personal quiz generation
@@ -159,6 +160,48 @@ Generate a complete quiz package following the schema exactly.`;
   } catch (error) {
     console.error("Error generating personal quiz with Genkit:", error);
     throw new Error("Failed to generate personal quiz. Please try again.");
+  }
+};
+
+// Output schema for waitlist update generation
+const waitlistUpdateOutputSchema = z.object({
+  subject: z.string().describe("Catchy email subject line"),
+  content: z.string().describe("Markdown content for the newsletter"),
+});
+
+export const generateWaitlistMarkdown = async (
+  context: string
+): Promise<{ subject: string; content: string }> => {
+  try {
+    const prompt = `Generate a newsletter update for our waitlist users.
+    
+    Context Information:
+    ${context}
+
+    Instructions:
+    1. Provide a catchy, engaging subject line.
+    2. The content MUST be in Markdown format.
+    4. Highlight the key updates provided in the context.
+    5. Maintain a professional yet exciting tone (BetaForge Labs).
+    6. Close with a call to action or a "stay tuned" message.
+    7. Do not include user-specific placeholders like [Name] in the markdown body itself (the template handles the greeting name).
+
+    Generate the subject and markdown content following the schema precisely.`;
+
+    const { output } = await ai.generate({
+      prompt,
+      model: googleAI.model("gemini-2.5-flash"),
+     output: { schema: waitlistUpdateOutputSchema },
+    });
+
+    if (!output) {
+      throw new Error("Failed to generate waitlist update");
+    }
+
+    return waitlistUpdateOutputSchema.parse(output);
+  } catch (error) {
+    console.error("Error generating waitlist markdown:", error);
+    throw new Error("Failed to generate waitlist update. Please try again.");
   }
 };
 
