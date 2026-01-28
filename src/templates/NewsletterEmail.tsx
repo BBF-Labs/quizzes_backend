@@ -8,6 +8,7 @@ import {
     Preview,
     Heading,
     Hr,
+    Markdown,
 } from "@react-email/components";
 
 interface NewsletterEmailProps {
@@ -26,7 +27,7 @@ export const NewsletterEmail = ({
             <Body style={main}>
                 <Container style={container}>
                     <Heading style={h1}>Hello {name},</Heading>
-                    <Text style={text}>{content}</Text>
+                    <Markdown markdownContainerStyles={markdownStyles}>{content}</Markdown>
                     <Hr style={hr} />
                     <Text style={footer}>
                         You are receiving this email because you signed up for our waitlist.
@@ -37,7 +38,11 @@ export const NewsletterEmail = ({
     );
 };
 
-export default NewsletterEmail;
+const markdownStyles = {
+    fontSize: "16px",
+    lineHeight: "26px",
+    color: "#333",
+};
 
 const main = {
     backgroundColor: "#ffffff",
@@ -74,3 +79,5 @@ const footer = {
     color: "#8898aa",
     fontSize: "12px",
 };
+
+export default NewsletterEmail;
