@@ -79,7 +79,7 @@ waitlistRoutes.get("/", getWaitlist);
 
 /**
  * @swagger
- * /api/v1/waitlist/daily-update/generate:
+ * /api/v1/waitlist/update/generate:
  *   post:
  *     summary: Generate daily update draft
  *     description: Generates AI-powered markdown content for a newsletter update based on provided context. Admin only.
@@ -102,11 +102,11 @@ waitlistRoutes.get("/", getWaitlist);
  *       201:
  *         description: Draft generated successfully
  */
-waitlistRoutes.post("/daily-update/generate", generateDailyUpdate);
+waitlistRoutes.post("/update/generate", generateDailyUpdate);
 
 /**
  * @swagger
- * /api/v1/waitlist/daily-update/pending:
+ * /api/v1/waitlist/update/pending:
  *   get:
  *     summary: Get pending daily update
  *     description: Retrieves the most recent draft or approved update that hasn't been sent yet. Admin only.
@@ -119,11 +119,11 @@ waitlistRoutes.post("/daily-update/generate", generateDailyUpdate);
  *       404:
  *         description: No pending updates found
  */
-waitlistRoutes.get("/daily-update/pending", getPendingUpdate);
+waitlistRoutes.get("/update/pending", getPendingUpdate);
 
 /**
  * @swagger
- * /api/v1/waitlist/daily-update/approve/{id}:
+ * /api/v1/waitlist/update/approve/{id}:
  *   post:
  *     summary: Approve daily update
  *     description: Marks a draft update as approved and ready for sending. Admin only.
@@ -143,11 +143,11 @@ waitlistRoutes.get("/daily-update/pending", getPendingUpdate);
  *       404:
  *         description: Update not found
  */
-waitlistRoutes.post("/daily-update/approve/:id", approveUpdate);
+waitlistRoutes.post("/update/approve/:id", approveUpdate);
 
 /**
  * @swagger
- * /api/v1/waitlist/daily-update/send/{id}:
+ * /api/v1/waitlist/update/send/{id}:
  *   post:
  *     summary: Send daily update
  *     description: Queues a background job to send the approved update to all waitlist users. Admin only.
@@ -169,6 +169,6 @@ waitlistRoutes.post("/daily-update/approve/:id", approveUpdate);
  *       404:
  *         description: Update not found
  */
-waitlistRoutes.post("/daily-update/send/:id", sendDailyUpdate);
+waitlistRoutes.post("/update/send/:id", sendDailyUpdate);
 
 export default waitlistRoutes;
