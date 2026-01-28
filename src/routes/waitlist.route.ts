@@ -74,6 +74,9 @@ waitlistRoutes.post("/", addToWaitlist);
  */
 waitlistRoutes.get("/unsubscribe", unsubscribe);
 
+// Admin only routes
+waitlistRoutes.use(authGuard, authorizeRoles("admin"));
+
 /**
  * @swagger
  * /api/v1/waitlist:
