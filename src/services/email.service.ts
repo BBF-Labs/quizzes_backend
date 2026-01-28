@@ -3,6 +3,7 @@ import { render } from "@react-email/render";
 import WelcomeEmail from "../templates/WelcomeEmail";
 import NewsletterEmail from "../templates/NewsletterEmail";
 import { Config } from "../config";
+import { Waitlist } from "../models";
 
 const transporter = nodemailer.createTransport({
   host: Config.SMTP_HOST || "smtp.gmail.com",
@@ -32,7 +33,13 @@ export const sendEmail = async (to: string, subject: string, html: string) => {
 
 export const sendWelcomeEmail = async (to: string, name: string) => {
   try {
-    const emailHtml = await render(WelcomeEmail({ name }));
+    // Check if user was deleted since the job was queued
+    const user = await Waitlist.findOne({ email: to });
+    if (user?.isDeleted) {
+        console.log(`Skipping welcome email to deleted user: ${to}`);
+        return;
+    }
+    const emailHtml = await render(WelcomeEmail({ name, email: to }));
     await sendEmail(to, "Welcome to the Waitlist!", emailHtml);
   } catch (error) {
     console.error("Error rendering or sending welcome email:", error);
@@ -43,12 +50,26 @@ export const sendWelcomeEmail = async (to: string, name: string) => {
 interface BulkEmailRecipient {
   email: string;
   name: string;
+  id?: string;
 }
+
+const replacePlaceholders = (text: string, user: BulkEmailRecipient) => {
+    if (!text) return text;
+    return text
+        .replace(/:id/g, user.id || '')
+        .replace(/:email/g, user.email)
+        .replace(/:name/g, user.name)
+        .replace(/{{id}}/g, user.id || '')
+        .replace(/{{email}}/g, user.email)
+        .replace(/{{name}}/g, user.name);
+};
 
 export const sendBulkEmails = async (
   recipients: BulkEmailRecipient[],
   subject: string,
   content?: string,
+  type?: 'update' | 'promotional' | 'security' | 'general',
+  links?: { label: string; url: string }[],
 ) => {
   console.log(`Starting bulk email send to ${recipients.length} recipients`);
 
@@ -66,11 +87,30 @@ export const sendBulkEmails = async (
     await Promise.all(
       batch.map(async (recipient) => {
         try {
+          // Double check deletion status before sending (Protect against race conditions/delays)
+          const user = await Waitlist.findOne({ email: recipient.email });
+          if (user?.isDeleted) {
+              console.log(`Skipping email to deleted user in bulk job: ${recipient.email}`);
+              return;
+          }
+
           // In a real production app, you might want to pre-render this if it's identical,
           // but for personalized emails (Hello {name}), we render per user.
           // Note: render() can be CPU intensive. For very large lists, consider worker threads.
+          // Replace placeholders in links for each user
+          const personalizedLinks = links?.map(link => ({
+            ...link,
+            url: replacePlaceholders(link.url, recipient)
+          }));
+
           const emailHtml = await render(
-            NewsletterEmail({ name: recipient.name, content }),
+            NewsletterEmail({ 
+                name: recipient.name, 
+                email: recipient.email, 
+                content,
+                type,
+                links: personalizedLinks
+            }),
           );
 
           await sendEmail(recipient.email, subject, emailHtml);

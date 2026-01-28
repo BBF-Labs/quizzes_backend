@@ -95,7 +95,19 @@ import {
 } from "./token.controller";
 
 import { generateQuestions, outputSchema } from "./ai.controller";
-import { addToWaitlist, getWaitlist, generateDailyUpdate, getPendingUpdate, approveUpdate, sendDailyUpdate } from "./waitlist.controller";
+import { 
+    addToWaitlist, 
+    getWaitlist,
+    deleteFromWaitlist,
+    restoreFromWaitlist,
+    unsubscribe,
+    generateDailyUpdate,
+    getPendingUpdate, 
+    getAllUpdates, 
+    updateEmailUpdate, 
+    approveUpdate, 
+    sendDailyUpdate 
+} from "./waitlist.controller";
 
 export {
   generateAccessToken,
@@ -168,8 +180,13 @@ export {
   outputSchema,
   addToWaitlist,
   getWaitlist,
+  deleteFromWaitlist,
+  restoreFromWaitlist,
+  unsubscribe,
   generateDailyUpdate,
   getPendingUpdate,
+  getAllUpdates,
+  updateEmailUpdate,
   approveUpdate,
   sendDailyUpdate,
 };

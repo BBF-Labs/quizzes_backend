@@ -18,6 +18,7 @@ const Config = {
   SMTP_PASS: process.env.SMTP_PASS,
   SMTP_FROM_NAME: process.env.SMTP_FROM_NAME,
   SMTP_FROM_EMAIL: process.env.SMTP_FROM_EMAIL,
+  FRONTEND_URL: process.env.FRONTEND_URL || (process.env.NODE_ENV === "production" ? "https://quizzes.bflabs.tech" : "http://localhost:3000"),
 };
 
 const StatusCodes = {

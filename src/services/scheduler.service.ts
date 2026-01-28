@@ -20,12 +20,14 @@ export const queueEmailJob = async (
     recipients: { email: string; name: string }[],
     subject: string,
     content: string,
+    type: 'update' | 'promotional' | 'security' | 'general' = 'update',
+    links: { label: string; url: string }[] = [],
     onComplete?: () => Promise<void>
 ) => {
     // Run in the background without awaiting
     runWithRetry(async () => {
         console.log(`Starting queued email job: ${subject}`);
-        await sendBulkEmails(recipients, subject, content);
+        await sendBulkEmails(recipients, subject, content, type, links);
         if (onComplete) {
             await onComplete();
         }
