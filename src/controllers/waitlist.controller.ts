@@ -51,10 +51,18 @@ async function addToWaitlist(req: Request, res: Response) {
             return;
         }
 
+        // Normalize university name (Title Case)
+        const normalizedUniversity = university
+            .trim()
+            .toLowerCase()
+            .split(' ')
+            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+
         const newEntry = await Waitlist.create({
             name,
             email,
-            university,
+            university: normalizedUniversity,
         });
 
         // Send welcome email (Queued background job)
@@ -89,7 +97,15 @@ async function getWaitlist(req: Request, res: Response) {
             ];
         }
         if (university) {
-            query.university = university;
+            // Handle multiple universities (comma-separated or array)
+            const unis = Array.isArray(university) 
+                ? university 
+                : (university as string).includes(',') 
+                    ? (university as string).split(',') 
+                    : [university];
+            
+            // @ts-ignore
+            query.university = { $in: unis.map(u => new RegExp(`^${u}$`, 'i')) }; // Case-insensitive exact match for list
         }
 
         const [waitlist, total] = await Promise.all([
@@ -111,6 +127,40 @@ async function getWaitlist(req: Request, res: Response) {
         console.error("Error retrieving waitlist:", error);
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
             message: "An error occurred while retrieving the waitlist",
+        });
+    }
+}
+
+
+async function getUniversities(req: Request, res: Response) {
+    try {
+        const universities = await Waitlist.find({ isDeleted: { $ne: true } }).distinct('university');
+        const sortedUniversities = universities.filter(u => u).sort(); // Remove nulls and sort
+        
+        res.status(StatusCodes.OK).json({
+            message: "Universities retrieved successfully",
+            data: sortedUniversities
+        });
+    } catch (error: any) {
+        console.error("Error retrieving universities:", error);
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+            message: "An error occurred while retrieving universities",
+        });
+    }
+}
+
+async function getAllWaitlistUsers(req: Request, res: Response) {
+    try {
+        const users = await Waitlist.find({ isDeleted: { $ne: true } }).select('name email');
+        
+        res.status(StatusCodes.OK).json({
+            message: "All users retrieved successfully",
+            data: users
+        });
+    } catch (error: any) {
+        console.error("Error retrieving all users:", error);
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+            message: "An error occurred while retrieving users",
         });
     }
 }
@@ -278,23 +328,9 @@ async function approveUpdate(req: Request, res: Response) {
         update.status = 'approved';
         await update.save();
 
-        // Automatically trigger send job
-        const users = await Waitlist.find({ isDeleted: { $ne: true } }, 'email name');
-        const recipients = users.map(u => ({ email: u.email, name: u.name }));
-
-        if (recipients.length > 0) {
-            queueEmailJob(recipients, update.subject, update.content, update.type, update.links, async () => {
-                update.status = 'sent';
-                update.sentAt = new Date();
-                await update.save();
-                console.log(`Auto-send: Update ${id} marked as sent.`);
-            });
-        }
-
         res.status(StatusCodes.OK).json({
-            message: "Update approved and queued for sending",
-            data: update,
-            recipientCount: recipients.length
+            message: "Update approved. Ready to send.",
+            data: update
         });
     } catch (error: any) {
         console.error("Error approving update:", error);
@@ -307,6 +343,7 @@ async function approveUpdate(req: Request, res: Response) {
 async function sendDailyUpdate(req: Request, res: Response) {
     try {
         const { id } = req.params;
+        const { filters } = req.body; // { type: 'all' | 'university' | 'specific', value?: string | string[] }
 
         const update = await EmailUpdate.findById(id);
         if (!update) {
@@ -324,13 +361,37 @@ async function sendDailyUpdate(req: Request, res: Response) {
             return;
         }
 
-        // Fetch all non-deleted waitlist users
-        const users = await Waitlist.find({ isDeleted: { $ne: true } }, 'email name');
+        let query: any = { isDeleted: { $ne: true } };
+
+        // Apply filters
+        if (filters) {
+            if (filters.type === 'university' && filters.value) {
+                // Handle array of universities
+                const unis = Array.isArray(filters.value) ? filters.value : [filters.value];
+                query.university = { $in: unis.map((u: string) => new RegExp(`^${u}$`, 'i')) };
+            } else if (filters.type === 'specific') {
+                if (filters.value) {
+                     const emails = Array.isArray(filters.value) ? filters.value : [filters.value];
+                     if (emails.length > 0) {
+                        query.email = { $in: emails };
+                     } else {
+                        // Specific requested but empty list = match nothing
+                        query.email = { $in: ['__NO_MATCH__'] };
+                     }
+                } else {
+                    // Specific requested but no value = match nothing
+                    query.email = { $in: ['__NO_MATCH__'] };
+                }
+            }
+        }
+
+        // Fetch recipients
+        const users = await Waitlist.find(query, 'email name');
         const recipients = users.map(u => ({ email: u.email, name: u.name }));
 
         if (recipients.length === 0) {
             res.status(StatusCodes.OK).json({
-                message: "No recipients in the waitlist",
+                message: "No recipients found matching the criteria",
             });
             return;
         }
@@ -373,6 +434,8 @@ async function restoreFromWaitlist(req: Request, res: Response) {
 export { 
     addToWaitlist, 
     getWaitlist, 
+    getUniversities,
+    getAllWaitlistUsers,
     deleteFromWaitlist,
     restoreFromWaitlist,
     unsubscribe,

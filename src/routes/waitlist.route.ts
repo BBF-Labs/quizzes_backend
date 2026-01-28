@@ -10,7 +10,9 @@ import {
     getAllUpdates,
     updateEmailUpdate,
     approveUpdate,
-    sendDailyUpdate
+    sendDailyUpdate,
+    getUniversities,
+    getAllWaitlistUsers
 } from "../controllers";
 import { authGuard, authorizeRoles } from "../middlewares/auth.middleware";
 
@@ -115,6 +117,34 @@ waitlistRoutes.use(authGuard, authorizeRoles("admin"));
  *         description: List of waitlist members
  */
 waitlistRoutes.get("/", getWaitlist);
+
+/**
+ * @swagger
+ * /api/v1/waitlist/universities:
+ *   get:
+ *     summary: Get list of all universities
+ *     tags: [Waitlist]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of universities
+ */
+waitlistRoutes.get("/universities", getUniversities);
+
+/**
+ * @swagger
+ * /api/v1/waitlist/all:
+ *   get:
+ *     summary: Get all waitlist users (lightweight)
+ *     tags: [Waitlist]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all users
+ */
+waitlistRoutes.get("/all", getAllWaitlistUsers);
 
 /**
  * @swagger
