@@ -1,42 +1,50 @@
 import cron from "node-cron";
 import { Waitlist } from "../models";
-import { sendBulkEmails } from "./email.service";
+import { sendBulkEmails, sendWelcomeEmail } from "./email.service";
 
-// Schedule a task to run every day at 9:00 AM
+// Schedule a task to run every day at 9:00 AM (DISABLED: Now triggered manually by admin)
 export const initScheduledJobs = () => {
+    /*
     cron.schedule("0 9 * * *", async () => {
-        await runWithRetry(async () => {
-            console.log("Running daily waitlist summary job...");
-
-            // Use a cursor to stream documents for memory efficiency
-            const cursor = Waitlist.find().cursor();
-
-            let batch: { email: string; name: string }[] = [];
-            const BATCH_SIZE = 50; // Match the email service batch size or larger
-            let totalProcessed = 0;
-
-            for await (const doc of cursor) {
-                batch.push({ email: doc.email, name: doc.name });
-
-                if (batch.length >= BATCH_SIZE) {
-                    await sendBulkEmails(batch, "Daily Waitlist Update");
-                    totalProcessed += batch.length;
-                    console.log(`Processed ${totalProcessed} users...`);
-                    batch = []; // Clear batch
-                }
-            }
-
-            // Send remaining users
-            if (batch.length > 0) {
-                await sendBulkEmails(batch, "Daily Waitlist Update");
-                totalProcessed += batch.length;
-            }
-
-            console.log(`Daily job completed. Total emails sent: ${totalProcessed}`);
-        }, "Daily Waitlist Job");
+        // ... (existing logic)
     });
+    */
 
-    console.log("Scheduled jobs initialized");
+    console.log("Scheduled jobs initialized (Automatic daily waitlist updates disabled)");
+};
+
+/**
+ * Queues a bulk email job to run in the background
+ */
+export const queueEmailJob = async (
+    recipients: { email: string; name: string }[],
+    subject: string,
+    content: string,
+    onComplete?: () => Promise<void>
+) => {
+    // Run in the background without awaiting
+    runWithRetry(async () => {
+        console.log(`Starting queued email job: ${subject}`);
+        await sendBulkEmails(recipients, subject, content);
+        if (onComplete) {
+            await onComplete();
+        }
+        console.log(`Completed queued email job: ${subject}`);
+    }, `Bulk Email Job: ${subject}`).catch(err => {
+        console.error(`Fatal error in queued email job ${subject}:`, err);
+    });
+};
+
+/**
+ * Queues a welcome email for a new waitlist user
+ */
+export const queueWelcomeEmail = async (email: string, name: string) => {
+    runWithRetry(async () => {
+        console.log(`Sending background welcome email to ${email}`);
+        await sendWelcomeEmail(email, name);
+    }, `Welcome Email: ${email}`).catch(err => {
+        console.error(`Failed to send welcome email to ${email}:`, err);
+    });
 };
 
 /**
