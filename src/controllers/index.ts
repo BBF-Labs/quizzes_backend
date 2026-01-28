@@ -98,6 +98,8 @@ import { generateQuestions, outputSchema } from "./ai.controller";
 import { 
     addToWaitlist, 
     getWaitlist,
+    getUniversities,
+    getAllWaitlistUsers,
     deleteFromWaitlist,
     restoreFromWaitlist,
     unsubscribe,
@@ -180,6 +182,8 @@ export {
   outputSchema,
   addToWaitlist,
   getWaitlist,
+  getUniversities,
+  getAllWaitlistUsers,
   deleteFromWaitlist,
   restoreFromWaitlist,
   unsubscribe,
