@@ -36,7 +36,7 @@ export const WelcomeEmail = ({ name, email }: WelcomeEmailProps) => {
                     </Text>
                     <Hr style={hr} />
                     <Text style={footer}>
-                        Best regards,<br />The BBF Labs Team
+                        Best regards,<br />The BF Labs Team
                     </Text>
                     <Text style={footer}>
                         Visit us at <Link href={Config.FRONTEND_URL} style={link}>{Config.FRONTEND_URL}</Link>
