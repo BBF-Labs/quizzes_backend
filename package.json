@@ -37,6 +37,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@genkit-ai/google-genai": "^1.28.0",
     "@genkit-ai/googleai": "^1.0.4",
     "@react-email/components": "^0.5.7",
     "axios": "^1.7.9",
